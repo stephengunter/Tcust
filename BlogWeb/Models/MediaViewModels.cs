@@ -1,0 +1,40 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Blog.Models;
+
+namespace BlogWeb.Models
+{
+	public class MediaViewModel
+	{
+		public MediaViewModel() { }
+
+		public MediaViewModel(UploadFile file)
+		{
+			this.id = file.Id;
+			this.itemOID = file.ItemOID;
+			this.top = file.Top;
+			this.width = file.Width;
+			this.height = file.Height;
+			this.name = file.ClearName;
+			this.path = file.Path;
+		}
+
+		public int id { get; set; }
+
+		public int postId { get; set; }
+
+		public string itemOID { get; set; }
+
+		public string path { get; set; }
+
+		public string name { get; set; }
+
+		public bool top { get; set; }
+
+		public int width { get; set; }
+
+		public int height { get; set; }
+	}
+}

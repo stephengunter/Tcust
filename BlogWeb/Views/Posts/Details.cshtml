@@ -1,0 +1,51 @@
+﻿@model Model.Post
+
+<div class="row">
+
+
+
+
+
+    <div class="col-sm-8 blog-main">
+        @Html.Partial("_Post", Model)
+
+
+    </div><!-- /.blog-main -->
+    <div class="col-sm-3 offset-sm-1 blog-sidebar">
+        @Html.Partial("_Media", Model.UploadFiles)
+
+
+    </div><!-- /.blog-sidebar -->
+
+</div><!-- /.row -->
+
+    <nav class="blog-pagination">
+        <a class="btn btn-outline-primary" id="btn-back" href="/">
+            返回
+        </a>
+    </nav>
+
+
+
+@section Scripts{
+    <script type="text/javascript">
+        
+        $(document).ready(function () {
+            var backurl = localStorage.getItem('backurl');
+            backurl=backurl.replace(/&amp;/g, '&');
+            if (backurl) {
+               
+                $('#btn-back').attr('href', backurl)
+            }
+          
+
+       
+
+
+
+        });  //end ready
+
+    </script>
+}
+
+

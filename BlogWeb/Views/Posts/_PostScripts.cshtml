@@ -1,0 +1,40 @@
+﻿<script type="text/javascript">
+    $(document).ready(function () {
+        iniTooltip();
+
+        $('#copy-url').click(function (e) {
+            e.preventDefault();
+            alert('damn');
+            $('#btn-copy-hidden').click();
+
+
+        });
+
+        var clipboard= new Clipboard('.btn-copy');
+        clipboard.on('success', function (e) {
+            $.notify({
+                message: '連結已複製'
+            }, {
+
+                type: 'success',
+                delay: 500,
+            });
+
+            e.clearSelection();
+        });
+
+        clipboard.on('error', function (e) {
+            $.notify({
+                message: '複製連結失敗'
+            }, {
+
+                type: 'danger',
+                delay: 500,
+            });
+        });
+
+
+
+    });
+
+</script>

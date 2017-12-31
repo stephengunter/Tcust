@@ -1,0 +1,32 @@
+﻿<post-admin :model="model"></post-admin>
+
+
+
+
+@section scripts{
+	<script>
+		new Vue({
+			el: '#main',
+			data() {
+				return {
+					
+					model: {},
+				}
+			},
+			beforeMount() {
+
+				this.model =@Html.Raw(ViewBag.list);
+				
+
+			},
+			methods:{
+
+            }
+
+		});
+	</script>
+
+}
+
+
+
