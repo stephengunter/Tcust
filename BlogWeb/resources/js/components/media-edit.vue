@@ -12,10 +12,11 @@
             <tbody>
                <tr v-for="(media,index) in medias" :key="index">
                   <td>
-                     <!-- <img v-if="file.thumb" :src="file.thumb" width="80" height="auto" /> -->
+							<img v-if="media.thumb" class="thumbnail" style="max-width:120px" :src="media.thumb" />
+                    
                   </td>
                   <td>
-                      {{media.name}}
+                      {{ media.title }}
                   </td>
                   <td>
                      <button class="btn btn-sm btn-primary" >
@@ -24,19 +25,19 @@
                      <button class="btn btn-sm btn-danger" @click.prevent="removeMedia(media)">
                         <i class="fa fa-trash-o" aria-hidden="true"></i>
                      </button>
+							<button class="btn btn-sm btn-default" v-if="medias.length>1" @click.prevent="up(media,index)">
+								<i class="fa fa-arrow-up" aria-hidden="true"></i>
+							</button>
+							<button class="btn btn-sm btn-default" v-if="medias.length>1" @click.prevent="down(media,index)">
+								<i class="fa fa-arrow-down" aria-hidden="true"></i>
+							</button>
                   </td>
                </tr>
             </tbody>
          </table>
       </div>
       <div>
-         <label  class="btn btn-success btn-file" >
-             <i class="fa fa-plus"></i>
-             新增圖片
-              <input type="file" multiple accept="image/png,image/gif,image/jpeg" 
-               style="display: none;" @change="onFileChange" >
-                      
-         </label>
+         <file-upload ref="fileUpload" @file-added="onFileAdded"></file-upload>
 
          <button type="button" class="btn btn-success"  @click.prevent="testUpload">
            <i class="fa fa-arrow-up" aria-hidden="true"></i>
@@ -47,6 +48,7 @@
 </template>
 
 <script>
+import FileUpload from './file-upload';
 export default {
    name:'MediaEdit',
       props:{
@@ -54,162 +56,142 @@ export default {
             type:Number,
             default:0
          }
+		},
+		components: {
+         'file-upload':FileUpload
       },
       data(){
          return {
-            files:[],
+           
             medias:[],
+			
+            // filedata:{
+            //    name:'',
+            //    type:'',
+            //    size:'',
 
-            filedata:{
-               name:'',
-               type:'',
-               size:'',
-
-            },
-            autoCompress: 1024 * 1024,
+            // },
+            // autoCompress: 1024 * 1024,
          }
       },
       computed:{
 
       }, 
       methods:{
-         test(){
-            let i=this.medias.findIndex((item)=>{
-               return item.name=='Koala.jpg'
-            });
-            alert(i);
-         },
          fileExist(name){
-            let index=this.medias.findIndex((item)=>{
-               return item.name==name;
-            });
-            return index >=0 ;
-         },
-         addFile(){
-
-         },
+				let index=this.findFileIndex(name);
+				return index >=0;
+			},
+			findFileIndex(name){
+				let index=this.medias.findIndex((item)=>{
+					return item.name==name;
+				});
+				return index ;
+			},
+			
+			addMedia(name,thumb){
+				let media={
+					id:0,
+					order:this.findMinOrder() - 1,
+					title:name,
+					name:name,
+					thumb:thumb
+				};
+				this.medias.push(media);
+				this.sortMedias();
+			},
          testUpload(){
-            let form = new FormData();
-            form.append('width', '122');
-            form.append('height','211');    
-            for (let i = 0; i < this.files.length; i++) {
-               form.append('image_files', this.files[i]);
+				for (let i=0; i<this.files.length; i++) {
+               alert(this.files[i].name);
             }
-            let url='/admin/posts/upload';
-            axios.post(url, form)
-                .then(response => {
-                     alert('then');
-                })
-                .catch(error => {
-                     alert('err');
-                })
+            // let form = new FormData();
+            // form.append('width', '122');
+            // form.append('height','211');    
+            // for (let i = 0; i < this.files.length; i++) {
+            //    form.append('image_files', this.files[i]);
+            // }
+            // let url='/admin/posts/upload';
+            // axios.post(url, form)
+            //     .then(response => {
+            //          alert('then');
+            //     })
+            //     .catch(error => {
+            //          alert('err');
+            //     })
 
 
-         },
-         onFileChange(e) {
-            let files = e.target.files || e.dataTransfer.files;
-            if (!files.length)  return;
+			},
+			removeMedia(media){
+				let index=this.findFileIndex(media.name);
+				if(index< 0) return;
 
-            this.addFiles(files);
-                
-         },
-         addFiles(files){
-            for (let i=0; i<files.length; i++) {
-               if(!this.fileExist(files[i].name)){
-                  this.files.push(files[i]);
-                  this.medias.push({
-                     name:files[i].name,
-                     order:i,
-                     title:''
-                  });
-               }
+				this.medias.splice(index, 1);
+
+				if(media.id){
+
+				}else{
+					this.$refs.fileUpload.removeFile(media.name);
+				}
+			},
+			onFileAdded(){
+			   let thumbs = this.$refs.fileUpload.getThunbnails();
+			   for (let i=0; i<thumbs.length; i++) {
+					let name=thumbs[i].name;
+					if(!this.fileExist(name)){
+						this.addMedia(thumbs[i].name, thumbs[i].data);
+					}
+					
             }
+			},
+			up(media,index){
+				let upper=this.medias[index-1];
+				if(!upper) return;
+
+				let upperOrder=upper.order;
+				let downOrder=media.order;
+
+				upper.order=downOrder;
+				media.order=upperOrder;
+
+				this.sortMedias();
+
+			},
+			down(media,index){
+				let downer=this.medias[index+1];
+				if(!downer) return;
+
+				let downerOrder=downer.order;
+				let upperOrder=media.order;
+
+				downer.order=upperOrder;
+				media.order=downerOrder;
+
+				this.sortMedias();
+			},
+			sortMedias(){
+				this.medias.sort((a,b)=>{
+					return b.order- a.order;
+				})
+			},
+			findMinOrder(){
+				if(!this.medias.length) return 0;
+
+			   let arr=this.medias;
+				let min = arr[0].order;
+				for (let i = 1, len=arr.length; i < len; i++) {
+					let v = arr[i].order;
+					min = (v < min) ? v : min;
+				
+				}
+
+				return min;
+			}
+         
+			
+         
+         
+         
         
-            
-         },
-         removeMedia(media){
-            alert('removeMedia:' + media.name);
-         },
-         onAdd(){
-            this.create=true;
-         },
-         inputFilter(newFile, oldFile, prevent){
-            
-            if (newFile && !oldFile) {
-               // Before adding a file
-               // Filter system files or hide files
-               if (/(\/|^)(Thumbs\.db|desktop\.ini|\..+)$/.test(newFile.name)) {
-                  return prevent();
-               }
-               // Filter php html js file
-               if (/\.(php5?|html?|jsx?)$/i.test(newFile.name)) {
-                  return prevent();
-               }
-               
-            }
-
-            if (newFile && (!oldFile || newFile.file !== oldFile.file)) {
-
-               // Create a blob field
-               newFile.blob = ''
-               let URL = window.URL || window.webkitURL
-               if (URL && URL.createObjectURL) {
-                  newFile.blob = URL.createObjectURL(newFile.file)
-               }
-
-               // Thumbnails
-               newFile.thumb = ''
-               if (newFile.blob && newFile.type.substr(0, 6) === 'image/') {
-                  newFile.thumb = newFile.blob
-               }
-            }
-         },
-         inputFile(newFile, oldFile) {
-            if (newFile && oldFile) {
-               // update
-               if (newFile.active && !oldFile.active) {
-                  // beforeSend
-                  console.log('update');
-                  // min size
-                  if (newFile.size >= 0 && this.minSize > 0 && newFile.size < this.minSize) {
-                        this.$refs.upload.update(newFile, {
-                           error: 'size'
-                        })
-                  }
-               }
-
-                    if (newFile.progress !== oldFile.progress) {
-                        // progress
-                    }
-
-                    if (newFile.error && !oldFile.error) {
-                        // error
-                    }
-
-                    if (newFile.success && !oldFile.success) {
-                        // success
-                    }
-            }
-
-            if (!newFile && oldFile) {
-               // remove
-               if (oldFile.success && oldFile.response.id) {
-                  // $.ajax({
-                  //   type: 'DELETE',
-                  //   url: '/upload/delete?id=' + oldFile.response.id,
-                  // })
-               }
-            }
-
-
-            // Automatically activate upload
-             
-            if (Boolean(newFile) !== Boolean(oldFile) || oldFile.error !== newFile.error) {
-               if (this.uploadAuto && !this.$refs.upload.active) {
-                  this.$refs.upload.active = true
-               }
-            }
-         }
          
       }
 }

@@ -1,8 +1,6 @@
 import './bootstrap';
 
 
-const VueUploadComponent = require('vue-upload-component');
-Vue.component('file-upload', VueUploadComponent);
 
 
 Vue.component('navbar', require('./components/navbar'));
