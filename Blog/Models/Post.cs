@@ -4,6 +4,7 @@ using ApplicationCore.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using ApplicationCore.Helpers;
+using System;
 
 namespace Blog.Models
 {
@@ -12,7 +13,7 @@ namespace Blog.Models
 	{
 		public Post() => Categories = new JoinCollectionFacade<Category, Post, PostCategory>(this, PostCategories);
 
-
+		public DateTime Date { get; set; }
 
 		public string Author { get; set; }
 

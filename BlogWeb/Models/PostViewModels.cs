@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Blog.Models;
 using ApplicationCore.Helpers;
 using ApplicationCore.Paging;
+using Microsoft.AspNetCore.Http;
 
 namespace BlogWeb.Models
 {
@@ -27,6 +28,8 @@ namespace BlogWeb.Models
 
 		//public Post Post { get; set; }
 	}
+
+	
 
 	public class PostViewModel
 	{
@@ -55,6 +58,7 @@ namespace BlogWeb.Models
 			this.cover = new MediaViewModel(post.TopFile);
 
 		}
+
 		public int id { get; set; }
 		public string title { get; set; }
 		public string author { get; set; }
@@ -72,10 +76,12 @@ namespace BlogWeb.Models
 			return str.Substring(0, Math.Min(str.Length, 100)) + " ...";
 		}
 
-		
-
-
 	}
+
+
+	
+
+	
 
 	
 }

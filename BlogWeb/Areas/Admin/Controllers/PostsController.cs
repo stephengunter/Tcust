@@ -12,13 +12,14 @@ using ApplicationCore.Paging;
 
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
 	public class UploadForm
 	{
-		public string width { get; set; }
-		public string height { get; set; }
+		//public string width { get; set; }
+		//public string height { get; set; }
 		public List<IFormFile> image_files { get; set; }
 	}
 
@@ -28,7 +29,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 		private readonly int pagesize = 8;
 		private readonly IPostService postService;
 
-		public PostsController(IPostService postService)
+		public PostsController(IHostingEnvironment environment, IPostService postService) : base(environment)
 		{
 			this.postService = postService;
 		}
@@ -41,14 +42,46 @@ namespace BlogWeb.Areas.Admin.Controllers
 		[HttpPost]
 		public async Task<IActionResult> Upload(UploadForm model)
 		{
-			byte[] file = null;
-			using (var memoryStream = new MemoryStream())
+			var files = model.image_files;
+
+			
+			string folderPath = this.UploadFilesPath;
+			foreach (var file in files)
 			{
-				await model.image_files.FirstOrDefault().CopyToAsync(memoryStream);
-				file = memoryStream.ToArray();
+				if (file.Length > 0)
+				{
+					var filePath = Path.Combine(folderPath, file.FileName);
+					using (var fileStream = new FileStream(filePath, FileMode.Create))
+					{
+						await file.CopyToAsync(fileStream);
+					}
+				}
 			}
 
-			return Content("test");
+			return Content(UploadFilesPath);
+
+			//var files = new List<IFormFile>();
+			//foreach (var file in form.files)
+			//{
+			//	if (media.file != null)
+			//	{
+			//		files.Add(media.file);
+			//	}
+			//}
+
+
+			//string folderPath = this.UploadFilesPath;
+			//foreach (var file in form.files)
+			//{
+			//	if (file.Length > 0)
+			//	{
+			//		var filePath = Path.Combine(folderPath, file.FileName);
+			//		using (var fileStream = new FileStream(filePath, FileMode.Create))
+			//		{
+			//			await file.CopyToAsync(fileStream);
+			//		}
+			//	}
+			//}
 		}
 
 		public async Task<IActionResult> Index()
@@ -81,5 +114,19 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 			return View();
 		}
+
+		[HttpPost]
+		public IActionResult Store([FromBody] Post post)
+		{
+
+			post=postService.Create(post);
+
+			return new ObjectResult(post);
+
+		
+		}
+
+
+		
 	}
 }

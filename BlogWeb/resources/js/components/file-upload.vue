@@ -87,6 +87,9 @@ export default {
             reader.readAsDataURL(file);
          });
       },
+      getFiles(){
+			return this.files;
+      },
       getThunbnails(){
          return this.thumbnails;
       }

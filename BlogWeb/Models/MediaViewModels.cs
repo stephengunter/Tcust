@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Blog.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace BlogWeb.Models
 {
@@ -36,5 +37,8 @@ namespace BlogWeb.Models
 		public int width { get; set; }
 
 		public int height { get; set; }
+
+
+		
 	}
 }
