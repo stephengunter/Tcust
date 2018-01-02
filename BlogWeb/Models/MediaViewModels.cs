@@ -14,11 +14,11 @@ namespace BlogWeb.Models
 		public MediaViewModel(UploadFile file)
 		{
 			this.id = file.Id;
-			this.itemOID = file.ItemOID;
-			this.top = file.Top;
+			
+		
 			this.width = file.Width;
 			this.height = file.Height;
-			this.name = file.ClearName;
+		
 			this.path = file.Path;
 		}
 
@@ -40,5 +40,11 @@ namespace BlogWeb.Models
 
 
 		
+	}
+
+	public class UploadForm
+	{
+		public int postId { get; set; }
+		public List<IFormFile> files { get; set; }
 	}
 }

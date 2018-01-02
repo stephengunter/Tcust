@@ -73,14 +73,14 @@ namespace Blog.Services
 			if (!string.IsNullOrEmpty(title)) post.Title = title;
 
 			post.Top = true;
-			if (cover > 0 && post.Attachments.Where(f => f.Id == cover).FirstOrDefault() != null)
-			{
-				foreach (UploadFile uploadFile in post.Attachments)
-				{
-					int num = uploadFile.Id == cover ? 1 : 0;
-					uploadFile.Top = num != 0;
-				}
-			}
+			//if (cover > 0 && post.Attachments.Where(f => f.Id == cover).FirstOrDefault() != null)
+			//{
+			//	foreach (UploadFile uploadFile in post.Attachments)
+			//	{
+			//		int num = uploadFile.Id == cover ? 1 : 0;
+			//		uploadFile.Top = num != 0;
+			//	}
+			//}
 
 
 			postRepository.Update(post);

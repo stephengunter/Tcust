@@ -41,7 +41,7 @@ namespace Blog.Models
 			get
 			{
 				if (this.Attachments.IsNullOrEmpty()) return null;
-				return this.Attachments.Where(f => f.Top).FirstOrDefault() ?? this.Attachments.FirstOrDefault();
+				return this.Attachments.OrderByDescending(f => f.Order).FirstOrDefault();
 			}
 		}
 

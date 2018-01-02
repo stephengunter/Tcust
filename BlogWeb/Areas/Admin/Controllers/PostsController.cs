@@ -16,12 +16,7 @@ using Microsoft.AspNetCore.Hosting;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	public class UploadForm
-	{
-		//public string width { get; set; }
-		//public string height { get; set; }
-		public List<IFormFile> image_files { get; set; }
-	}
+	
 
 
 	public class PostsController: BaseAdminController
@@ -36,13 +31,15 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		public IActionResult Test()
 		{
+
+
 			return View();
 		}
 
 		[HttpPost]
 		public async Task<IActionResult> Upload(UploadForm model)
 		{
-			var files = model.image_files;
+			var files = model.files;
 
 			
 			string folderPath = this.UploadFilesPath;
@@ -115,9 +112,37 @@ namespace BlogWeb.Areas.Admin.Controllers
 			return View();
 		}
 
-		[HttpPost]
-		public IActionResult Store([FromBody] Post post)
+		[HttpGet]
+		public IActionResult Create()
 		{
+			var model = new PostEditForm
+			{
+				post = new PostViewModel()
+			};
+		
+
+
+			return new ObjectResult(model);
+		}
+
+		[HttpPost]
+		public IActionResult Store([FromBody] PostEditForm model)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			
+
+			var post = new Post
+			{
+				 Title= model.post.title.Trim(),
+				 Content=model.post.content.Trim(),
+				 Author= model.post.author.Trim(),
+				 //Date=model.da
+			
+			};
 
 			post=postService.Create(post);
 

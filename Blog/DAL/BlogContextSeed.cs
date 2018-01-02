@@ -63,12 +63,12 @@ namespace Blog.DAL
 							Path = item.Path,
 							PreviewPath = item.PreviewPath,
 							PS = item.PS,
-							Top = item.Top,
+						
 							Type = item.Type,
 							UpdatedBy = post.UpdatedBy,
 							Width = item.Width,
 
-							ItemOID = item.ItemOID,
+						
 
 						});
 					}

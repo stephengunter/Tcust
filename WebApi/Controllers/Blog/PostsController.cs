@@ -51,7 +51,7 @@ namespace WebApi.Controllers.Blog
 			post.Attachments.Add(new UploadFile()
 			{
 				CreatedAt = DateTime.Now,
-				Top = false,
+			
 				LastUpdated = DateTime.Now,
 
 			});
@@ -59,7 +59,7 @@ namespace WebApi.Controllers.Blog
 			post.Attachments.Add(new UploadFile()
 			{
 				CreatedAt = DateTime.Now,
-				Top = false,
+				
 				LastUpdated = DateTime.Now,
 
 			});
@@ -79,7 +79,7 @@ namespace WebApi.Controllers.Blog
 			post.Attachments.Add(new UploadFile()
 			{
 				CreatedAt = DateTime.Now,
-				Top = false,
+			
 				LastUpdated = DateTime.Now,
 
 			});
@@ -87,7 +87,7 @@ namespace WebApi.Controllers.Blog
 			post.Attachments.Add(new UploadFile()
 			{
 				CreatedAt = DateTime.Now,
-				Top = false,
+				
 				LastUpdated = DateTime.Now,
 
 			});

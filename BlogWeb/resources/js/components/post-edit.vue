@@ -1,33 +1,41 @@
 <template>
-   <div>
+   <div v-if="loaded">
       <h2>{{ title  }}</h2>
       <hr/>
-      <form @submit.prevent="onSubmit"  class="form-horizontal">
+      <form @submit.prevent="onSubmit" @keydown="clearErrorMsg($event.target.name)" class="form-horizontal">
          <div class="form-group">
 				<label class="col-md-2 control-label">標題</label>
 				<div class="col-md-10">
-					<input name="title" v-model="post.title" class="form-control" />
-					<span class="text-danger"></span>
+					<input name="post.title" v-model="form.post.title" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('post.title')" v-text="form.errors.get('post.title')"></small>
+				
 				</div>
          </div>
          <div class="form-group">
 				<label class="col-md-2 control-label">作者</label>
 				<div class="col-md-10">
-					<input v-model="post.author" name="title" class="form-control" />
-					<span class="text-danger"></span>
+					<input name="post.author" v-model="form.post.author" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('post.author')" v-text="form.errors.get('post.author')"></small>
 				</div>
          </div>
          <div class="form-group">
 				<label class="col-md-2 control-label">內容</label>
 				<div class="col-md-10">
-					<textarea rows="12" v-model="post.content" class="form-control" >
+					<textarea rows="12" name="post.content"  v-model="form.post.content" class="form-control" >
                </textarea>
+					<small class="text-danger" v-if="form.errors.has('post.content')" v-text="form.errors.get('post.content')"></small>
 				</div>
          </div>
 			<div class="form-group">
 				<label class="col-md-2 control-label">日期</label>
 				<div class="col-md-10">
-					<datetime-picker :date="post.date" @selected="setDate"></datetime-picker>
+					<datetime-picker :date="form.post.date" @selected="setDate"></datetime-picker>
+				</div>
+         </div>
+			<div class="form-group">
+				<label class="col-md-2 control-label">圖片</label>
+				<div class="col-md-10">
+					<media-edit :post_id="form.post.id" ref="mediaEdit"></media-edit>
 				</div>
          </div>
 			<div class="form-group">
@@ -35,7 +43,7 @@
 				<div class="col-md-10">
 					<button class="btn btn-success" type="submit">存檔</button>
 					&nbsp;&nbsp;&nbsp;
-					<button class="btn btn-default">取消</button>
+					<button class="btn btn-default" @click.prevent="test">取消</button>
 				</div>
          </div>
 			
@@ -44,8 +52,12 @@
 </template>
 
 <script>
+import MediaEdit from './media-edit';
 export default {
 	name:'PostEdit',
+	components: {
+      'media-edit':MediaEdit
+   },
 	props:{
 		id:{
 			type:Number,
@@ -54,37 +66,86 @@ export default {
 	},
 	data(){
 		return {
-			post:{
-				title:'',
-				date:'',
-				author:'',
-				content:'',
+			loaded:false,
+			title:'',
+			
 
-			}
+			form:{}
+				
+
+			
 			
 			
 		}
 	},
 	computed:{
-		title(){
-			return '新增文章';
-		},
-
+		isCreate(){
+         return this.id == 0;
+      }
+	},
+	beforeMount() {
+		this.init();
 	}, 
 	methods:{
+		test(){
+			alert(this.form.errors.get('title'));
+		},
+		init(){
+			if(this.isCreate){
+				this.title = '新增日誌';
+			}else{
+				this.title += '編輯日誌';				
+			}
+
+			this.fetchData();
+			
+		},
+		fetchData(){
+			let getData=null
+
+			if(this.isCreate)   getData=Post.create();                  
+			else  return;
+
+			getData.then(model => {
+			
+				this.form = new Form({
+					...model
+				});
+
+				this.loaded=true;
+				
+			})
+			.catch(error=> {
+				Helper.BusEmitError(error);                   
+				this.loaded=false;
+			})
+		},
 		setDate(val){
-			this.post.date=val;
+			this.form.post.date=val;
 		},
 		onSubmit(){
-			let url='/admin/posts/store';
-			axios.post(url, this.post)
-			.then(response => {
-				alert('then');
-			})
-			.catch(error => {
-				alert('err');
-			})
-		}
+			let medias=this.$refs.mediaEdit.getMedias();
+			this.form.post.medias=medias;
+			
+			let save=Post.store(this.form);
+			save.then(post => {
+					this.form = new Form({
+						post:post
+					});
+					this.$refs.mediaEdit.submit();	
+					// this.$emit('saved',post)
+					Helper.BusEmitOK('資料已存檔');
+				})
+				.catch(error => {
+					Helper.BusEmitError(error,'存檔失敗');
+				})
+
+
+			//let medias = this.$refs.mediaEdit.onSubmit();	
+		},
+		clearErrorMsg(name) {
+      	this.form.errors.clear(name);
+      },
 	}
 }
 </script>

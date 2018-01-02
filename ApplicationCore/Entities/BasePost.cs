@@ -7,6 +7,7 @@ namespace ApplicationCore.Entities
 
 	public abstract class BasePost: BaseRecord
 	{
+		
 		public string Title { get; set; }
 
 		public string Content { get; set; }

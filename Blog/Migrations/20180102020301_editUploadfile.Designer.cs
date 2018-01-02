@@ -11,9 +11,10 @@ using System;
 namespace Blog.Migrations
 {
     [DbContext(typeof(BlogContext))]
-    partial class BlogContextModelSnapshot : ModelSnapshot
+    [Migration("20180102020301_editUploadfile")]
+    partial class editUploadfile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -109,8 +110,6 @@ namespace Blog.Migrations
                     b.Property<int>("PostId");
 
                     b.Property<string>("PreviewPath");
-
-                    b.Property<string>("Title");
 
                     b.Property<string>("Type");
 

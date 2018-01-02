@@ -7,6 +7,7 @@ using Blog.Models;
 using ApplicationCore.Helpers;
 using ApplicationCore.Paging;
 using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace BlogWeb.Models
 {
@@ -33,7 +34,10 @@ namespace BlogWeb.Models
 
 	public class PostViewModel
 	{
-		public PostViewModel() { }
+		public PostViewModel()
+		{
+			this.medias = new List<MediaViewModel>();
+		}
 
 		public PostViewModel(Post post, bool allMedias=false)
 		{
@@ -60,10 +64,21 @@ namespace BlogWeb.Models
 		}
 
 		public int id { get; set; }
+
+		[Required(ErrorMessage = "請填寫標題")]
 		public string title { get; set; }
+
+		
 		public string author { get; set; }
+
+		[Required(ErrorMessage = "請填寫內容")]
 		public string content { get; set; }
+
 		public string summary { get; set; }
+
+		public string date { get; set; }
+
+
 		public DateTime createdAt { get; set; }
 
 		public MediaViewModel cover { get; set; }
@@ -78,10 +93,17 @@ namespace BlogWeb.Models
 
 	}
 
+	public class PostEditForm
+	{
+		public PostViewModel post { get; set; }
+	}
 
-	
 
-	
 
-	
+
+
+
+
+
+
 }

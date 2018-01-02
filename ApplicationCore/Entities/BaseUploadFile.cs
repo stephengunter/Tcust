@@ -20,6 +20,8 @@ namespace ApplicationCore.Entities
 
 		public string Name { get; set; }
 
+		public string Title { get; set; }
+
 		public string PS { get; set; }
 
 		

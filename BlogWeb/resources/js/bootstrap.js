@@ -19,3 +19,18 @@ if (token) {
 
 import Vue from 'vue';
 window.Vue = Vue;
+
+
+import Helper from './helper';
+window.Helper = Helper;
+
+import Form from './utilities/Form';
+window.Form = Form;
+
+import Post from './models/post';
+import Attachment from './models/attachment';
+window.Post = Post;
+window.Attachment = Attachment;
+
+
+window.Bus = new Vue({});

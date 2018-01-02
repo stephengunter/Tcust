@@ -31,6 +31,13 @@
 				</div>
 			</div>
 		</nav>
+		<alert v-show="showAlert" :show="showAlert" :type="alertSetting.type"
+			   width="400px" placement="top-right" :duration=alertSetting.duration
+			   v-on:closed="closeAlert">
+			<i :class="alertSetting.class" aria-hidden="true"></i>
+			<strong v-text="alertSetting.title"></strong>
+			<p v-text="alertSetting.text"></p>
+		</alert>
 	</div>
 	<div id="main" class="container body-content">
 		@RenderBody()
