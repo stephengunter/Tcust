@@ -104,7 +104,7 @@ export default {
 			let getData=null
 
 			if(this.isCreate)   getData=Post.create();                  
-			else  return;
+			else  getData=Post.edit(this.id);  
 
 			getData.then(model => {
 			
@@ -129,19 +129,39 @@ export default {
 			
 			let save=Post.store(this.form);
 			save.then(post => {
-					this.form = new Form({
-						post:post
+
+					let setPost = new Promise( (resolve, reject) => {
+						this.form = new Form({
+							post:post
+						});
+						resolve(true);
+					
 					});
-					this.$refs.mediaEdit.submit();	
-					// this.$emit('saved',post)
-					Helper.BusEmitOK('資料已存檔');
+
+					setPost.then(()=>{
+						this.submitMedias();	
+					});
+
+
+					
+				
 				})
 				.catch(error => {
 					Helper.BusEmitError(error,'存檔失敗');
 				})
 
 
-			//let medias = this.$refs.mediaEdit.onSubmit();	
+			
+		},
+		submitMedias(){
+			let save=this.$refs.mediaEdit.submit();	
+			save.then(result => {
+				   this.$emit('saved')
+					Helper.BusEmitOK('資料已存檔');
+				})
+				.catch(error => {
+					Helper.BusEmitError(error,'存檔失敗');
+				})
 		},
 		clearErrorMsg(name) {
       	this.form.errors.clear(name);

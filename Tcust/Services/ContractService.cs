@@ -51,8 +51,8 @@ namespace Tcust.Services
 			if (enterprise) partner.Type = PartnerType.Enterprise;
 			else partner.Type = PartnerType.School;
 
-			partner.SetBaseRecord(updatedBy);
-			contract.SetBaseRecord(updatedBy);
+			partner.SetUpdated(updatedBy);
+			contract.SetUpdated(updatedBy);
 
 			contract.Partners.Add(partner);
 

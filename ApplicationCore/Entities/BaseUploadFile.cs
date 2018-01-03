@@ -7,6 +7,7 @@ namespace ApplicationCore.Entities
 {
 	public abstract class BsseUploadFile : BaseRecord
 	{
+		
 
 		public string Path { get; set; }
 

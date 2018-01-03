@@ -26,20 +26,38 @@ namespace BlogWeb.Models
 
 		public int postId { get; set; }
 
-		public string itemOID { get; set; }
+		public int order { get; set; }
 
 		public string path { get; set; }
 
 		public string name { get; set; }
 
-		public bool top { get; set; }
+		public string title { get; set; }
+
 
 		public int width { get; set; }
 
 		public int height { get; set; }
 
 
-		
+
+		public UploadFile MapToEntity(string updatedBy)
+		{
+			var entity = new UploadFile();
+			entity.PostId = postId;
+			entity.Name = name;
+			entity.Title = title;
+			entity.Order = order;
+
+			entity.SetUpdated(updatedBy);
+
+
+
+			return entity;
+		}
+
+
+
 	}
 
 	public class UploadForm

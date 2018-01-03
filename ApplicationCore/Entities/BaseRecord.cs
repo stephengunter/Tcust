@@ -13,13 +13,9 @@ namespace ApplicationCore.Entities
 		public string UpdatedBy { get; set; }
 
 		
-		public void SetBaseRecord(string updatedBy, DateTime? createdAt=null)
+		public void SetUpdated(string updatedBy)
 		{
 			this.UpdatedBy = updatedBy;
-
-			if (createdAt.HasValue) this.CreatedAt = (DateTime)createdAt;
-			else this.CreatedAt = DateTime.Now;
-
 			this.LastUpdated= DateTime.Now;
 		}
 

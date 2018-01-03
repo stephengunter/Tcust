@@ -111,30 +111,24 @@ export default {
 				return copyMedias;
 			},
 			submit(){
-				const files=this.$refs.fileUpload.getFiles();
-				let form = new FormData();
-				form.append('postId', this.post_id);
-				
-				for (let i = 0; i < files.length; i++) {
-					form.append('files', files[i]); 
-				} 
-				let save=Attachment.store(form);
-				save.then(attachments => {
-					alert('then');
-				})
-				.catch(error=> {
-					alert('err');
-				})
-				
-				// if(save){
-				// 	let copyMedias= this.medias.map(media=>{
-				// 		return {...media , thumb:''};
-				// 	});
+				return new Promise((resolve, reject) => {
+					const files=this.$refs.fileUpload.getFiles();
+					let form = new FormData();
+					form.append('postId', this.post_id);
+					
+					for (let i = 0; i < files.length; i++) {
+						form.append('files', files[i]); 
+					} 
 
-				// 	console.log(copyMedias);
+					let save=Attachment.store(form);
+					save.then(result => {
+						resolve(true);
+					})
+					.catch(error => {
+						reject(error);
+					})
 
-				// 	return copyMedias;
-				// }
+				})
 				
 			},
 			saveFiles(){

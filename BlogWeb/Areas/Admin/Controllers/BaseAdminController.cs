@@ -23,5 +23,10 @@ namespace BlogWeb.Areas.Admin.Controllers
 			get {  return Path.Combine(_hostingEnvironment.WebRootPath, "uploads"); }
 		}
 
+		protected string CurrentUserId
+		{
+			get { return Guid.NewGuid().ToString(); }
+		}
+
 	}
 }

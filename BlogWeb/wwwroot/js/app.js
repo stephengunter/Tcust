@@ -30985,6 +30985,11 @@ var Post = function () {
 			return this.source() + '/store';
 		}
 	}, {
+		key: 'editUrl',
+		value: function editUrl(id) {
+			return this.source() + '/edit/' + id;
+		}
+	}, {
 		key: 'create',
 		value: function create() {
 			var url = this.createUrl();
@@ -31005,6 +31010,19 @@ var Post = function () {
 			return new Promise(function (resolve, reject) {
 				form.submit(method, url).then(function (data) {
 					resolve(data);
+				}).catch(function (error) {
+					reject(error);
+				});
+			});
+		}
+	}, {
+		key: 'edit',
+		value: function edit(id) {
+			var url = this.editUrl(id);
+
+			return new Promise(function (resolve, reject) {
+				axios.get(url).then(function (response) {
+					resolve(response.data);
 				}).catch(function (error) {
 					reject(error);
 				});
@@ -35682,7 +35700,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 			var getData = null;
 
-			if (this.isCreate) getData = Post.create();else return;
+			if (this.isCreate) getData = Post.create();else getData = Post.edit(this.id);
 
 			getData.then(function (model) {
 
@@ -35705,17 +35723,31 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 			var save = Post.store(this.form);
 			save.then(function (post) {
-				_this2.form = new Form({
-					post: post
+
+				var setPost = new Promise(function (resolve, reject) {
+					_this2.form = new Form({
+						post: post
+					});
+					resolve(true);
 				});
-				_this2.$refs.mediaEdit.submit();
-				// this.$emit('saved',post)
+
+				setPost.then(function () {
+					_this2.submitMedias();
+				});
+			}).catch(function (error) {
+				Helper.BusEmitError(error, '存檔失敗');
+			});
+		},
+		submitMedias: function submitMedias() {
+			var _this3 = this;
+
+			var save = this.$refs.mediaEdit.submit();
+			save.then(function (result) {
+				_this3.$emit('saved');
 				Helper.BusEmitOK('資料已存檔');
 			}).catch(function (error) {
 				Helper.BusEmitError(error, '存檔失敗');
 			});
-
-			//let medias = this.$refs.mediaEdit.onSubmit();	
 		},
 		clearErrorMsg: function clearErrorMsg(name) {
 			this.form.errors.clear(name);
@@ -35845,35 +35877,30 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			return copyMedias;
 		},
 		submit: function submit() {
-			var files = this.$refs.fileUpload.getFiles();
-			var form = new FormData();
-			form.append('postId', this.post_id);
-
-			for (var i = 0; i < files.length; i++) {
-				form.append('files', files[i]);
-			}
-			var save = Attachment.store(form);
-			save.then(function (attachments) {
-				alert('then');
-			}).catch(function (error) {
-				alert('err');
-			});
-
-			// if(save){
-			// 	let copyMedias= this.medias.map(media=>{
-			// 		return {...media , thumb:''};
-			// 	});
-
-			// 	console.log(copyMedias);
-
-			// 	return copyMedias;
-			// }
-		},
-		saveFiles: function saveFiles() {
 			var _this = this;
 
 			return new Promise(function (resolve, reject) {
 				var files = _this.$refs.fileUpload.getFiles();
+				var form = new FormData();
+				form.append('postId', _this.post_id);
+
+				for (var i = 0; i < files.length; i++) {
+					form.append('files', files[i]);
+				}
+
+				var save = Attachment.store(form);
+				save.then(function (result) {
+					resolve(true);
+				}).catch(function (error) {
+					reject(error);
+				});
+			});
+		},
+		saveFiles: function saveFiles() {
+			var _this2 = this;
+
+			return new Promise(function (resolve, reject) {
+				var files = _this2.$refs.fileUpload.getFiles();
 				var form = new FormData();
 				for (var i = 0; i < files.length; i++) {
 					form.append('files', files[i]);
@@ -35884,7 +35911,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 					if (!attachments.length) resolve(null);
 
 					var _loop = function _loop(x) {
-						var media = _this.medias.find(function (item) {
+						var media = _this2.medias.find(function (item) {
 							return item.name == attachments[x].name;
 						});
 						media.path = attachments[x].path;
@@ -35894,7 +35921,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 						_loop(x);
 					}
 
-					resolve(_this.medias);
+					resolve(_this2.medias);
 
 					// return true;
 
@@ -35912,11 +35939,11 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			});
 		},
 		setMedias: function setMedias(attachments) {
-			var _this2 = this;
+			var _this3 = this;
 
 			return new Promise(function (resolve, reject) {
 				attachments.forEach(function (attachment) {
-					var media = _this2.medias.find(function (item) {
+					var media = _this3.medias.find(function (item) {
 						return item.name == attachment.name;
 					});
 					if (media) {

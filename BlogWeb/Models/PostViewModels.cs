@@ -59,7 +59,7 @@ namespace BlogWeb.Models
 				}
 			}
 			
-			this.cover = new MediaViewModel(post.TopFile);
+			//this.cover = new MediaViewModel(post.TopFile);
 
 		}
 
@@ -89,6 +89,25 @@ namespace BlogWeb.Models
 		{
 			string str = post.Content.RemoveHtmlTags().Trim();
 			return str.Substring(0, Math.Min(str.Length, 100)) + " ...";
+		}
+
+
+		public Post MapToEntity(string updatedBy)
+		{
+			var post = new Post();
+			post.Attachments = new List<UploadFile>();
+
+			post.Title = title.Trim();
+			post.Content = content.Trim();
+			post.Author =author.Trim();
+
+			post.Date = date.ToDatetimeOrDefault(DateTime.Now);
+
+			post.SetUpdated(updatedBy);
+
+
+
+			return post;
 		}
 
 	}

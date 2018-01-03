@@ -56,5 +56,23 @@ namespace ApplicationCore.Helpers
 			return (str.ToLower() == "true");
 		}
 
+		public static DateTime? ToDatetimeOrNull(this string str)
+		{
+			DateTime dateValue;
+			if (DateTime.TryParse(str, out dateValue)) return dateValue;
+
+			return null;
+				
+		}
+
+		public static DateTime ToDatetimeOrDefault(this string str, DateTime defaultValue)
+		{
+			DateTime dateValue;
+			if (DateTime.TryParse(str, out dateValue)) return dateValue;
+
+			return defaultValue;
+
+		}
+
 	}
 }

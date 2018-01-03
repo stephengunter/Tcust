@@ -11,8 +11,6 @@ namespace Blog.Models
 
 	public class Post: BasePost
 	{
-		public Post() => Categories = new JoinCollectionFacade<Category, Post, PostCategory>(this, PostCategories);
-
 		public DateTime Date { get; set; }
 
 		public string Author { get; set; }
@@ -43,6 +41,17 @@ namespace Blog.Models
 				if (this.Attachments.IsNullOrEmpty()) return null;
 				return this.Attachments.OrderByDescending(f => f.Order).FirstOrDefault();
 			}
+		}
+
+
+		public Post()
+		{
+			CreatedAt = DateTime.Now;
+			
+			CreateYear = DateTime.Now.Year;
+			CreateMonth = DateTime.Now.Month;
+
+			Categories = new JoinCollectionFacade<Category, Post, PostCategory>(this, PostCategories);
 		}
 
 	}

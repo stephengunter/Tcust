@@ -171,7 +171,7 @@ namespace Tcust.DAL
 					};
 
 					string updatedBy = "";
-					department.SetBaseRecord(updatedBy);
+					department.SetUpdated(updatedBy);
 
 				    context.Departments.Add(department);
 
@@ -192,7 +192,7 @@ namespace Tcust.DAL
 				Type = PartnerType.Enterprise,
 
 			};
-			partner.SetBaseRecord(updatedBy, DateTime.Now);
+			partner.SetUpdated(updatedBy);
 
 			context.Partners.Add(partner);
 			context.SaveChanges();

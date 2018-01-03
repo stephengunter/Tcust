@@ -8,14 +8,17 @@ class Post {
 	}
 
 	static source() {
-		return '/admin/posts'
+		return '/admin/posts';
    }
 	static createUrl() {
-		return this.source() + '/create'
+		return this.source() + '/create';
 	}
 	static storeUrl() {
-		return this.source() + '/store'
-   }
+		return this.source() + '/store';
+	}
+	static editUrl(id) {
+		return this.source() + '/edit/' + id;
+	}
 	
 	static create() {
 		let url = this.createUrl();
@@ -34,7 +37,7 @@ class Post {
 	
 	static store(form){
 		let url = this.storeUrl();
-		let method = 'post'
+		let method = 'post';
 		return new Promise((resolve, reject) => {
 			form.submit(method, url)
 					.then(data => {
@@ -43,6 +46,21 @@ class Post {
 					.catch(error => {
 						reject(error);
 					})
+		})
+	}
+
+	static edit(id) {
+		let url = this.editUrl(id);
+
+		return new Promise((resolve, reject) => {
+			 axios.get(url)
+				  .then(response => {
+						resolve(response.data);
+				  })
+				  .catch(error => {
+						reject(error);
+				  })
+
 		})
 	}
    

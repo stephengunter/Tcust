@@ -36,50 +36,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			return View();
 		}
 
-		[HttpPost]
-		public async Task<IActionResult> Upload(UploadForm model)
-		{
-			var files = model.files;
-
-			
-			string folderPath = this.UploadFilesPath;
-			foreach (var file in files)
-			{
-				if (file.Length > 0)
-				{
-					var filePath = Path.Combine(folderPath, file.FileName);
-					using (var fileStream = new FileStream(filePath, FileMode.Create))
-					{
-						await file.CopyToAsync(fileStream);
-					}
-				}
-			}
-
-			return Content(UploadFilesPath);
-
-			//var files = new List<IFormFile>();
-			//foreach (var file in form.files)
-			//{
-			//	if (media.file != null)
-			//	{
-			//		files.Add(media.file);
-			//	}
-			//}
-
-
-			//string folderPath = this.UploadFilesPath;
-			//foreach (var file in form.files)
-			//{
-			//	if (file.Length > 0)
-			//	{
-			//		var filePath = Path.Combine(folderPath, file.FileName);
-			//		using (var fileStream = new FileStream(filePath, FileMode.Create))
-			//		{
-			//			await file.CopyToAsync(fileStream);
-			//		}
-			//	}
-			//}
-		}
+		
 
 		public async Task<IActionResult> Index()
 		{
@@ -133,25 +90,39 @@ namespace BlogWeb.Areas.Admin.Controllers
 				return BadRequest(ModelState);
 			}
 
-			
+			var post = model.post.MapToEntity(CurrentUserId);
 
-			var post = new Post
+			foreach (var  item in model.post.medias)
 			{
-				 Title= model.post.title.Trim(),
-				 Content=model.post.content.Trim(),
-				 Author= model.post.author.Trim(),
-				 //Date=model.da
+				post.Attachments.Add(item.MapToEntity(CurrentUserId));
+			}
 			
-			};
+		
 
-			post=postService.Create(post);
+			post = postService.Create(post);
+
 
 			return new ObjectResult(post);
 
 		
 		}
 
+		[HttpGet("{id}")]
+		public IActionResult Edit(int id)
+		{
+			var post = postService.GetById(id);
+			if (post == null) return NotFound();
 
-		
+			bool allMedias = true;
+			var model = new PostEditForm
+			{
+				post = new PostViewModel(post, allMedias)
+			};
+
+			return new ObjectResult(model);
+		}
+
+
+
 	}
 }

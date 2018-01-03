@@ -17,41 +17,45 @@ using System.Drawing;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	public class UploadModel
-	{
-		public int id { get; set; }
-		public List<UploadFile> attachments { get; set; }
-		public List<IFormFile> images { get; set; }
-	}
+	
     public class UploadsController : BaseAdminController
 	{
-		public UploadsController(IHostingEnvironment environment) : base(environment)
+		private readonly IAttachmentService attachmentService;
+
+		public UploadsController(IHostingEnvironment environment, IAttachmentService attachmentService) : base(environment)
 		{
-			
-	    }
+			this.attachmentService = attachmentService;
+
+		}
 
 		[HttpPost]
-		public async Task<List<UploadFile>> Store(UploadForm form)
+		public async Task<IActionResult> Store(UploadForm form)
 		{
-			/*List<IFormFile> files, */
-			var entityList = new List<UploadFile>();
-
 			
-			//foreach (var file in files)
-			//{
-			//	if (file.Length > 0)
-			//	{
-			//		//var image = Image.FromStream(file.OpenReadStream());
+			foreach (var file in form.files)
+			{
+				if (file.Length > 0)
+				{
+					var attachment = attachmentService.FindByName(file.FileName, form.postId);
+					if (attachment == null) throw new Exception(String.Format("attachmentService.FindByName({0},{1})", file.FileName, form.postId));
 
-			//		var entity = await SaveFile(file);
-			//		//entity.Width = image.Width;
-			//		//entity.Height = image.Height;
+					
 
-			//		entityList.Add(entity);
-			//	}
-			//}
+					var image = Image.FromStream(file.OpenReadStream());
+					attachment.Width = image.Width;
+					attachment.Height = image.Height;
+				
+					var saveFile = await SaveFile(file);
+					attachment.Type = saveFile.Type;
+					attachment.Path = saveFile.Path;
 
-			return entityList;
+					attachmentService.Update(attachment);
+				}
+			}
+
+
+
+			return   new NoContentResult(); 
 			
 		}
 
@@ -75,7 +79,6 @@ namespace BlogWeb.Areas.Admin.Controllers
 			var entity = new UploadFile()
 			{
 				 Type= extension,
-				 Name= file.FileName,
 				 Path= folderName + "/" + fileName
 			};
 

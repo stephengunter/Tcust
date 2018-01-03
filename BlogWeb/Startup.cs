@@ -42,6 +42,7 @@ namespace BlogWeb
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
 
 			services.AddScoped<IPostService, PostService>();
+			services.AddScoped<IAttachmentService, AttachmentService>();
 			services.AddScoped<ITopPostService, TopPostService>();
 
 
