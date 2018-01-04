@@ -30,6 +30,8 @@ namespace BlogWeb.Helpers
 			var model = new PostViewModel();
 			model.id = post.Id;
 			model.title = post.Title;
+			model.termNumber = post.TermNumber;
+			model.number = post.Number;
 			model.author = post.Author;
 			model.content = post.Content;
 			model.date = post.Date.ToShortDateString();
@@ -41,7 +43,7 @@ namespace BlogWeb.Helpers
 			if (allMedias)
 			{
 				model.medias = new List<MediaViewModel>();
-				foreach (var media in post.Attachments)
+				foreach (var media in post.Attachments.OrderByDescending(a=>a.Order))
 				{
 
 					model.medias.Add(MapMediaViewModel(media));

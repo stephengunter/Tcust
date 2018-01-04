@@ -4,9 +4,10 @@
          <table class="table table-striped">
             <thead>
                <tr>
-                  <th style="width:15%">&nbsp;</th>
+                  <th style="width:10%">&nbsp;</th>
+                  <th style="width:10%">編號</th>
                   <th style="width:25%">標題</th>
-                  <th style="width:30%">作者</th>
+                  <th style="width:25%">作者</th>
                   <th style="width:10%">日期</th>
                   <th style="width:10%"></th>
                </tr>
@@ -14,9 +15,10 @@
             <tbody>
                <tr v-for="(post,index) in model.viewList" :key="index">
                   <td>
-                     <img v-if="post.cover" class="thumbnail" style="max-width:120px" :src="post.cover.path" />
+                     <img v-if="post.cover" class="thumbnail" style="max-width:60px" :src="post.cover.path" />
                      
                   </td>
+                  <td>{{ post.number }}</td>
                   <td>{{ post.title }}</td>
                   <td>{{ post.author }}</td>
                   <td>{{ post.date }}</td>

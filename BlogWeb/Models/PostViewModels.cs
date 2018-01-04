@@ -11,27 +11,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BlogWeb.Models
 {
-	public class PostSearchModel 
-	{
-		//public string Keyword { get; set; }
-		//public int Year { get; set; }
-		//public int Month { get; set; }
-		
-
-		//public int PageNumber { get; set; }
-		//public int PageSize { get; set; }
-
-		//public string CurrentUrl { get; set; }
-
-		public PagedList<Post, PostViewModel> PagedList  { get; set; }
-
-		public IEnumerable<MenuItem> MenuItems { get; set; }
-
-		//public Post Post { get; set; }
-	}
-
 	
-
 	public class PostViewModel
 	{
 		public PostViewModel()
@@ -76,7 +56,10 @@ namespace BlogWeb.Models
 		[Required(ErrorMessage = "請填寫標題")]
 		public string title { get; set; }
 
-		
+		[Required(ErrorMessage = "請填寫學年標題")]
+		public string termNumber { get; set; }
+
+		public string number { get; set; }
 		public string author { get; set; }
 
 		[Required(ErrorMessage = "請填寫內容")]
@@ -107,11 +90,16 @@ namespace BlogWeb.Models
 				post = new Post();
 				post.Attachments = new List<UploadFile>();
 			}
-			
 
-			post.Title = title.Trim();
-			post.Content = content.Trim();
-			post.Author =author.Trim();
+
+			post.Title = title;
+			post.Content = content;
+			post.TermNumber = termNumber.Trim();
+
+			post.Author = author;
+
+			post.Number = number;
+
 
 			post.Date = date.ToDatetimeOrDefault(DateTime.Now);
 

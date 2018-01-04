@@ -2,8 +2,10 @@
    <div>
       <div v-if="model" v-show="indexMode">
          <div class="row">
-            <div class="col-sm-3">
-               
+            <div class="col-sm-3" style="margin-top: 20px;">
+               <select  v-model="params.category" class="form-control" style="width:180px" @change="fetchData">
+                  <option v-for="(item,index) in categories" :key="index" :value="item.id" v-text="item.name"></option>
+            	</select>
             </div>
             <div class="col-sm-3">
                
@@ -25,8 +27,8 @@
 
          <post-table :model="model"  @edit="onEdit" @remove="onDelete" >
           
-			   <div slot="table-footer" class="panel-footer pagination-footer">
-					<page-controll :model="model" @page-changed="onPageChanged"
+			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
+					<page-controll   :model="model" @page-changed="onPageChanged"
 						@pagesize-changed="fetchData">
 					</page-controll>
             
@@ -60,15 +62,27 @@
          init_model: {
             type: Object,
             default: null
-         },
+			},
+			categories:{
+				type:Array,
+				default:null
+			}
       },
       data(){
          return {
-            model:null,
+				model:null,
+				
             selected:0,
 				create:false,
 				
-				keyword:'',
+				params:{
+					category:0,
+					keyword:'',
+					page:1,
+					pageSize:10
+				},
+				
+				category:null,
 
             deleteConfirm:{
                id:0,
@@ -79,11 +93,15 @@
       },
       beforeMount() {
          if(this.init_model){
-            this.model={...this.init_model };
-         }
-         
-				//this.model =@Html.Raw(ViewBag.list);
-				
+				this.model={...this.init_model };
+				this.params.page=this.init_model.pageNumber;
+				this.params.pageSize=this.init_model.pageSize;
+			}
+			
+			if(this.categories){
+				this.category=this.categories[0];
+				this.params.category=this.categories[0].id;
+			}	
 
 		},
       computed:{
@@ -132,21 +150,17 @@
 				this.deleteConfirm.showing=false;
 			},
 			onPageChanged(page){
-				this.model.page=page;
+				this.params.page=page;
 				this.fetchData();
 				
 			},
 			onSearch(keyword){
-				this.keyword=keyword;
+				this.params.keyword=keyword;
 				this.fetchData();
 			},
          fetchData() {
-				let params={
-					keyword:this.keyword,
-					page:this.model.page,
-					pageSize:this.model.pageSize
-				}
-            let getData = Post.index(params);
+				
+            let getData = Post.index(this.params);
 
             getData.then(model => {
 

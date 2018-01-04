@@ -36,28 +36,30 @@ namespace BlogWeb.Areas.Admin.Controllers
 			this.viewService = new ViewService(this.settings); 
 		}
 
-		public IActionResult Test()
+		public async Task<IActionResult> Test()
 		{
 
-			
+			bool returnDefaultCategory = true;
+			var selectedCategory = await postService.GetCategoryByIdAsync(0, returnDefaultCategory);
+
+			var posts =await postService.GetAllAsync();
+			posts = posts.Take(60);
+
+			foreach (var post in posts)
+			{
+				post.Categories.Add(selectedCategory);
+				postService.Update(post);
+			}
+
 			return View();
 		}
 
 		
 		[HttpGet]
-		public async Task<IActionResult> Index(string keyword ,int page = 1, int pageSize=10 )
+		public async Task<IActionResult> Index(int category=0 ,string keyword="" ,int page = 1, int pageSize=10 )
 		{
-			Task<IEnumerable<Post>> getPostsTask;
-			if (String.IsNullOrEmpty(keyword))
-			{
-				getPostsTask =  postService.GetAllAsync();
-			}
-			else
-			{
-				getPostsTask = postService.GetByKeywordAsync(keyword);
-			}
-
-			var posts = await getPostsTask;
+			
+			var posts = await postService.FetchPosts(category, keyword);
 
 			posts = posts.OrderByDescending(p=>p.Date);
 
@@ -69,17 +71,18 @@ namespace BlogWeb.Areas.Admin.Controllers
 			}
 
 			pageList.List = null;
-
-
-			//var model = new PostSearchModel();
-			//model.PagedList = pageList;
+			
 
 			if (Request.IsAjaxRequest())
 			{
 				return new ObjectResult(pageList);
 			}
 
-			ViewBag.list = this.ToJsonString(pageList);
+			var categories = postService.GetCategoriesAsync();
+
+			ViewData["categories"] = this.ToJsonString(categories);
+
+			ViewData["list"]= this.ToJsonString(pageList);
 
 			return View();
 		}
@@ -87,9 +90,13 @@ namespace BlogWeb.Areas.Admin.Controllers
 		[HttpGet]
 		public IActionResult Create()
 		{
+			var post = new PostViewModel()
+			{
+				termNumber = DefaultTermNumber()
+			};
 			var model = new PostEditForm
 			{
-				post = new PostViewModel()
+				post = post
 			};
 		
 

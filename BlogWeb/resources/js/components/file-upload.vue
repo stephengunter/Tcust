@@ -28,15 +28,24 @@ export default {
    },
    methods:{
       onFileChange(e) {
-         let files = e.target.files || e.dataTransfer.files;
+			
+			let files = e.target.files || e.dataTransfer.files;
+		
          if (!files.length)  return;
 
+			let addFiles=[];
          for (let i=0; i<files.length; i++) {
-           
-            if(this.fileCanAdd(files[i])){
-               this.addFile(files[i]);
-            }
-         }
+				if(this.fileCanAdd(files[i])){
+					addFiles.push(this.addFile(files[i]));
+				}
+			}
+
+
+			Promise.all(addFiles).then(() => { 
+			    this.$emit('file-added');
+			});
+
+			
                 
 		},
 		fileCanAdd(file){
@@ -55,19 +64,24 @@ export default {
          return index ;
       },
       addFile(file){
-         let image= this.createImage(file);
-         image.then(data=>{
-            let thumb={
-               data:data,
-               name:file.name
-            }
-            this.files.push(file);
-            this.thumbnails.push(thumb);
-
-            this.$emit('file-added');
-         }).catch(error=>{
-            console.log(error);
-         })  
+		   return new Promise((resolve, reject) => {
+            let image= this.createImage(file);
+				image.then(data=>{
+					let thumb={
+						data:data,
+						name:file.name
+					}
+					this.files.push(file);
+					this.thumbnails.push(thumb);
+					
+					resolve(true);
+					
+				}).catch(error=>{
+					console.log(error);
+					reject();
+				})  
+         });
+         
       },
       removeFile(name){
          let index=this.findFileIndex(name);

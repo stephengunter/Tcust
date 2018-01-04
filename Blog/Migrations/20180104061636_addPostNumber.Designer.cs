@@ -11,9 +11,10 @@ using System;
 namespace Blog.Migrations
 {
     [DbContext(typeof(BlogContext))]
-    partial class BlogContextModelSnapshot : ModelSnapshot
+    [Migration("20180104061636_addPostNumber")]
+    partial class addPostNumber
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,8 +68,6 @@ namespace Blog.Migrations
 
                     b.Property<string>("Summary");
 
-                    b.Property<string>("TermNumber");
-
                     b.Property<string>("Title");
 
                     b.Property<bool>("Top");
@@ -90,7 +89,7 @@ namespace Blog.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("PostsCategories");
+                    b.ToTable("PostCategory");
                 });
 
             modelBuilder.Entity("Blog.Models.UploadFile", b =>

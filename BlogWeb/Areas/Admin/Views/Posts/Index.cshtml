@@ -1,4 +1,4 @@
-﻿<post-admin :init_model="model"></post-admin>
+﻿<post-admin :init_model="model" :categories="categories"></post-admin>
 
 
 
@@ -9,18 +9,18 @@
 			el: '#main',
 			data() {
 				return {
-					
 					model: {},
+					categories: []
 				}
 			},
 			beforeMount() {
 
-				this.model =@Html.Raw(ViewBag.list);
-				
-
+				this.model =@Html.Raw(ViewData["list"]);
+				let categoryList =@Html.Raw(ViewData["categories"]);
+				this.categories = categoryList.result;
 			},
 			methods:{
-				
+
             }
 
 		});

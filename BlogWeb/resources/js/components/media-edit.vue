@@ -1,6 +1,7 @@
 <template>
    
 	<div>
+		<file-upload ref="fileUpload" :exclude="fileNames" @file-added="onFileAdded"></file-upload>
 		<table v-show="medias.length" class="table table-hover">
 			<thead>
 				<tr>
@@ -11,9 +12,11 @@
 			</thead>
 			<tbody>
 				<tr v-for="(media,index) in medias" :key="index">
-					<td>
+					<td v-if="media.id">
+						<img  class="thumbnail" style="max-width:120px" :src="media.path" />
+					</td>
+					<td v-else>
 						<img v-if="media.thumb" class="thumbnail" style="max-width:120px" :src="media.thumb" />
-						
 					</td>
 					<td v-if="edittingIndex==index">
 						<input class="form-control" type="text" v-model="edittingMedia.title">
@@ -46,7 +49,7 @@
 				</tr>
 			</tbody>
 		</table>
-		<file-upload ref="fileUpload" :exclude="fileNames" @file-added="onFileAdded"></file-upload>
+		
 		
 		<delete-confirm :showing="deleteConfirm.showing" :message="deleteConfirm.message"
         @close="deleteConfirm.showing=false" @confirmed="deleteMedia">
@@ -116,6 +119,8 @@ export default {
 					let index=this.medias.findIndex((item)=>{
 						return item.name==name;
 					});	
+
+					return index;
 				}
 				
 				
@@ -142,7 +147,7 @@ export default {
 			submit(){
 				return new Promise((resolve, reject) => {
 					const files=this.$refs.fileUpload.getFiles();
-					alert(files.length);
+					
 					if(!files.length){
 						resolve(true);
 						return;
@@ -191,12 +196,15 @@ export default {
 					this.deleteConfirm.message=`確定要刪除圖片 ${media.title} 嗎?`;
 					this.deleteConfirm.showing=true;
 				}else{
+				
 					this.removeMedia(media);
 					this.$refs.fileUpload.removeFile(media.name);
 				}
 			},
 			removeMedia(media){
+				
 				let index=this.findFileIndex(media.name);
+				
 				if(index< 0) return;
 
 				this.medias.splice(index, 1);
@@ -206,7 +214,7 @@ export default {
 				let deleteMedia=Attachment.remove(this.deleteConfirm.id);
 				deleteMedia.then(() => {
 					this.deleteConfirm.showing=false;
-					
+
 					let index=this.findFileIndex(null,this.deleteConfirm.id);
 					if(index< 0) return;
 					this.medias.splice(index, 1);
@@ -218,7 +226,8 @@ export default {
 			},
 			onFileAdded(){
 				
-			   let thumbs = this.$refs.fileUpload.getThunbnails();
+				let thumbs = this.$refs.fileUpload.getThunbnails();
+				
 			   for (let i=0; i<thumbs.length; i++) {
 					let name=thumbs[i].name;
 					if(!this.fileExist(name)){
@@ -249,6 +258,7 @@ export default {
 				};
 			},
 			up(media,index){
+				
 				let upper=this.medias[index-1];
 				if(!upper) return;
 

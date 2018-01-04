@@ -7,11 +7,11 @@ class Attachment {
 
    }
    static source() {
-		return '/admin/uploads'
+		return '/admin/uploads';
    }
 	
 	static storeUrl() {
-		return this.source() + '/store'
+		return this.source();
 	}
 
 	static deleteUrl(id){

@@ -1,9 +1,43 @@
 <template>
    <div v-if="loaded">
-      <h2>{{ title  }}</h2>
+      
+		<div class="row">
+			<div class="col-sm-3">
+				<h2>{{ title  }}</h2>
+			</div>
+			<div class="col-sm-3">
+				
+			</div>
+			<div class="col-sm-3" style="margin-top: 20px;">
+				
+			</div>
+			<div class="col-sm-3" style="margin-top: 20px;">
+
+				<a @click.prevent="cancel" href="#" class="btn btn-default pull-right title-controll">
+					<i class="fa fa-arrow-circle-o-left" aria-hidden="true"></i>
+					返回
+				</a>
+			</div>
+		</div>
       <hr/>
       <form @submit.prevent="onSubmit" @keydown="clearErrorMsg($event.target.name)" class="form-horizontal">
+			<div class="form-group">
+				<label class="col-md-2 control-label">學年編號</label>
+				<div class="col-md-10">
+					<input name="post.termNumber" v-model="form.post.termNumber" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('post.termNumber')" v-text="form.errors.get('post.termNumber')"></small>
+				
+				</div>
+         </div>
          <div class="form-group">
+				<label class="col-md-2 control-label">文章編號</label>
+				<div class="col-md-10">
+					<input name="post.number" v-model="form.post.number" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('post.number')" v-text="form.errors.get('post.number')"></small>
+				
+				</div>
+         </div>
+			<div class="form-group">
 				<label class="col-md-2 control-label">標題</label>
 				<div class="col-md-10">
 					<input name="post.title" v-model="form.post.title" class="form-control" />
@@ -40,10 +74,23 @@
          </div>
 			<div class="form-group">
 				<label class="col-md-2 control-label"></label>
-				<div class="col-md-10">
-					<button class="btn btn-success" type="submit">存檔</button>
+				
+				<div v-if="submitting"  class="col-md-10">
+					<button class="btn btn-default">
+                  <i class="fa fa-spinner fa-spin"></i> 
+                  處理中
+               </button>
+				</div>
+				<div v-else class="col-md-10">
+					<button class="btn btn-success" type="submit">
+						<i class="fa fa-floppy-o" aria-hidden="true"></i>
+							確認存檔
+						</button>
 					&nbsp;&nbsp;&nbsp;
-					<button class="btn btn-default" @click.prevent="cancel">取消</button>
+					<button @click.prevent="cancel" class="btn btn-default">
+						
+						取消
+					</button>
 				</div>
          </div>
 			
@@ -59,6 +106,10 @@ export default {
       'media-edit':MediaEdit
    },
 	props:{
+		category:{
+			type:Object,
+			default:null
+		},
 		id:{
 			type:Number,
 			default:0
@@ -69,7 +120,8 @@ export default {
 			loaded:false,
 			title:'',
 
-			form:{}
+			form:{},
+			submitting:false
 			
 		}
 	},
@@ -122,6 +174,8 @@ export default {
 			this.form.post.date=val;
 		},
 		onSubmit(){
+			this.submitting=true;
+
 			let medias=this.$refs.mediaEdit.getMedias();
 			this.form.post.medias=medias;
 			
@@ -157,7 +211,8 @@ export default {
 		submitMedias(){
 			let save=this.$refs.mediaEdit.submit();	
 			save.then(result => {
-				   this.$emit('saved')
+					this.submitting=false;
+				   this.$emit('saved');
 					Helper.BusEmitOK('資料已存檔');
 				})
 				.catch(error => {

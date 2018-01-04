@@ -97,7 +97,7 @@ namespace WebApi.Controllers.Blog
 
 		void deletePost(Post post)
 		{
-			postService.Delete(post);
+			
 		}
 
 		//[HttpGet("{id}")]

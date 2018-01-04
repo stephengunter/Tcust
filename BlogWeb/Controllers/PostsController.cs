@@ -47,10 +47,10 @@ namespace BlogWeb.Controllers
 			pageList.List = null;
 
 
-			var model = new PostSearchModel();
-			model.PagedList = pageList;
+			//var model = new PostSearchModel();
+			//model.PagedList = pageList;
 
-			ViewBag.list = this.ToJsonString(model.PagedList);
+			//ViewBag.list = this.ToJsonString(model.PagedList);
 
 			return View();
 		}

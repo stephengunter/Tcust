@@ -16,6 +16,7 @@ namespace Blog.Specifications
 			Criteria = p => !p.Removed && p.CreateYear >= 2013;
 
 			AddInclude(p => p.Attachments);
+			
 
 		}
 	}
@@ -49,6 +50,8 @@ namespace Blog.Specifications
 		{
 
 			var compiled = Criteria.Compile();
+
+
 			if (!String.IsNullOrEmpty(keyword))
 			{
 				Criteria = p => compiled(p) && (p.Title != null && p.Title.CaseInsensitiveContains(keyword) ||

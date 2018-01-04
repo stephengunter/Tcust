@@ -28,7 +28,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		}
 
-		[HttpPost]
+		[HttpPost("[area]/[controller]")]
 		public async Task<IActionResult> Store(UploadForm form)
 		{
 			

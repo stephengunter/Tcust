@@ -31176,7 +31176,7 @@ var Attachment = function () {
 	}, {
 		key: 'storeUrl',
 		value: function storeUrl() {
-			return this.source() + '/store';
+			return this.source();
 		}
 	}, {
 		key: 'deleteUrl',
@@ -36588,6 +36588,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 //
 //
 //
+//
+//
 
 
 
@@ -36603,15 +36605,27 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
       init_model: {
          type: Object,
          default: null
+      },
+      categories: {
+         type: Array,
+         default: null
       }
    },
    data: function data() {
       return {
          model: null,
+
          selected: 0,
          create: false,
 
-         keyword: '',
+         params: {
+            category: 0,
+            keyword: '',
+            page: 1,
+            pageSize: 10
+         },
+
+         category: null,
 
          deleteConfirm: {
             id: 0,
@@ -36623,10 +36637,14 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
    beforeMount: function beforeMount() {
       if (this.init_model) {
          this.model = _extends({}, this.init_model);
+         this.params.page = this.init_model.pageNumber;
+         this.params.pageSize = this.init_model.pageSize;
       }
 
-      //this.model =@Html.Raw(ViewBag.list);
-
+      if (this.categories) {
+         this.category = this.categories[0];
+         this.params.category = this.categories[0].id;
+      }
    },
 
    computed: {
@@ -36675,22 +36693,17 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
          this.deleteConfirm.showing = false;
       },
       onPageChanged: function onPageChanged(page) {
-         this.model.page = page;
+         this.params.page = page;
          this.fetchData();
       },
       onSearch: function onSearch(keyword) {
-         this.keyword = keyword;
+         this.params.keyword = keyword;
          this.fetchData();
       },
       fetchData: function fetchData() {
          var _this2 = this;
 
-         var params = {
-            keyword: this.keyword,
-            page: this.model.page,
-            pageSize: this.model.pageSize
-         };
-         var getData = Post.index(params);
+         var getData = Post.index(this.params);
 
          getData.then(function (model) {
 
@@ -36951,6 +36964,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
    name: 'PostTable',
@@ -36994,11 +37009,13 @@ var render = function() {
                   post.cover
                     ? _c("img", {
                         staticClass: "thumbnail",
-                        staticStyle: { "max-width": "120px" },
+                        staticStyle: { "max-width": "60px" },
                         attrs: { src: post.cover.path }
                       })
                     : _vm._e()
                 ]),
+                _vm._v(" "),
+                _c("td", [_vm._v(_vm._s(post.number))]),
                 _vm._v(" "),
                 _c("td", [_vm._v(_vm._s(post.title))]),
                 _vm._v(" "),
@@ -37063,11 +37080,13 @@ var staticRenderFns = [
     var _c = _vm._self._c || _h
     return _c("thead", [
       _c("tr", [
-        _c("th", { staticStyle: { width: "15%" } }, [_vm._v(" ")]),
+        _c("th", { staticStyle: { width: "10%" } }, [_vm._v(" ")]),
+        _vm._v(" "),
+        _c("th", { staticStyle: { width: "10%" } }, [_vm._v("編號")]),
         _vm._v(" "),
         _c("th", { staticStyle: { width: "25%" } }, [_vm._v("標題")]),
         _vm._v(" "),
-        _c("th", { staticStyle: { width: "30%" } }, [_vm._v("作者")]),
+        _c("th", { staticStyle: { width: "25%" } }, [_vm._v("作者")]),
         _vm._v(" "),
         _c("th", { staticStyle: { width: "10%" } }, [_vm._v("日期")]),
         _vm._v(" "),
@@ -37195,6 +37214,53 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -37203,6 +37269,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		'media-edit': __WEBPACK_IMPORTED_MODULE_0__media_edit___default.a
 	},
 	props: {
+		category: {
+			type: Object,
+			default: null
+		},
 		id: {
 			type: Number,
 			default: 0
@@ -37213,7 +37283,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			loaded: false,
 			title: '',
 
-			form: {}
+			form: {},
+			submitting: false
 
 		};
 	},
@@ -37266,6 +37337,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		onSubmit: function onSubmit() {
 			var _this2 = this;
 
+			this.submitting = true;
+
 			var medias = this.$refs.mediaEdit.getMedias();
 			this.form.post.medias = medias;
 
@@ -37294,6 +37367,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 			var save = this.$refs.mediaEdit.submit();
 			save.then(function (result) {
+				_this3.submitting = false;
 				_this3.$emit('saved');
 				Helper.BusEmitOK('資料已存檔');
 			}).catch(function (error) {
@@ -37316,6 +37390,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__file_upload___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__file_upload__);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
+//
+//
+//
 //
 //
 //
@@ -37435,6 +37512,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				var index = this.medias.findIndex(function (item) {
 					return item.name == name;
 				});
+
+				return index;
 			}
 		},
 		addMedia: function addMedia(name, thumb) {
@@ -37461,7 +37540,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 			return new Promise(function (resolve, reject) {
 				var files = _this.$refs.fileUpload.getFiles();
-				alert(files.length);
+
 				if (!files.length) {
 					resolve(true);
 					return;
@@ -37507,12 +37586,15 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 				this.deleteConfirm.message = '\u78BA\u5B9A\u8981\u522A\u9664\u5716\u7247 ' + media.title + ' \u55CE?';
 				this.deleteConfirm.showing = true;
 			} else {
+
 				this.removeMedia(media);
 				this.$refs.fileUpload.removeFile(media.name);
 			}
 		},
 		removeMedia: function removeMedia(media) {
+
 			var index = this.findFileIndex(media.name);
+
 			if (index < 0) return;
 
 			this.medias.splice(index, 1);
@@ -37534,6 +37616,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 		onFileAdded: function onFileAdded() {
 
 			var thumbs = this.$refs.fileUpload.getThunbnails();
+
 			for (var i = 0; i < thumbs.length; i++) {
 				var name = thumbs[i].name;
 				if (!this.fileExist(name)) {
@@ -37563,6 +37646,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 			};
 		},
 		up: function up(media, index) {
+
 			var upper = this.medias[index - 1];
 			if (!upper) return;
 
@@ -37690,15 +37774,22 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
    methods: {
       onFileChange: function onFileChange(e) {
+         var _this = this;
+
          var files = e.target.files || e.dataTransfer.files;
+
          if (!files.length) return;
 
+         var addFiles = [];
          for (var i = 0; i < files.length; i++) {
-
             if (this.fileCanAdd(files[i])) {
-               this.addFile(files[i]);
+               addFiles.push(this.addFile(files[i]));
             }
          }
+
+         Promise.all(addFiles).then(function () {
+            _this.$emit('file-added');
+         });
       },
       fileCanAdd: function fileCanAdd(file) {
          if (this.fileExist(file.name)) return false;
@@ -37716,20 +37807,23 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
          return index;
       },
       addFile: function addFile(file) {
-         var _this = this;
+         var _this2 = this;
 
-         var image = this.createImage(file);
-         image.then(function (data) {
-            var thumb = {
-               data: data,
-               name: file.name
-            };
-            _this.files.push(file);
-            _this.thumbnails.push(thumb);
+         return new Promise(function (resolve, reject) {
+            var image = _this2.createImage(file);
+            image.then(function (data) {
+               var thumb = {
+                  data: data,
+                  name: file.name
+               };
+               _this2.files.push(file);
+               _this2.thumbnails.push(thumb);
 
-            _this.$emit('file-added');
-         }).catch(function (error) {
-            console.log(error);
+               resolve(true);
+            }).catch(function (error) {
+               console.log(error);
+               reject();
+            });
          });
       },
       removeFile: function removeFile(name) {
@@ -37810,6 +37904,12 @@ var render = function() {
   return _c(
     "div",
     [
+      _c("file-upload", {
+        ref: "fileUpload",
+        attrs: { exclude: _vm.fileNames },
+        on: { "file-added": _vm.onFileAdded }
+      }),
+      _vm._v(" "),
       _c(
         "table",
         {
@@ -37830,15 +37930,23 @@ var render = function() {
             "tbody",
             _vm._l(_vm.medias, function(media, index) {
               return _c("tr", { key: index }, [
-                _c("td", [
-                  media.thumb
-                    ? _c("img", {
+                media.id
+                  ? _c("td", [
+                      _c("img", {
                         staticClass: "thumbnail",
                         staticStyle: { "max-width": "120px" },
-                        attrs: { src: media.thumb }
+                        attrs: { src: media.path }
                       })
-                    : _vm._e()
-                ]),
+                    ])
+                  : _c("td", [
+                      media.thumb
+                        ? _c("img", {
+                            staticClass: "thumbnail",
+                            staticStyle: { "max-width": "120px" },
+                            attrs: { src: media.thumb }
+                          })
+                        : _vm._e()
+                    ]),
                 _vm._v(" "),
                 _vm.edittingIndex == index
                   ? _c("td", [
@@ -38001,12 +38109,6 @@ var render = function() {
         ]
       ),
       _vm._v(" "),
-      _c("file-upload", {
-        ref: "fileUpload",
-        attrs: { exclude: _vm.fileNames },
-        on: { "file-added": _vm.onFileAdded }
-      }),
-      _vm._v(" "),
       _c("delete-confirm", {
         attrs: {
           showing: _vm.deleteConfirm.showing,
@@ -38058,7 +38160,45 @@ var render = function() {
   var _c = _vm._self._c || _h
   return _vm.loaded
     ? _c("div", [
-        _c("h2", [_vm._v(_vm._s(_vm.title))]),
+        _c("div", { staticClass: "row" }, [
+          _c("div", { staticClass: "col-sm-3" }, [
+            _c("h2", [_vm._v(_vm._s(_vm.title))])
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "col-sm-3" }),
+          _vm._v(" "),
+          _c("div", {
+            staticClass: "col-sm-3",
+            staticStyle: { "margin-top": "20px" }
+          }),
+          _vm._v(" "),
+          _c(
+            "div",
+            { staticClass: "col-sm-3", staticStyle: { "margin-top": "20px" } },
+            [
+              _c(
+                "a",
+                {
+                  staticClass: "btn btn-default pull-right title-controll",
+                  attrs: { href: "#" },
+                  on: {
+                    click: function($event) {
+                      $event.preventDefault()
+                      _vm.cancel($event)
+                    }
+                  }
+                },
+                [
+                  _c("i", {
+                    staticClass: "fa fa-arrow-circle-o-left",
+                    attrs: { "aria-hidden": "true" }
+                  }),
+                  _vm._v("\n\t\t\t\t\t返回\n\t\t\t\t")
+                ]
+              )
+            ]
+          )
+        ]),
         _vm._v(" "),
         _c("hr"),
         _vm._v(" "),
@@ -38077,6 +38217,86 @@ var render = function() {
             }
           },
           [
+            _c("div", { staticClass: "form-group" }, [
+              _c("label", { staticClass: "col-md-2 control-label" }, [
+                _vm._v("學年編號")
+              ]),
+              _vm._v(" "),
+              _c("div", { staticClass: "col-md-10" }, [
+                _c("input", {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.form.post.termNumber,
+                      expression: "form.post.termNumber"
+                    }
+                  ],
+                  staticClass: "form-control",
+                  attrs: { name: "post.termNumber" },
+                  domProps: { value: _vm.form.post.termNumber },
+                  on: {
+                    input: function($event) {
+                      if ($event.target.composing) {
+                        return
+                      }
+                      _vm.$set(_vm.form.post, "termNumber", $event.target.value)
+                    }
+                  }
+                }),
+                _vm._v(" "),
+                _vm.form.errors.has("post.termNumber")
+                  ? _c("small", {
+                      staticClass: "text-danger",
+                      domProps: {
+                        textContent: _vm._s(
+                          _vm.form.errors.get("post.termNumber")
+                        )
+                      }
+                    })
+                  : _vm._e()
+              ])
+            ]),
+            _vm._v(" "),
+            _c("div", { staticClass: "form-group" }, [
+              _c("label", { staticClass: "col-md-2 control-label" }, [
+                _vm._v("文章編號")
+              ]),
+              _vm._v(" "),
+              _c("div", { staticClass: "col-md-10" }, [
+                _c("input", {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.form.post.number,
+                      expression: "form.post.number"
+                    }
+                  ],
+                  staticClass: "form-control",
+                  attrs: { name: "post.number" },
+                  domProps: { value: _vm.form.post.number },
+                  on: {
+                    input: function($event) {
+                      if ($event.target.composing) {
+                        return
+                      }
+                      _vm.$set(_vm.form.post, "number", $event.target.value)
+                    }
+                  }
+                }),
+                _vm._v(" "),
+                _vm.form.errors.has("post.number")
+                  ? _c("small", {
+                      staticClass: "text-danger",
+                      domProps: {
+                        textContent: _vm._s(_vm.form.errors.get("post.number"))
+                      }
+                    })
+                  : _vm._e()
+              ])
+            ]),
+            _vm._v(" "),
             _c("div", { staticClass: "form-group" }, [
               _c("label", { staticClass: "col-md-2 control-label" }, [
                 _vm._v("標題")
@@ -38233,34 +38453,58 @@ var render = function() {
             _c("div", { staticClass: "form-group" }, [
               _c("label", { staticClass: "col-md-2 control-label" }),
               _vm._v(" "),
-              _c("div", { staticClass: "col-md-10" }, [
-                _c(
-                  "button",
-                  { staticClass: "btn btn-success", attrs: { type: "submit" } },
-                  [_vm._v("存檔")]
-                ),
-                _vm._v("\n\t\t\t\t\t   \n\t\t\t\t\t"),
-                _c(
-                  "button",
-                  {
-                    staticClass: "btn btn-default",
-                    on: {
-                      click: function($event) {
-                        $event.preventDefault()
-                        _vm.cancel($event)
-                      }
-                    }
-                  },
-                  [_vm._v("取消")]
-                )
-              ])
+              _vm.submitting
+                ? _c("div", { staticClass: "col-md-10" }, [_vm._m(0)])
+                : _c("div", { staticClass: "col-md-10" }, [
+                    _vm._m(1),
+                    _vm._v("\n\t\t\t\t\t   \n\t\t\t\t\t"),
+                    _c(
+                      "button",
+                      {
+                        staticClass: "btn btn-default",
+                        on: {
+                          click: function($event) {
+                            $event.preventDefault()
+                            _vm.cancel($event)
+                          }
+                        }
+                      },
+                      [_vm._v("\n\t\t\t\t\t\t\n\t\t\t\t\t\t取消\n\t\t\t\t\t")]
+                    )
+                  ])
             ])
           ]
         )
       ])
     : _vm._e()
 }
-var staticRenderFns = []
+var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("button", { staticClass: "btn btn-default" }, [
+      _c("i", { staticClass: "fa fa-spinner fa-spin" }),
+      _vm._v(" \n                  處理中\n               ")
+    ])
+  },
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c(
+      "button",
+      { staticClass: "btn btn-success", attrs: { type: "submit" } },
+      [
+        _c("i", {
+          staticClass: "fa fa-floppy-o",
+          attrs: { "aria-hidden": "true" }
+        }),
+        _vm._v("\n\t\t\t\t\t\t\t確認存檔\n\t\t\t\t\t\t")
+      ]
+    )
+  }
+]
 render._withStripped = true
 module.exports = { render: render, staticRenderFns: staticRenderFns }
 if (false) {
@@ -38296,7 +38540,61 @@ var render = function() {
             },
             [
               _c("div", { staticClass: "row" }, [
-                _c("div", { staticClass: "col-sm-3" }),
+                _c(
+                  "div",
+                  {
+                    staticClass: "col-sm-3",
+                    staticStyle: { "margin-top": "20px" }
+                  },
+                  [
+                    _c(
+                      "select",
+                      {
+                        directives: [
+                          {
+                            name: "model",
+                            rawName: "v-model",
+                            value: _vm.params.category,
+                            expression: "params.category"
+                          }
+                        ],
+                        staticClass: "form-control",
+                        staticStyle: { width: "180px" },
+                        on: {
+                          change: [
+                            function($event) {
+                              var $$selectedVal = Array.prototype.filter
+                                .call($event.target.options, function(o) {
+                                  return o.selected
+                                })
+                                .map(function(o) {
+                                  var val = "_value" in o ? o._value : o.value
+                                  return val
+                                })
+                              _vm.$set(
+                                _vm.params,
+                                "category",
+                                $event.target.multiple
+                                  ? $$selectedVal
+                                  : $$selectedVal[0]
+                              )
+                            },
+                            _vm.fetchData
+                          ]
+                        }
+                      },
+                      _vm._l(_vm.categories, function(item, index) {
+                        return _c("option", {
+                          key: index,
+                          domProps: {
+                            value: item.id,
+                            textContent: _vm._s(item.name)
+                          }
+                        })
+                      })
+                    )
+                  ]
+                ),
                 _vm._v(" "),
                 _c("div", { staticClass: "col-sm-3" }),
                 _vm._v(" "),
@@ -38354,6 +38652,14 @@ var render = function() {
                   _c(
                     "div",
                     {
+                      directives: [
+                        {
+                          name: "show",
+                          rawName: "v-show",
+                          value: _vm.model.totalItems > 0,
+                          expression: "model.totalItems>0"
+                        }
+                      ],
                       staticClass: "panel-footer pagination-footer",
                       attrs: { slot: "table-footer" },
                       slot: "table-footer"

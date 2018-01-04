@@ -28,8 +28,16 @@ namespace BlogWeb.Controllers
 			return JsonConvert.SerializeObject(model, this.jsonSettings);
 		}
 
-		
+		protected string DefaultTermNumber()
+		{
+			var year = DateTime.Now.Year - 1911 -1;
+			if (DateTime.Now.Month > 7) return year.ToString() + 2;
+			return year.ToString() + 1;
 
-		
+		}
+
+
+
+
 	}
 }

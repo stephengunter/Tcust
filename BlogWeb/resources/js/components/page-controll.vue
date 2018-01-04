@@ -1,6 +1,6 @@
 <template>
    <div class="row"> 
-      <div class="col-md-2 pagination-item paging-controll">
+      <div  class="col-md-2 pagination-item paging-controll">
          <span>每頁: </span>
             <select v-model="model.pageSize" @change="onPageSizeChanged">
                <option>10</option>
@@ -9,7 +9,7 @@
             </select>
          <span>筆資料</span>
       </div>
-      <div class="col-md-2 pagination-item paging-controll">
+      <div  class="col-md-2 pagination-item paging-controll">
          <small>Showing {{ first }} - {{ last }} of {{model.totalItems}}</small>
       </div>
       <div class="col-md-8 pagination-item">
@@ -40,6 +40,7 @@ export default {
 		}
    },
    computed:{
+	
 		first(){
          if(!this.model) return 0;
          return this.model.pageSize * (this.model.pageNumber-1) + 1;
