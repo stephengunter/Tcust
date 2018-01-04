@@ -14,7 +14,11 @@ export default {
       title: {
          type: String,
          default: '新增圖片'
-      },
+		},
+		exclude:{
+			type: Array,
+         default: null
+		}
    },
    data(){
       return {
@@ -29,12 +33,17 @@ export default {
 
          for (let i=0; i<files.length; i++) {
            
-            if(!this.fileExist(files[i].name)){
+            if(this.fileCanAdd(files[i])){
                this.addFile(files[i]);
             }
          }
                 
-      },
+		},
+		fileCanAdd(file){
+			if(this.fileExist(file.name)) return false;
+			if(this.exclude.includes(file.name)) return false;
+			return true;
+		},
       fileExist(name){
           let index=this.findFileIndex(name);
           return index >=0;

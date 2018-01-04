@@ -33,7 +33,7 @@
 						<button class="btn btn-sm btn-primary" @click.prevent="editMedia(media,index)">
 							<i class="fa fa-pencil" aria-hidden="true"></i>
 						</button>
-						<button class="btn btn-sm btn-danger" @click.prevent="removeMedia(media)">
+						<button class="btn btn-sm btn-danger" @click.prevent="onRemoveMedia(media)">
 							<i class="fa fa-trash-o" aria-hidden="true"></i>
 						</button>
 						<button class="btn btn-sm btn-default" v-if="medias.length>1" @click.prevent="up(media,index)">
@@ -46,8 +46,11 @@
 				</tr>
 			</tbody>
 		</table>
-		<file-upload ref="fileUpload" @file-added="onFileAdded"></file-upload>
-	
+		<file-upload ref="fileUpload" :exclude="fileNames" @file-added="onFileAdded"></file-upload>
+		
+		<delete-confirm :showing="deleteConfirm.showing" :message="deleteConfirm.message"
+        @close="deleteConfirm.showing=false" @confirmed="deleteMedia">
+      </delete-confirm>
 	</div>
       
   
@@ -58,9 +61,9 @@ import FileUpload from './file-upload';
 export default {
    name:'MediaEdit',
       props:{
-         post_id:{
-            type:Number,
-            default:0
+         post:{
+            type:Object,
+            default:null
          }
 		},
 		components: {
@@ -74,25 +77,51 @@ export default {
 
 				edittingMedia:{},
 
-				test:[],
+				deleteConfirm:{
+					id:0,
+               showing:false,
+               message:''
+            }
 			
          }
       },
       computed:{
-
-      }, 
+			fileNames(){
+				return this.medias.map((item)=>{
+					return item.name;
+				});
+			}
+		},
+		beforeMount() {
+			this.init();
+		},  
       methods:{
+			init(){
+				if(!this.post) return;
+				this.medias=this.post.medias.slice(0);
+
+			},
          fileExist(name){
 				let index=this.findFileIndex(name);
 				return index >=0;
 			},
-			findFileIndex(name){
-				let index=this.medias.findIndex((item)=>{
-					return item.name==name;
-				});
-				return index ;
+			findFileIndex(name, id ){
+				
+				if(id){
+					let indexById=this.medias.findIndex((item)=>{
+						return item.id==id;
+					});
+					return indexById;
+				}else{
+					let index=this.medias.findIndex((item)=>{
+						return item.name==name;
+					});	
+				}
+				
+				
 			},
 			addMedia(name,thumb){
+				
 				let media={
 					id:0,
 					order:this.findMinOrder() - 1,
@@ -113,8 +142,14 @@ export default {
 			submit(){
 				return new Promise((resolve, reject) => {
 					const files=this.$refs.fileUpload.getFiles();
+					alert(files.length);
+					if(!files.length){
+						resolve(true);
+						return;
+					} 
+
 					let form = new FormData();
-					form.append('postId', this.post_id);
+					form.append('postId', this.post.id);
 					
 					for (let i = 0; i < files.length; i++) {
 						form.append('files', files[i]); 
@@ -131,43 +166,6 @@ export default {
 				})
 				
 			},
-			saveFiles(){
-				return new Promise((resolve, reject) => {
-					const files=this.$refs.fileUpload.getFiles();
-					let form = new FormData();
-					for (let i = 0; i < files.length; i++) {
-						form.append('files', files[i]); 
-					}
-					let save=Attachment.store(form);
-					save.then(attachments => {
-					   
-						if(!attachments.length) resolve(null);
-					   for(let x = 0; x < attachments.length; x++){
-							let media=this.medias.find(item=>{
-								return item.name==attachments[x].name;
-							});
-							media.path=attachments[x].path;
-						}
-
-						resolve(this.medias);
-
-						// return true;
-
-						// let copyMedias= this.medias.map(media=>{
-						// 	return {...media , thumb:''};
-						// });
-
-						// console.log(copyMedias);
-
-						// return copyMedias;
-					})
-					.catch(error=> {
-						Helper.BusEmitError(error);                   
-						reject(error);
-					})
-            })
-				
-			},		
 			setMedias(attachments){
 				return new Promise((resolve, reject) => {
 					attachments.forEach((attachment) => {
@@ -184,22 +182,42 @@ export default {
 
 				})
 				
+			},
+			onRemoveMedia(media){
 				
+				if(media.id){
 				
+					this.deleteConfirm.id=media.id;
+					this.deleteConfirm.message=`確定要刪除圖片 ${media.title} 嗎?`;
+					this.deleteConfirm.showing=true;
+				}else{
+					this.removeMedia(media);
+					this.$refs.fileUpload.removeFile(media.name);
+				}
 			},
 			removeMedia(media){
 				let index=this.findFileIndex(media.name);
 				if(index< 0) return;
 
 				this.medias.splice(index, 1);
-
-				if(media.id){
-
-				}else{
-					this.$refs.fileUpload.removeFile(media.name);
-				}
+				
+			},
+			deleteMedia(){
+				let deleteMedia=Attachment.remove(this.deleteConfirm.id);
+				deleteMedia.then(() => {
+					this.deleteConfirm.showing=false;
+					
+					let index=this.findFileIndex(null,this.deleteConfirm.id);
+					if(index< 0) return;
+					this.medias.splice(index, 1);
+				})
+				.catch(error => {
+					Helper.BusEmitError(error,'刪除失敗');
+				})
+				
 			},
 			onFileAdded(){
+				
 			   let thumbs = this.$refs.fileUpload.getThunbnails();
 			   for (let i=0; i<thumbs.length; i++) {
 					let name=thumbs[i].name;

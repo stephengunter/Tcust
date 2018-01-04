@@ -13,6 +13,11 @@ class Attachment {
 	static storeUrl() {
 		return this.source() + '/store'
 	}
+
+	static deleteUrl(id){
+		return `${this.source()}/delete/${id}`;
+		
+	}
 	
 	static store(form){
 		let url = this.storeUrl()
@@ -27,6 +32,21 @@ class Attachment {
 					})
 
       })
+	}
+
+	static remove(id) {
+		let url = this.deleteUrl(id);
+		
+		return new Promise((resolve, reject) => {
+			 axios.delete(url)
+				  .then(response => {
+						resolve(response.data);
+				  })
+				  .catch(error => {
+						reject(error);
+				  })
+
+		})
 	}
    
    

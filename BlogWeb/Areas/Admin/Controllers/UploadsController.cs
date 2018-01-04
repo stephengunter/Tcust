@@ -59,6 +59,16 @@ namespace BlogWeb.Areas.Admin.Controllers
 			
 		}
 
+		[HttpDelete]
+		public IActionResult Delete(int id)
+		{
+			attachmentService.Delete(id);
+
+			return new NoContentResult();
+
+		}
+
+
 		private async Task<UploadFile> SaveFile(IFormFile file)
 		{
 			//檢查檔案路徑

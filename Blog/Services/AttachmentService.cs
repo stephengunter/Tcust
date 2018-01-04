@@ -13,6 +13,8 @@ namespace Blog.Services
 	{
 		UploadFile FindByName(string name, int postId);
 		void Update(UploadFile attachment);
+
+		void Delete(int id);
 	}
 
 	public class AttachmentService: IAttachmentService
@@ -34,6 +36,16 @@ namespace Blog.Services
 		public void Update(UploadFile attachment)
 		{
 			uploadFileRepository.Update(attachment);
+		}
+
+		public void Delete(int id)
+		{
+			var entity = uploadFileRepository.GetById(id);
+		
+			uploadFileRepository.Delete(entity);
+
+			
+
 		}
 	}
 }

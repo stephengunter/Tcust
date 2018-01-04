@@ -50,6 +50,12 @@ namespace BlogWeb.Models
 			if (String.IsNullOrEmpty(post.Summary)) this.summary = PostViewModel.GetDefaultSummary(post);
 			else this.summary = post.Summary;
 
+			//this.medias = new List<MediaViewModel>();
+			//foreach (var media in post.Attachments)
+			//{
+			//	this.medias.Add(new MediaViewModel(media));
+			//}
+
 			if (allMedias)
 			{
 				this.medias = new List<MediaViewModel>();
@@ -58,8 +64,10 @@ namespace BlogWeb.Models
 					this.medias.Add(new MediaViewModel(media));
 				}
 			}
-			
-			//this.cover = new MediaViewModel(post.TopFile);
+
+			if(post.TopFile!=null) this.cover = new MediaViewModel(post.TopFile);
+
+
 
 		}
 
@@ -92,10 +100,14 @@ namespace BlogWeb.Models
 		}
 
 
-		public Post MapToEntity(string updatedBy)
+		public Post MapToEntity(string updatedBy , Post post=null)
 		{
-			var post = new Post();
-			post.Attachments = new List<UploadFile>();
+			if (post == null)
+			{
+				post = new Post();
+				post.Attachments = new List<UploadFile>();
+			}
+			
 
 			post.Title = title.Trim();
 			post.Content = content.Trim();

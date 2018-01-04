@@ -11,11 +11,14 @@ namespace ApplicationCore.Specifications
 		{
 			Criteria = criteria;
 		}
+		public BaseSpecification()
+		{
+			
+		}
 
-		
 
 
-		public Expression<Func<T, bool>> Criteria { get; }
+		public Expression<Func<T, bool>> Criteria { get; set; }
 		public List<Expression<Func<T, object>>> Includes { get; } = new List<Expression<Func<T, object>>>();
 		public List<string> IncludeStrings { get; } = new List<string>();
 

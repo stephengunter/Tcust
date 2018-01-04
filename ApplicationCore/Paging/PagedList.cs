@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ApplicationCore.Helpers;
 
 namespace ApplicationCore.Paging
 {
@@ -35,7 +36,7 @@ namespace ApplicationCore.Paging
 			this.PageNumber = pageNumber;
 			this.PageSize = pageSize;
 
-			this.List = list.ToList();
+			this.List = list.GetPaged(pageNumber, pageSize).ToList();
 			this.ViewList = new List<V>();
 
 			this.TotalPages= (int)Math.Ceiling(this.TotalItems / (double)this.PageSize);

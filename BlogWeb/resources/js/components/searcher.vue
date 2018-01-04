@@ -11,18 +11,15 @@
 
 <script>
 export default {
-   name:'Searcher',
-   data() {
-      return {
-         keyword:''
-            
-         
-      }
-   },
+	name:'Searcher',
+	data(){
+		return {
+			keyword:'',
+		}
+	},
    methods:{
       onSubmit(){
-         
-         alert('onSubmit');
+         this.$emit('search',this.keyword);
          
       }
    }

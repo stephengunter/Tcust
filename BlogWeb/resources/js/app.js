@@ -2,7 +2,10 @@ import './bootstrap';
 
 
 Vue.component('datetime-picker', require('./components/datetime-picker'));
+Vue.component('page-controll', require('./components/page-controll'));
 Vue.component('alert', require('./packages/components/Alert'));
+Vue.component('modal', require('./packages/components/Modal'));
+Vue.component('delete-confirm', require('./packages/components/DeleteConfirm'));
 
 
 Vue.component('navbar', require('./components/navbar'));

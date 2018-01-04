@@ -13,7 +13,7 @@ namespace Blog.Services
 	{
 		Post Create(Post post);
 		void Update(Post post);
-		void Delete(Post post);
+		void Delete(int id, string updatedBy);
 		Post GetById(int id);
 
 		Task<IEnumerable<Post>> GetAllAsync();
@@ -26,9 +26,9 @@ namespace Blog.Services
 
 		Task<int> CheckYearAsync(int year, IEnumerable<Post> postList = null);
 
-		Task<IEnumerable<Post>> GetByYearAsync(int year, IEnumerable<Post> postList = null);
+		//Task<IEnumerable<Post>> GetByYearAsync(int year, IEnumerable<Post> postList = null);
 
-		Task<IEnumerable<Post>> GetByYearMonthAsync(int year, int month);
+		//Task<IEnumerable<Post>> GetByYearMonthAsync(int year, int month);
 
 	}
 
@@ -43,10 +43,11 @@ namespace Blog.Services
 			this.uploadFileRepository = uploadFileRepository;
 		}
 
-		public async Task<IEnumerable<Post>> GetAllAsync() 
+		public async Task<IEnumerable<Post>> GetAllAsync()
 		{
-			var allpost = await postRepository.ListAllAsync();
-			return allpost.Where(p => p.CreateYear >= 2013);
+			var filter = new BasePostFilterSpecification();
+			return await postRepository.ListAsync(filter);
+		
 		}
 
 		public IEnumerable<Post> GetAll()
@@ -87,21 +88,21 @@ namespace Blog.Services
 			return year;
 		}
 
-		public async Task<IEnumerable<Post>> GetByYearAsync(int year, IEnumerable<Post> postList = null)
-		{
-			var filter = new PostFilterSpecification(year);
+		//public async Task<IEnumerable<Post>> GetByYearAsync(int year, IEnumerable<Post> postList = null)
+		//{
+		//	var filter = new PostFilterSpecification(year);
 
-			return await postRepository.ListAsync(filter);
-		}
+		//	return await postRepository.ListAsync(filter);
+		//}
 
-		public async Task<IEnumerable<Post>> GetByYearMonthAsync(int year, int month)
-		{
-			var filter = new PostFilterSpecification(year, month);
+		//public async Task<IEnumerable<Post>> GetByYearMonthAsync(int year, int month)
+		//{
+		//	var filter = new PostFilterSpecification(year, month);
 
-			var posts = await postRepository.ListAsync(filter);
+		//	var posts = await postRepository.ListAsync(filter);
 
-			return posts;
-		}
+		//	return posts;
+		//}
 
 		public IEnumerable<UploadFile> GetPostAttachments(int postId)
 		{
@@ -117,15 +118,18 @@ namespace Blog.Services
 
 		public void Update(Post post)
 		{
-			var oldFiles = GetPostAttachments(post.Id);
-			uploadFileRepository.DeleteRange(oldFiles);
-
+			
 			postRepository.Update(post);
 		}
 
-		public void Delete(Post post)
+		public void Delete(int id, string updatedBy)
 		{
-			postRepository.Delete(post);
+			var post = postRepository.GetById(id);
+			post.Removed = true;
+			post.SetUpdated(updatedBy);
+
+			postRepository.Update(post);
+
 		}
 	}
 }

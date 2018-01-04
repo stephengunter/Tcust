@@ -34,7 +34,7 @@ namespace BlogWeb.Controllers
 
 			year = await postService.CheckYearAsync(year, allPost);
 
-			var yearPosts = await postService.GetByYearAsync(year, allPost);
+			var yearPosts = allPost;// await postService.GetByYearAsync(year, allPost);
 
 
 			var pageList = new PagedList<Post, PostViewModel>(yearPosts, page, this.pagesize);

@@ -35,7 +35,7 @@
 			<div class="form-group">
 				<label class="col-md-2 control-label">圖片</label>
 				<div class="col-md-10">
-					<media-edit :post_id="form.post.id" ref="mediaEdit"></media-edit>
+					<media-edit :post="form.post" ref="mediaEdit"></media-edit>
 				</div>
          </div>
 			<div class="form-group">
@@ -43,7 +43,7 @@
 				<div class="col-md-10">
 					<button class="btn btn-success" type="submit">存檔</button>
 					&nbsp;&nbsp;&nbsp;
-					<button class="btn btn-default" @click.prevent="test">取消</button>
+					<button class="btn btn-default" @click.prevent="cancel">取消</button>
 				</div>
          </div>
 			
@@ -68,13 +68,8 @@ export default {
 		return {
 			loaded:false,
 			title:'',
-			
 
 			form:{}
-				
-
-			
-			
 			
 		}
 	},
@@ -89,6 +84,9 @@ export default {
 	methods:{
 		test(){
 			alert(this.form.errors.get('title'));
+		},
+		cancel(){
+			this.$emit('cancel');
 		},
 		init(){
 			if(this.isCreate){
@@ -127,7 +125,11 @@ export default {
 			let medias=this.$refs.mediaEdit.getMedias();
 			this.form.post.medias=medias;
 			
-			let save=Post.store(this.form);
+			let save=null;
+
+			if(this.isCreate)  save=Post.store(this.form);            
+			else  save=Post.update(this.id,this.form);  
+
 			save.then(post => {
 
 					let setPost = new Promise( (resolve, reject) => {
@@ -141,7 +143,6 @@ export default {
 					setPost.then(()=>{
 						this.submitMedias();	
 					});
-
 
 					
 				

@@ -1,14 +1,22 @@
 <template>
-   <media-edit></media-edit>
+   <post-edit :id="345"></post-edit>
 </template>
 
 <script>
-import MediaEdit from '../components/media-edit';
+import PostEdit from '../components/post-edit';
 
 export default {
    components: {
-     'media-edit':MediaEdit
+     'post-edit':PostEdit
    },
+   data(){
+		return {
+		 id:348
+			
+		}
+	},
 }
 </script>
+
+
 

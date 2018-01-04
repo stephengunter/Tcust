@@ -5,14 +5,17 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.Http;
 
 namespace BlogWeb.Controllers
 {
 	public abstract class BaseController : Controller
 	{
 		private readonly JsonSerializerSettings jsonSettings;
-	   
-	    public BaseController()
+
+		
+
+		public BaseController()
 		{
 			this.jsonSettings = new JsonSerializerSettings
 			{
@@ -22,13 +25,11 @@ namespace BlogWeb.Controllers
 		}
 		protected string ToJsonString(object model)
 		{
-			
-			//var json = JsonConvert.SerializeObject(dog, Formatting.Indented, jsonSerializerSettings);
-
-
-			
-		
 			return JsonConvert.SerializeObject(model, this.jsonSettings);
 		}
-    }
+
+		
+
+		
+	}
 }

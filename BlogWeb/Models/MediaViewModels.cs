@@ -14,7 +14,10 @@ namespace BlogWeb.Models
 		public MediaViewModel(UploadFile file)
 		{
 			this.id = file.Id;
-			
+			this.postId = file.PostId;
+			this.name = file.Name;
+			this.title = file.Title;
+			this.order = file.Order;
 		
 			this.width = file.Width;
 			this.height = file.Height;
@@ -41,16 +44,16 @@ namespace BlogWeb.Models
 
 
 
-		public UploadFile MapToEntity(string updatedBy)
+		public UploadFile MapToEntity(string updatedBy , UploadFile entity = null)
 		{
-			var entity = new UploadFile();
+			if(entity==null) entity = new UploadFile();
+
 			entity.PostId = postId;
 			entity.Name = name;
 			entity.Title = title;
 			entity.Order = order;
 
 			entity.SetUpdated(updatedBy);
-
 
 
 			return entity;

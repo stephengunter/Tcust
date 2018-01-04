@@ -13,58 +13,73 @@ using ApplicationCore.Paging;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Options;
+using BlogWeb.Helpers;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	
-
 
 	public class PostsController: BaseAdminController
 	{
-		private readonly int pagesize = 8;
+		private readonly IOptions<AppSettings> settings;
+
+		
 		private readonly IPostService postService;
 
-		public PostsController(IHostingEnvironment environment, IPostService postService) : base(environment)
+		private readonly ViewService viewService;
+
+		public PostsController(IHostingEnvironment environment, IOptions<AppSettings> settings,IPostService postService) : base(environment)
 		{
+			this.settings = settings;
 			this.postService = postService;
+
+			this.viewService = new ViewService(this.settings); 
 		}
 
 		public IActionResult Test()
 		{
 
-
+			
 			return View();
 		}
 
 		
-
-		public async Task<IActionResult> Index()
+		[HttpGet]
+		public async Task<IActionResult> Index(string keyword ,int page = 1, int pageSize=10 )
 		{
-			int year = 0;
-			int page = 1;
+			Task<IEnumerable<Post>> getPostsTask;
+			if (String.IsNullOrEmpty(keyword))
+			{
+				getPostsTask =  postService.GetAllAsync();
+			}
+			else
+			{
+				getPostsTask = postService.GetByKeywordAsync(keyword);
+			}
 
+			var posts = await getPostsTask;
 
-			var allPost = await postService.GetAllAsync();
+			posts = posts.OrderByDescending(p=>p.Date);
 
-			year = await postService.CheckYearAsync(year, allPost);
-
-			var yearPosts = await postService.GetByYearAsync(year, allPost);
-
-
-			var pageList = new PagedList<Post, PostViewModel>(yearPosts, page, this.pagesize);
+			var pageList = new PagedList<Post, PostViewModel>(posts, page, pageSize);
 
 			foreach (var item in pageList.List)
 			{
-				pageList.ViewList.Add(new PostViewModel(item));
+				pageList.ViewList.Add(viewService.MapPostViewModel(item));
 			}
 
 			pageList.List = null;
 
 
-			var model = new PostSearchModel();
-			model.PagedList = pageList;
+			//var model = new PostSearchModel();
+			//model.PagedList = pageList;
 
-			ViewBag.list = this.ToJsonString(model.PagedList);
+			if (Request.IsAjaxRequest())
+			{
+				return new ObjectResult(pageList);
+			}
+
+			ViewBag.list = this.ToJsonString(pageList);
 
 			return View();
 		}
@@ -82,7 +97,8 @@ namespace BlogWeb.Areas.Admin.Controllers
 			return new ObjectResult(model);
 		}
 
-		[HttpPost]
+		
+		[HttpPost("[area]/[controller]")]
 		public IActionResult Store([FromBody] PostEditForm model)
 		{
 			if (!ModelState.IsValid)
@@ -107,7 +123,40 @@ namespace BlogWeb.Areas.Admin.Controllers
 		
 		}
 
-		[HttpGet("{id}")]
+		[HttpPut("[area]/[controller]/{id}")]
+		public IActionResult Update(int id , [FromBody] PostEditForm model)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			var post = postService.GetById(id);
+			if (post == null) return NotFound();
+
+			post = model.post.MapToEntity(CurrentUserId, post);
+
+			if (post.Attachments.IsNullOrEmpty()) post.Attachments = new List<UploadFile>();
+
+			foreach (var item in model.post.medias)
+			{
+				var attachment = post.Attachments.Where(a=>a.Id== item.id).FirstOrDefault();
+
+				if (attachment == null) post.Attachments.Add(item.MapToEntity(CurrentUserId));				
+				else attachment = item.MapToEntity(CurrentUserId, attachment);
+				
+			}
+
+
+			postService.Update(post);
+
+
+			return new ObjectResult(post);
+
+
+		}
+
+		[HttpGet("[area]/[controller]/{id}/edit")]
 		public IActionResult Edit(int id)
 		{
 			var post = postService.GetById(id);
@@ -116,10 +165,20 @@ namespace BlogWeb.Areas.Admin.Controllers
 			bool allMedias = true;
 			var model = new PostEditForm
 			{
-				post = new PostViewModel(post, allMedias)
+				post = viewService.MapPostViewModel(post, allMedias)
 			};
 
 			return new ObjectResult(model);
+		}
+
+
+		[HttpDelete]
+		public IActionResult Delete(int id)
+		{
+			postService.Delete(id, CurrentUserId);
+
+			return new NoContentResult();
+			
 		}
 
 

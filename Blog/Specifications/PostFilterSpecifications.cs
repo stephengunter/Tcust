@@ -4,62 +4,78 @@ using ApplicationCore.Helpers;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Blog.Specifications
 {
-	public class TopPostFilterSpecification : BaseSpecification<Post>
+
+	public class BasePostFilterSpecification : BaseSpecification<Post>
 	{
-		public TopPostFilterSpecification(bool top) : base(p => p.Top == top && p.CreateYear >= 2013 )
+		public BasePostFilterSpecification()
 		{
+			Criteria = p => !p.Removed && p.CreateYear >= 2013;
+
 			AddInclude(p => p.Attachments);
 
 		}
 	}
 
-
-	public class PostIdFilterSpecification : BaseSpecification<Post>
+	public class TopPostFilterSpecification : BasePostFilterSpecification
 	{
-		public PostIdFilterSpecification(int id) : base(p => p.Id == id)
+		public TopPostFilterSpecification(bool top) 
 		{
-			AddInclude(p => p.Attachments);
-			
+			var compiled = Criteria.Compile();
+			Criteria = p => compiled(p) && p.Top == top;
+
 		}
+	}
+
+
+	public class PostIdFilterSpecification : BasePostFilterSpecification
+	{
+		public PostIdFilterSpecification(int id)
+		{
+			var compiled = Criteria.Compile();
+			Criteria = p => compiled(p) && p.Id == id;
+
+		}
+	}
+
+	public class PostFilterSpecification : BasePostFilterSpecification
+	{
+		
+
+		public PostFilterSpecification(string keyword="",int year=0, int month=0)
+		{
+
+			var compiled = Criteria.Compile();
+			if (!String.IsNullOrEmpty(keyword))
+			{
+				Criteria = p => compiled(p) && (p.Title != null && p.Title.CaseInsensitiveContains(keyword) ||
+											  p.Author != null && p.Author.CaseInsensitiveContains(keyword) ||
+											  p.Content != null && p.Content.CaseInsensitiveContains(keyword)
+											 );
+			}
+
+			if (year > 0)
+			{
+				compiled = Criteria.Compile();
+				Criteria = p => compiled(p) && p.CreateYear == year;
+			}
+
+			if (month > 0)
+			{
+				compiled = Criteria.Compile();
+				Criteria = p => compiled(p) && p.CreateMonth == month;
+			}
+
+
+
+		}
+
+
+
 	}
 
 	
-
-	public class PostFilterSpecification : BaseSpecification<Post>
-	{
-		public PostFilterSpecification() : base(p => p.CreateYear >= 2013)
-		{
-			AddInclude(p => p.Attachments);
-		}
-
-		public PostFilterSpecification(string keyword) : base(
-				p => p.CreateYear >= 2013 && (p.Title != null && p.Title.CaseInsensitiveContains(keyword) ||
-											  p.Author != null && p.Author.CaseInsensitiveContains(keyword) ||
-											  p.Content != null && p.Content.CaseInsensitiveContains(keyword)
-											 )
-			)
-		{
-
-			AddInclude(p => p.Attachments);
-
-
-		}
-
-
-		public PostFilterSpecification(int year) : base(p=> p.CreateYear == year)
-		{
-
-			AddInclude(p => p.Attachments);
-		}
-
-		public PostFilterSpecification(int year,int month) : base(p => p.CreateYear == year && p.CreateMonth == month)
-		{
-			AddInclude(p => p.Attachments);
-		}
-
-
-	}
 }
