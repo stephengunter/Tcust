@@ -3,9 +3,10 @@
       <div v-if="model" v-show="indexMode">
          <div class="row">
             <div class="col-sm-3" style="margin-top: 20px;">
-               <select  v-model="params.category" class="form-control" style="width:180px" @change="fetchData">
-                  <option v-for="(item,index) in categories" :key="index" :value="item.id" v-text="item.name"></option>
-            	</select>
+					<drop-down :items="categories" :selected="category.value"
+					  @selected="onCategorySelected">
+
+					</drop-down>
             </div>
             <div class="col-sm-3">
                
@@ -99,8 +100,8 @@
 			}
 			
 			if(this.categories){
-				this.category=this.categories[0];
-				this.params.category=this.categories[0].id;
+				this.setCategory(this.categories[0]);
+				
 			}	
 
 		},
@@ -149,6 +150,13 @@
 				
 				this.deleteConfirm.showing=false;
 			},
+			onCategorySelected(category){
+				this.setCategory(category);
+			},
+			setCategory(category){
+				this.category=category;
+				this.params.category=category.value;
+			},
 			onPageChanged(page){
 				this.params.page=page;
 				this.fetchData();
@@ -176,5 +184,8 @@
       }
    }
 </script>
+
+
+
 
 

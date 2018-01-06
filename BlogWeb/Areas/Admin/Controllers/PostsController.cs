@@ -15,6 +15,7 @@ using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using BlogWeb.Helpers;
+using System.Linq;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
@@ -78,9 +79,11 @@ namespace BlogWeb.Areas.Admin.Controllers
 				return new ObjectResult(pageList);
 			}
 
-			var categories = postService.GetCategoriesAsync();
+			var categories =await postService.GetCategoriesAsync();
+			var options = categories.Select(c => new { value = c.Id, text = c.Name });
 
-			ViewData["categories"] = this.ToJsonString(categories);
+			ViewData["categories"] = this.ToJsonString(options);
+			
 
 			ViewData["list"]= this.ToJsonString(pageList);
 
