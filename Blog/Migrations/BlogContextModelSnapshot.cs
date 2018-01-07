@@ -47,10 +47,6 @@ namespace Blog.Migrations
 
                     b.Property<string>("Content");
 
-                    b.Property<int>("CreateMonth");
-
-                    b.Property<int>("CreateYear");
-
                     b.Property<DateTime>("CreatedAt");
 
                     b.Property<DateTime>("Date");
@@ -60,6 +56,8 @@ namespace Blog.Migrations
                     b.Property<bool>("Down");
 
                     b.Property<DateTime>("LastUpdated");
+
+                    b.Property<int>("Month");
 
                     b.Property<string>("Number");
 
@@ -74,6 +72,8 @@ namespace Blog.Migrations
                     b.Property<bool>("Top");
 
                     b.Property<string>("UpdatedBy");
+
+                    b.Property<int>("Year");
 
                     b.HasKey("Id");
 

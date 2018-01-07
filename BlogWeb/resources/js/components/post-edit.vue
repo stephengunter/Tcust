@@ -24,7 +24,7 @@
 			<div class="form-group">
 				<label class="col-md-2 control-label">學年編號</label>
 				<div class="col-md-10">
-					<input name="post.termNumber" v-model="form.post.termNumber" class="form-control" />
+					<input name="post.termNumber" v-model="form.post.termNumber" class="form-control" style="max-width:180px"/>
 					<small class="text-danger" v-if="form.errors.has('post.termNumber')" v-text="form.errors.get('post.termNumber')"></small>
 				
 				</div>
@@ -32,9 +32,17 @@
          <div class="form-group">
 				<label class="col-md-2 control-label">文章編號</label>
 				<div class="col-md-10">
-					<input name="post.number" v-model="form.post.number" class="form-control" />
+					<input name="post.number" v-model="form.post.number" class="form-control" style="max-width:180px" />
 					<small class="text-danger" v-if="form.errors.has('post.number')" v-text="form.errors.get('post.number')"></small>
 				
+				</div>
+         </div>
+			<div class="form-group">
+				<label class="col-md-2 control-label">分類</label>
+				<div class="col-md-10">
+					<drop-down :items="categories" :selected="form.post.categoryId"
+					  @selected="onCategorySelected">
+					</drop-down>
 				</div>
          </div>
 			<div class="form-group">
@@ -55,8 +63,10 @@
          <div class="form-group">
 				<label class="col-md-2 control-label">內容</label>
 				<div class="col-md-10">
-					<textarea rows="12" name="post.content"  v-model="form.post.content" class="form-control" >
-               </textarea>
+					<html-editor ref="contentEditor" :model="form.post.content" :toolbar="textEditor.toolbar"
+                  :height="textEditor.height"     @html-value="setContent">  
+               </html-editor>  
+
 					<small class="text-danger" v-if="form.errors.has('post.content')" v-text="form.errors.get('post.content')"></small>
 				</div>
          </div>
@@ -67,7 +77,7 @@
 				</div>
          </div>
 			<div class="form-group">
-				<label class="col-md-2 control-label">圖片</label>
+				<label class="col-md-2 control-label">圖片/影片</label>
 				<div class="col-md-10">
 					<media-edit :post="form.post" ref="mediaEdit"></media-edit>
 				</div>
@@ -110,6 +120,10 @@ export default {
 			type:Object,
 			default:null
 		},
+		categories:{
+			type:Array,
+			default:null
+		},
 		id:{
 			type:Number,
 			default:0
@@ -119,6 +133,11 @@ export default {
 		return {
 			loaded:false,
 			title:'',
+
+			textEditor:{
+				height:360,
+            toolbar:[]
+         },
 
 			form:{},
 			submitting:false
@@ -133,6 +152,10 @@ export default {
 	beforeMount() {
 		this.init();
 	}, 
+	mounted(){
+		$('#postContent').summernote();
+		
+	},
 	methods:{
 		test(){
 			alert(this.form.errors.get('title'));
@@ -142,9 +165,9 @@ export default {
 		},
 		init(){
 			if(this.isCreate){
-				this.title = '新增日誌';
+				this.title = '新增文章';
 			}else{
-				this.title += '編輯日誌';				
+				this.title += '編輯文章';				
 			}
 
 			this.fetchData();
@@ -162,6 +185,9 @@ export default {
 					...model
 				});
 
+				if(this.isCreate) this.form.post.categoryId=this.category.value;
+				
+
 				this.loaded=true;
 				
 			})
@@ -170,14 +196,24 @@ export default {
 				this.loaded=false;
 			})
 		},
+		onCategorySelected(category){
+			this.form.post.categoryId=category.value
+		},
 		setDate(val){
 			this.form.post.date=val;
 		},
+		setContent(val){
+			this.form.post.content=val
+			this.onSubmit()
+      },
 		onSubmit(){
 			this.submitting=true;
 
 			let medias=this.$refs.mediaEdit.getMedias();
 			this.form.post.medias=medias;
+
+			let contentValue=this.$refs.contentEditor.getValue();
+			this.form.post.content=contentValue;
 			
 			let save=null;
 

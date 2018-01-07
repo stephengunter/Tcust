@@ -16,8 +16,12 @@ namespace BlogWeb.Models
 	{
 		public PostViewModel()
 		{
-			this.medias = new List<MediaViewModel>();
+
 		}
+		//public PostViewModel()
+		//{
+		//	this.medias = new List<MediaViewModel>();
+		//}
 
 		public PostViewModel(Post post, bool allMedias=false)
 		{
@@ -72,6 +76,10 @@ namespace BlogWeb.Models
 
 		public DateTime createdAt { get; set; }
 
+		public int categoryId { get; set; }
+
+
+
 		public MediaViewModel cover { get; set; }
 
 		public List<MediaViewModel> medias { get; set; }
@@ -109,6 +117,15 @@ namespace BlogWeb.Models
 
 			return post;
 		}
+
+
+
+		//copy專用
+
+		public DateTime updatedAt { get; set; }
+		public string fileIds { get; set; }
+
+		public string categoryName { get; set; }
 
 	}
 

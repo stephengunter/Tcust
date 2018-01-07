@@ -21,7 +21,9 @@
         "vue": "^2.5.7"
     },
     "dependencies": {
+        "codemirror": "^5.33.0",
         "flatpickr": "^4.1.4",
+        "summernote": "^0.8.9",
         "vue-flatpickr-component": "^6.0.0",
         "vue-upload-component": "^2.7.4"
     }

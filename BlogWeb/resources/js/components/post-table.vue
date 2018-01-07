@@ -15,7 +15,7 @@
             <tbody>
                <tr v-for="(post,index) in model.viewList" :key="index">
                   <td>
-                     <img v-if="post.cover" class="thumbnail" style="max-width:60px" :src="post.cover.path" />
+                     <img v-if="post.cover" class="thumbnail" style="max-width:60px" :src="post.cover.previewPath" />
                      
                   </td>
                   <td>{{ post.number }}</td>

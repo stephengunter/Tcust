@@ -15,44 +15,41 @@ using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using BlogWeb.Helpers;
-using System.Linq;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
 
 	public class PostsController: BaseAdminController
 	{
-		private readonly IOptions<AppSettings> settings;
-
-		
 		private readonly IPostService postService;
 
 		private readonly ViewService viewService;
 
-		public PostsController(IHostingEnvironment environment, IOptions<AppSettings> settings,IPostService postService) : base(environment)
+		public PostsController(IHostingEnvironment environment, IOptions<AppSettings> settings,IPostService postService) : base(environment, settings)
 		{
-			this.settings = settings;
+			
 			this.postService = postService;
 
-			this.viewService = new ViewService(this.settings); 
+			this.viewService = new ViewService(this.Settings); 
 		}
 
-		public async Task<IActionResult> Test()
+		public IActionResult Test(int postId, int categoryId)
 		{
 
-			bool returnDefaultCategory = true;
-			var selectedCategory = await postService.GetCategoryByIdAsync(0, returnDefaultCategory);
+			//bool returnDefaultCategory = true;
+			//var selectedCategory = await postService.GetCategoryByIdAsync(0, returnDefaultCategory);
 
-			var posts =await postService.GetAllAsync();
-			posts = posts.Take(60);
+			//var posts =await postService.GetAllAsync();
+			//posts = posts.Take(60);
 
-			foreach (var post in posts)
-			{
-				post.Categories.Add(selectedCategory);
-				postService.Update(post);
-			}
+			//foreach (var post in posts)
+			//{
+			//	post.Categories.Add(selectedCategory);
+			//	postService.Update(post);
+			//}
 
 			return View();
+			
 		}
 
 		
@@ -62,7 +59,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			
 			var posts = await postService.FetchPosts(category, keyword);
 
-			posts = posts.OrderByDescending(p=>p.Date);
+			posts = posts.OrderByDescending(p=>p.Date).ThenByDescending(p=>p.LastUpdated);
 
 			var pageList = new PagedList<Post, PostViewModel>(posts, page, pageSize);
 
@@ -109,8 +106,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		
 		[HttpPost("[area]/[controller]")]
-		public IActionResult Store([FromBody] PostEditForm model)
+		public async Task<IActionResult> Store([FromBody] PostEditForm model)
 		{
+			
 			if (!ModelState.IsValid)
 			{
 				return BadRequest(ModelState);
@@ -122,8 +120,13 @@ namespace BlogWeb.Areas.Admin.Controllers
 			{
 				post.Attachments.Add(item.MapToEntity(CurrentUserId));
 			}
+
+			var caregory = await postService.GetCategoryByIdAsync(model.post.categoryId);
+			post.Categories.Add(caregory);
+
+
+
 			
-		
 
 			post = postService.Create(post);
 
@@ -131,6 +134,23 @@ namespace BlogWeb.Areas.Admin.Controllers
 			return new ObjectResult(post);
 
 		
+		}
+
+		[HttpGet("[area]/[controller]/{id}/edit")]
+		public IActionResult Edit(int id)
+		{
+			var post = postService.GetById(id);
+			if (post == null) return NotFound();
+
+			bool allMedias = true;
+			var model = new PostEditForm
+			{
+				post = viewService.MapPostViewModel(post, allMedias)
+			};
+
+			model.post.categoryId = postService.GetCategoryIds(id).FirstOrDefault();
+
+			return new ObjectResult(model);
 		}
 
 		[HttpPut("[area]/[controller]/{id}")]
@@ -157,8 +177,12 @@ namespace BlogWeb.Areas.Admin.Controllers
 				
 			}
 
+			var categoryIds =new List<int> { model.post.categoryId };
+			
+			
 
-			postService.Update(post);
+
+			postService.Update(post, categoryIds);
 
 
 			return new ObjectResult(post);
@@ -166,20 +190,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		}
 
-		[HttpGet("[area]/[controller]/{id}/edit")]
-		public IActionResult Edit(int id)
-		{
-			var post = postService.GetById(id);
-			if (post == null) return NotFound();
-
-			bool allMedias = true;
-			var model = new PostEditForm
-			{
-				post = viewService.MapPostViewModel(post, allMedias)
-			};
-
-			return new ObjectResult(model);
-		}
+		
 
 
 		[HttpDelete]

@@ -13,7 +13,7 @@ namespace Blog.Services
 	public interface IPostService
 	{
 		Post Create(Post post);
-		void Update(Post post);
+		void Update(Post post, List<int> categoryIds);
 		void Delete(int id, string updatedBy);
 		Post GetById(int id);
 
@@ -37,7 +37,10 @@ namespace Blog.Services
 
 		Task<IEnumerable<Category>> GetCategoriesAsync();
 		Task<Category> GetCategoryByIdAsync(int id, bool returnDefault = false);
+		IList<int> GetCategoryIds(int postId);
 
+
+		
 	}
 
 	public class PostService : IPostService
@@ -124,7 +127,7 @@ namespace Blog.Services
 		{
 			if (postList.IsNullOrEmpty()) postList = await GetAllAsync();
 
-			var source = postList.Select(p => p.CreateYear).Distinct();
+			var source = postList.Select(p => p.Year).Distinct();
 			if (!source.Contains(year)) year = source.Max();
 
 			return year;
@@ -155,13 +158,16 @@ namespace Blog.Services
 		public Post Create(Post post)
 		{
 			postRepository.Add(post);
+			
 			return post;
 		}
 
-		public void Update(Post post)
+		public void Update(Post post, List<int> categoryIds)
 		{
-			
 			postRepository.Update(post);
+
+			postsCategoriesRepository.SyncPostCategories(post.Id, categoryIds);
+
 		}
 
 		public void Delete(int id, string updatedBy)
@@ -190,5 +196,12 @@ namespace Blog.Services
 			var  categories = await GetCategoriesAsync();
 			return categories.FirstOrDefault();
 		}
+
+		public IList<int> GetCategoryIds(int postId)
+		{
+			return postsCategoriesRepository.GetCategoryIds(postId);
+		}
+
+		
 	}
 }

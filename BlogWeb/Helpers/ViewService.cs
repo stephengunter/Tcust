@@ -71,8 +71,9 @@ namespace BlogWeb.Helpers
 
 			model.width = file.Width;
 			model.height = file.Height;
-
-			model.path = String.Format("{0}/{1}/{2}", settings.Value.Url , settings.Value.UploadFoler, file.Path); 
+			model.type = file.Type;
+			model.path = String.Format("{0}/{1}/{2}", settings.Value.Url , settings.Value.UploadFoler, file.Path);
+			model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
 
 			return model;
 		}

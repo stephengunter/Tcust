@@ -7,6 +7,7 @@ Vue.component('alert', require('./packages/components/Alert'));
 Vue.component('modal', require('./packages/components/Modal'));
 Vue.component('delete-confirm', require('./packages/components/DeleteConfirm'));
 Vue.component('drop-down', require('./packages/components/DropDown'));
+Vue.component('html-editor', require('./packages/components/HtmlEditor'))
 
 
 Vue.component('navbar', require('./components/navbar'));

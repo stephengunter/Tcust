@@ -44,6 +44,8 @@ namespace BlogWeb
 				}
 			});
 
+			
+
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
 			services.AddScoped(typeof(IPostsCategoriesRepository), typeof(PostsCategoriesRepository));
 

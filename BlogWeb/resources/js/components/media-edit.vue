@@ -1,19 +1,20 @@
 <template>
    
 	<div>
-		<file-upload ref="fileUpload" :exclude="fileNames" @file-added="onFileAdded"></file-upload>
+		<file-upload ref="fileUpload" :title="title" :exclude="fileNames" @file-added="onFileAdded"></file-upload>
 		<table v-show="medias.length" class="table table-hover">
 			<thead>
 				<tr>
-					<th style="width:25%"></th>
+					<th style="width:20%"></th>
 					<th style="width:50%">標題</th>
+					<th style="width:10%">檔案類型</th>
 					<th></th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr v-for="(media,index) in medias" :key="index">
 					<td v-if="media.id">
-						<img  class="thumbnail" style="max-width:120px" :src="media.path" />
+						<img  class="thumbnail" style="max-width:120px" :src="media.previewPath" />
 					</td>
 					<td v-else>
 						<img v-if="media.thumb" class="thumbnail" style="max-width:120px" :src="media.thumb" />
@@ -23,6 +24,9 @@
 					</td>
 					<td v-else>
 						{{ media.title }} 
+					</td>
+					<td>
+						{{ media.type }} 
 					</td>
 					<td v-if="edittingIndex==index">
 						<button class="btn btn-sm btn-success" @click.prevent="updateMedia(index)">
@@ -67,14 +71,15 @@ export default {
          post:{
             type:Object,
             default:null
-         }
+         },
+			
 		},
 		components: {
          'file-upload':FileUpload
       },
       data(){
          return {
-           
+            title:'新增圖片/影片',
             medias:[],
 				edittingIndex:-1,
 
@@ -101,7 +106,10 @@ export default {
       methods:{
 			init(){
 				if(!this.post) return;
-				this.medias=this.post.medias.slice(0);
+				if(this.post.medias){
+					this.medias=this.post.medias.slice(0);
+				}
+				
 
 			},
          fileExist(name){
@@ -125,16 +133,7 @@ export default {
 				
 				
 			},
-			addMedia(name,thumb){
-				
-				let media={
-					id:0,
-					order:this.findMinOrder() - 1,
-					title:name.split('.')[0],
-					name:name,
-					thumb:thumb,
-					path:''
-				};
+			addMedia(media){
 				this.medias.push(media);
 				this.sortMedias();
 			},
@@ -231,7 +230,16 @@ export default {
 			   for (let i=0; i<thumbs.length; i++) {
 					let name=thumbs[i].name;
 					if(!this.fileExist(name)){
-						this.addMedia(thumbs[i].name, thumbs[i].data);
+						let media={
+							id:0,
+							order:this.findMinOrder() - 1,
+							title:name.split('.')[0],
+							name:name,
+							thumb:thumbs[i].data,
+							type:thumbs[i].type,
+							path:''
+						};
+						this.addMedia(media);
 					}
 					
             }

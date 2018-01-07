@@ -11,6 +11,9 @@ using ApplicationCore.Helpers;
 using BlogWeb.Models;
 using ApplicationCore.Paging;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Options;
+using BlogWeb.Helpers;
 
 namespace BlogWeb.Controllers
 {
@@ -19,9 +22,14 @@ namespace BlogWeb.Controllers
 		private readonly int pagesize = 8;
 		private readonly IPostService postService;
 
-		public PostsController(IPostService postService)
+		private readonly ViewService viewService;
+
+		public PostsController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPostService postService) : base(environment, settings)
 		{
+
 			this.postService = postService;
+
+			this.viewService = new ViewService(this.Settings);
 		}
 
 		public async Task<IActionResult> Index()

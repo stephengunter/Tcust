@@ -9,6 +9,7 @@ namespace BlogWeb
 	{
 		public string Url { get; set; }
 		public string UploadFoler { get; set; }
+		public string HistoryPath { get; set; }
 
 	}
 }

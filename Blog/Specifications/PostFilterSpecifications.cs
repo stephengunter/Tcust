@@ -13,7 +13,7 @@ namespace Blog.Specifications
 	{
 		public BasePostFilterSpecification()
 		{
-			Criteria = p => !p.Removed && p.CreateYear >= 2013;
+			Criteria = p => !p.Removed && p.Year >= 2013;
 
 			AddInclude(p => p.Attachments);
 			
@@ -54,7 +54,8 @@ namespace Blog.Specifications
 
 			if (!String.IsNullOrEmpty(keyword))
 			{
-				Criteria = p => compiled(p) && (p.Title != null && p.Title.CaseInsensitiveContains(keyword) ||
+				Criteria = p => compiled(p) && ( p.Number.CaseInsensitiveContains(keyword) ||
+												p.Title != null && p.Title.CaseInsensitiveContains(keyword) ||
 											  p.Author != null && p.Author.CaseInsensitiveContains(keyword) ||
 											  p.Content != null && p.Content.CaseInsensitiveContains(keyword)
 											 );
@@ -63,13 +64,13 @@ namespace Blog.Specifications
 			if (year > 0)
 			{
 				compiled = Criteria.Compile();
-				Criteria = p => compiled(p) && p.CreateYear == year;
+				Criteria = p => compiled(p) && p.Year == year;
 			}
 
 			if (month > 0)
 			{
 				compiled = Criteria.Compile();
-				Criteria = p => compiled(p) && p.CreateMonth == month;
+				Criteria = p => compiled(p) && p.Month == month;
 			}
 
 

@@ -1,7 +1,7 @@
 <template>
    <label  class="btn btn-primary btn-file" >
       <i class="fa fa-plus"></i> {{ title  }}
-      <input type="file" multiple accept="image/png,image/gif,image/jpeg" 
+      <input type="file" multiple accept="accept" 
       style="display: none;" @change="onFileChange" > 
    </label>
   
@@ -22,11 +22,20 @@ export default {
    },
    data(){
       return {
+			image_types:['image/png','image/gif','image/jpeg'],
+			video_types:['vidoe/mp4'],
+			accept:'',
          files:[],
          thumbnails:[],
       }
    },
+	beforeMount() {
+		this.init();
+	},
    methods:{
+		init(){
+			this.accept=this.image_types.toString() + ',' +  this.video_types.toString();
+		},
       onFileChange(e) {
 			
 			let files = e.target.files || e.dataTransfer.files;
@@ -35,6 +44,7 @@ export default {
 
 			let addFiles=[];
          for (let i=0; i<files.length; i++) {
+				
 				if(this.fileCanAdd(files[i])){
 					addFiles.push(this.addFile(files[i]));
 				}
@@ -44,7 +54,6 @@ export default {
 			Promise.all(addFiles).then(() => { 
 			    this.$emit('file-added');
 			});
-
 			
                 
 		},
@@ -69,7 +78,8 @@ export default {
 				image.then(data=>{
 					let thumb={
 						data:data,
-						name:file.name
+						name:file.name,
+						type:file.type,
 					}
 					this.files.push(file);
 					this.thumbnails.push(thumb);
@@ -83,6 +93,9 @@ export default {
          });
          
       },
+		isImage(type){
+			return this.image_types.includes(type);
+		},
       removeFile(name){
          let index=this.findFileIndex(name);
          if(index>=0) this.files.splice(index, 1);
@@ -97,8 +110,11 @@ export default {
          if(thumbIndex>=0) this.thumbnails.splice(thumbIndex, 1);
       },
       createImage(file) {
-         const reader = new FileReader();
+         
          return new Promise((resolve, reject) => {
+				if(!this.isImage(file.type)) resolve(null);
+
+				const reader = new FileReader();
             reader.onerror = (error) => {
                reader.abort();
                reject(error);
@@ -116,6 +132,7 @@ export default {
       getThunbnails(){
          return this.thumbnails;
       }
+
       
    }
 }

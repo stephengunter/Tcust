@@ -19,9 +19,9 @@ namespace Blog.Models
 
 		public string Author { get; set; }
 
-		public int CreateYear { get; set; }
+		public int Year { get; set; }
 
-		public int CreateMonth { get; set; }
+		public int Month { get; set; }
 
 		public bool Top { get; set; }
 
@@ -52,8 +52,8 @@ namespace Blog.Models
 		{
 			CreatedAt = DateTime.Now;
 			
-			CreateYear = DateTime.Now.Year;
-			CreateMonth = DateTime.Now.Month;
+			Year = DateTime.Now.Year;
+			Month = DateTime.Now.Month;
 
 			Categories = new JoinCollectionFacade<Category, Post, PostCategory>(this, PostCategories);
 		}

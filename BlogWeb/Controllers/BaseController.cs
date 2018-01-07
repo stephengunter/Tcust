@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
+using Microsoft.Extensions.Options;
 
 namespace BlogWeb.Controllers
 {
@@ -13,16 +16,34 @@ namespace BlogWeb.Controllers
 	{
 		private readonly JsonSerializerSettings jsonSettings;
 
-		
+		private readonly IHostingEnvironment _hostingEnvironment;
+		private readonly IOptions<AppSettings> settings;
 
-		public BaseController()
+
+		public BaseController(IHostingEnvironment environment, IOptions<AppSettings> settings)
 		{
+			this._hostingEnvironment = environment;
+			this.settings = settings;
+
 			this.jsonSettings = new JsonSerializerSettings
 			{
 				ContractResolver = new CamelCasePropertyNamesContractResolver(),
 				ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 			};
 		}
+
+		protected IOptions<AppSettings> Settings { get { return this.settings; } }
+
+		protected string UploadFilesPath
+		{
+			get { return Path.Combine(_hostingEnvironment.WebRootPath, "uploads"); }
+		}
+
+		protected string HelpersPath
+		{
+			get { return Path.Combine(_hostingEnvironment.ContentRootPath, "Helpers"); }
+		}
+
 		protected string ToJsonString(object model)
 		{
 			return JsonConvert.SerializeObject(model, this.jsonSettings);

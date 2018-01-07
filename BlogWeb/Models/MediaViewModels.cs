@@ -23,6 +23,7 @@ namespace BlogWeb.Models
 			this.height = file.Height;
 		
 			this.path = file.Path;
+			this.previewPath = file.PreviewPath;
 		}
 
 		public int id { get; set; }
@@ -31,7 +32,11 @@ namespace BlogWeb.Models
 
 		public int order { get; set; }
 
+		public string type { get; set; }
+
 		public string path { get; set; }
+
+		public string previewPath { get; set; }
 
 		public string name { get; set; }
 

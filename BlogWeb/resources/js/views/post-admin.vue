@@ -5,7 +5,6 @@
             <div class="col-sm-3" style="margin-top: 20px;">
 					<drop-down :items="categories" :selected="category.value"
 					  @selected="onCategorySelected">
-
 					</drop-down>
             </div>
             <div class="col-sm-3">
@@ -37,7 +36,7 @@
          </post-table>
 
       </div>
-      <post-edit :id="selected" v-if="editting" 
+      <post-edit v-if="editting"  :id="selected" :category="category"  :categories="categories"
          @saved="onIndex" @cancel="onIndex">
       </post-edit>
       
@@ -152,6 +151,7 @@
 			},
 			onCategorySelected(category){
 				this.setCategory(category);
+				this.fetchData();
 			},
 			setCategory(category){
 				this.category=category;
