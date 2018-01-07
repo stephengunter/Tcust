@@ -8,23 +8,10 @@ class Post {
 	}
 
 	static source() {
-		return '/admin/posts';
+		return '/posts';
    }
-	static createUrl() {
-		return this.source() + '/create';
-	}
-	static storeUrl() {
-		return this.source();
-	}
-	static editUrl(id) {
-		return `${this.source()}/${id}/edit`;
-	}
-	static updateUrl(id) {
-		return this.source() + `/${id}`;
-	}
-	static deleteUrl(id){
-		return this.source() + '/delete/' + id;
-	}
+	
+	
 
 	static index(params){
 		let url = this.source();
@@ -43,37 +30,10 @@ class Post {
 		})
 	}
 	
-	static create() {
-		let url = this.createUrl();
-
-		return new Promise((resolve, reject) => {
-			 axios.get(url)
-				  .then(response => {
-						resolve(response.data);
-				  })
-				  .catch(error => {
-						reject(error);
-				  })
-
-		})
-	}
 	
-	static store(form){
-		let url = this.storeUrl();
-		let method = 'post';
-		return new Promise((resolve, reject) => {
-			form.submit(method, url)
-					.then(data => {
-						resolve(data);
-					})
-					.catch(error => {
-						reject(error);
-					})
-		})
-	}
 
-	static edit(id) {
-		let url = this.editUrl(id);
+	static details(id) {
+		let url =  this.source() + `/${id}`;
 
 		return new Promise((resolve, reject) => {
 			 axios.get(url)
@@ -87,36 +47,7 @@ class Post {
 		})
 	}
 
-	static update(id,form){
-		let url = this.updateUrl(id);
-		let method = 'put';
-		return new Promise((resolve, reject) => {
-			form.submit(method, url)
-					.then(data => {
-						resolve(data);
-					})
-					.catch(error => {
-						reject(error);
-					})
-		})
-	}
-
-
-	static remove(id) {
-		let url = this.deleteUrl(id);
-		
-		return new Promise((resolve, reject) => {
-			 axios.delete(url)
-				  .then(response => {
-						resolve(response.data);
-				  })
-				  .catch(error => {
-						reject(error);
-				  })
-
-		})
-	}
-   
+	
    
    
 

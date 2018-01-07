@@ -136,7 +136,7 @@
             this.deleteConfirm.showing=true;
          },
          deletePost(){
-				let remove=Post.remove(this.deleteConfirm.id);
+				let remove=PostAdmin.remove(this.deleteConfirm.id);
 				
 				remove.then(() => {
 					this.fetchData();
@@ -168,7 +168,7 @@
 			},
          fetchData() {
 				
-            let getData = Post.index(this.params);
+            let getData = PostAdmin.index(this.params);
 
             getData.then(model => {
 

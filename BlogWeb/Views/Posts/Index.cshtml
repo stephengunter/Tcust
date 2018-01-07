@@ -1,12 +1,17 @@
 ﻿
 
-<post-index  :model="model"></post-index>
+<post-index ref="postIndex" v-show="!selected"  :init_keyword="keyword" :init_category="category"
+	:init_model="model" :categories="categories" :archive_items="archives"
+	v-on:details="onDetails">		
+			
+		    
+</post-index>
 
-<div id="details-view" class="row" style="display:none">
+<post-details :id="selected" v-if="selected" v-on:back="onBack">
 
 	
 
-</div><!-- /.details-view row -->
+</post-details>
 
 
 @section scripts{ 
@@ -15,20 +20,42 @@
 			el: '#main',
 			data() {
 				return {
-					
+					selected: 0,
+
 					model: {},
+					archives: [],
+					categories: [],
+
+					keyword: '',
+					category:0,
 				}
 			},
 			beforeMount() {
 
-				this.model =@Html.Raw(ViewBag.list);
-				
+				this.keyword ='@Html.Raw(ViewData["keyword"])';
+				this.category =@ViewData["category"];
+
+				this.archives =@Html.Raw(ViewData["archives"]);
+
+				this.model =@Html.Raw(ViewData["list"]);
+
+				let categoryList =@Html.Raw(ViewData["categories"]);
+				this.categories = categoryList;
+
+
 
 			},
-			methods:{
-				
-            }
-			
+			methods: {
+				onDetails(id) { 
+					this.selected = id;
+				},
+				onBack() { 
+					this.selected = 0;
+					this.$refs.postIndex.fetchData();
+
+				}
+			}
+
 		});
 	</script>
 

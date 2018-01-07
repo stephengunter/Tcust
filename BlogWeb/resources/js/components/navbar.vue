@@ -10,8 +10,8 @@
          <ul class="navbar-nav mr-auto"></ul>
 
          <div class="form-inline my-2 my-lg-0">
-            <form class="input-group stylish-input-group">
-               <input name="keyword" type="text" class="form-control" style="min-width:180px">
+            <form @submit.prevent="onSubmit" class="input-group stylish-input-group">
+               <input name="keyword" type="text" v-model="keyword"  class="form-control" style="min-width:180px">
                <span class="input-group-addon">
                   <button type="submit" id="btn-search">
                      <i class="fa fa-search" aria-hidden="true"></i>
@@ -27,5 +27,22 @@
 <script>
    export default {
       name:'Navbar',
+      data(){
+         return {
+             keyword:''
+         }
+        
+      },
+      created() {
+         Bus.$on('set-keyword',this.setKeyword);
+      },
+      methods:{
+         setKeyword(keyword){
+            this.keyword=keyword;
+         },
+         onSubmit(){
+            Bus.$emit('search',this.keyword);
+         }
+      }
    }
 </script>

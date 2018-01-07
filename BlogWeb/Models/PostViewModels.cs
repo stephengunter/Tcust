@@ -18,42 +18,39 @@ namespace BlogWeb.Models
 		{
 
 		}
-		//public PostViewModel()
+		
+
+		//public PostViewModel(Post post, bool allMedias=false)
 		//{
-		//	this.medias = new List<MediaViewModel>();
+		//	this.id = post.Id;
+		//	this.title = post.Title;
+		//	this.author = post.Author;
+		//	this.content = post.Content;
+		//	this.createdAt = post.CreatedAt;
+
+		//	if (String.IsNullOrEmpty(post.Summary)) this.summary = PostViewModel.GetDefaultSummary(post);
+		//	else this.summary = post.Summary;
+
+		//	//this.medias = new List<MediaViewModel>();
+		//	//foreach (var media in post.Attachments)
+		//	//{
+		//	//	this.medias.Add(new MediaViewModel(media));
+		//	//}
+
+		//	if (allMedias)
+		//	{
+		//		this.medias = new List<MediaViewModel>();
+		//		foreach (var media in post.Attachments)
+		//		{
+		//			this.medias.Add(new MediaViewModel(media));
+		//		}
+		//	}
+
+		//	if(post.TopFile!=null) this.cover = new MediaViewModel(post.TopFile);
+
+
+
 		//}
-
-		public PostViewModel(Post post, bool allMedias=false)
-		{
-			this.id = post.Id;
-			this.title = post.Title;
-			this.author = post.Author;
-			this.content = post.Content;
-			this.createdAt = post.CreatedAt;
-
-			if (String.IsNullOrEmpty(post.Summary)) this.summary = PostViewModel.GetDefaultSummary(post);
-			else this.summary = post.Summary;
-
-			//this.medias = new List<MediaViewModel>();
-			//foreach (var media in post.Attachments)
-			//{
-			//	this.medias.Add(new MediaViewModel(media));
-			//}
-
-			if (allMedias)
-			{
-				this.medias = new List<MediaViewModel>();
-				foreach (var media in post.Attachments)
-				{
-					this.medias.Add(new MediaViewModel(media));
-				}
-			}
-
-			if(post.TopFile!=null) this.cover = new MediaViewModel(post.TopFile);
-
-
-
-		}
 
 		public int id { get; set; }
 

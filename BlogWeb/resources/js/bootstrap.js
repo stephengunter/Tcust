@@ -30,8 +30,10 @@ import Form from './utilities/Form';
 window.Form = Form;
 
 import Post from './models/post';
+import PostAdmin from './models/postAdmin';
 import Attachment from './models/attachment';
 window.Post = Post;
+window.PostAdmin = PostAdmin;
 window.Attachment = Attachment;
 
 

@@ -12,6 +12,7 @@ Vue.component('html-editor', require('./packages/components/HtmlEditor'))
 
 Vue.component('navbar', require('./components/navbar'));
 Vue.component('post-index', require('./views/post-index'));
+Vue.component('post-details', require('./views/post-details'));
 
 
 

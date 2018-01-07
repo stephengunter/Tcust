@@ -176,8 +176,8 @@ export default {
 		fetchData(){
 			let getData=null
 
-			if(this.isCreate)   getData=Post.create();                  
-			else  getData=Post.edit(this.id);  
+			if(this.isCreate)   getData=PostAdmin.create();                  
+			else  getData=PostAdmin.edit(this.id);  
 
 			getData.then(model => {
 			
@@ -217,8 +217,8 @@ export default {
 			
 			let save=null;
 
-			if(this.isCreate)  save=Post.store(this.form);            
-			else  save=Post.update(this.id,this.form);  
+			if(this.isCreate)  save=PostAdmin.store(this.form);            
+			else  save=PostAdmin.update(this.id,this.form);  
 
 			save.then(post => {
 
