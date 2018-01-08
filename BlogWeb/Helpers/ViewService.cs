@@ -37,6 +37,8 @@ namespace BlogWeb.Helpers
 			model.date = post.Date.ToShortDateString();
 			model.createdAt = post.CreatedAt;
 
+			model.url = String.Format("{0}/posts/{1}?title={2}", settings.Value.Url, post.Id , post.Title);
+
 			if (String.IsNullOrEmpty(post.Summary)) model.summary = PostViewModel.GetDefaultSummary(post);
 			else model.summary = post.Summary;
 
@@ -73,7 +75,10 @@ namespace BlogWeb.Helpers
 			model.height = file.Height;
 			model.type = file.Type;
 			model.path = String.Format("{0}/{1}/{2}", settings.Value.Url , settings.Value.UploadFoler, file.Path);
-			model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
+
+			if (String.IsNullOrEmpty(file.PreviewPath)) model.previewPath = model.path;
+			else model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
+			
 
 			return model;
 		}

@@ -17,6 +17,13 @@ if (token) {
     //console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
 }
 
+require('../css/blog.css');
+require('../css/site.css');
+
+require('./packages/fancybox/dist/jquery.fancybox.css');
+require('./packages/fancybox/dist/jquery.fancybox.js');
+
+window.Clipboard=require('clipboard');
 
 
 import Vue from 'vue';

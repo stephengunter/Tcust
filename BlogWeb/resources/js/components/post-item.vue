@@ -3,8 +3,8 @@
    <article v-if="post">
       <div class="line-item hf-item-odd clearfix">
          <div class="content-image">
-            <a class="image-link article-link" href="#" >
-               <img class="img-thumbnail summary-img" src="http://203.64.34.2/imgs/zooming/561/437/20171214/9cdaa286-719d-4951-ad15-5daa5dbf871a.JPG" />
+            <a class="image-link article-link" href="#" @click.prevent="onDetails">
+               <img class="img-thumbnail summary-img" :src="post.cover.previewPath" />
                <span class="overlay article-overlay"></span>
             </a>
          </div>

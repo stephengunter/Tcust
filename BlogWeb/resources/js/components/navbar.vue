@@ -7,7 +7,9 @@
       </button>
 
       <div class="navbar-collapse collapse" id="menu-items">
-         <ul class="navbar-nav mr-auto"></ul>
+         <ul class="navbar-nav mr-auto">
+             <a v-for="(item,index) in categories" :key="index" :class="getClass(item)" :href="getLink(item)">{{ item.text }}</a>
+         </ul>
 
          <div class="form-inline my-2 my-lg-0">
             <form @submit.prevent="onSubmit" class="input-group stylish-input-group">
@@ -26,22 +28,40 @@
 
 <script>
    export default {
-      name:'Navbar',
+		name:'Navbar',
+		props:{
+			categories:{
+				type:Array,
+				default:null
+			},
+			category:{
+				type:Number,
+				default:0
+			}
+		},
       data(){
          return {
-             keyword:''
+				keyword:'',
          }
-        
-      },
-      created() {
-         Bus.$on('set-keyword',this.setKeyword);
-      },
+		},
       methods:{
+			getClass(item){
+            let style= 'nav-link';
+            if(this.isActive(item)) style += ' active';
+            
+            return style;
+			},
+			getLink(item){
+				return '/posts?category=' + item.value
+			},
+			isActive(item){
+            return parseInt(item.value)==this.category;
+         },
          setKeyword(keyword){
             this.keyword=keyword;
          },
          onSubmit(){
-            Bus.$emit('search',this.keyword);
+            this.$emit('search',this.keyword);
          }
       }
    }

@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 13);
+/******/ 	return __webpack_require__(__webpack_require__.s = 14);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -179,8 +179,8 @@ module.exports = function normalizeComponent (
 "use strict";
 
 
-var bind = __webpack_require__(6);
-var isBuffer = __webpack_require__(20);
+var bind = __webpack_require__(7);
+var isBuffer = __webpack_require__(21);
 
 /*global toString:true*/
 
@@ -584,7 +584,7 @@ if (typeof DEBUG !== 'undefined' && DEBUG) {
   ) }
 }
 
-var listToStyles = __webpack_require__(48)
+var listToStyles = __webpack_require__(66)
 
 /*
 type StyleObject = {
@@ -787,6 +787,365 @@ function applyToTag (styleElement, obj) {
 
 /***/ }),
 /* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+
+var stylesInDom = {};
+
+var	memoize = function (fn) {
+	var memo;
+
+	return function () {
+		if (typeof memo === "undefined") memo = fn.apply(this, arguments);
+		return memo;
+	};
+};
+
+var isOldIE = memoize(function () {
+	// Test for IE <= 9 as proposed by Browserhacks
+	// @see http://browserhacks.com/#hack-e71d8692f65334173fee715c222cb805
+	// Tests for existence of standard globals is to allow style-loader
+	// to operate correctly into non-standard environments
+	// @see https://github.com/webpack-contrib/style-loader/issues/177
+	return window && document && document.all && !window.atob;
+});
+
+var getElement = (function (fn) {
+	var memo = {};
+
+	return function(selector) {
+		if (typeof memo[selector] === "undefined") {
+			memo[selector] = fn.call(this, selector);
+		}
+
+		return memo[selector]
+	};
+})(function (target) {
+	return document.querySelector(target)
+});
+
+var singleton = null;
+var	singletonCounter = 0;
+var	stylesInsertedAtTop = [];
+
+var	fixUrls = __webpack_require__(40);
+
+module.exports = function(list, options) {
+	if (typeof DEBUG !== "undefined" && DEBUG) {
+		if (typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
+	}
+
+	options = options || {};
+
+	options.attrs = typeof options.attrs === "object" ? options.attrs : {};
+
+	// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
+	// tags it will allow on a page
+	if (!options.singleton) options.singleton = isOldIE();
+
+	// By default, add <style> tags to the <head> element
+	if (!options.insertInto) options.insertInto = "head";
+
+	// By default, add <style> tags to the bottom of the target
+	if (!options.insertAt) options.insertAt = "bottom";
+
+	var styles = listToStyles(list, options);
+
+	addStylesToDom(styles, options);
+
+	return function update (newList) {
+		var mayRemove = [];
+
+		for (var i = 0; i < styles.length; i++) {
+			var item = styles[i];
+			var domStyle = stylesInDom[item.id];
+
+			domStyle.refs--;
+			mayRemove.push(domStyle);
+		}
+
+		if(newList) {
+			var newStyles = listToStyles(newList, options);
+			addStylesToDom(newStyles, options);
+		}
+
+		for (var i = 0; i < mayRemove.length; i++) {
+			var domStyle = mayRemove[i];
+
+			if(domStyle.refs === 0) {
+				for (var j = 0; j < domStyle.parts.length; j++) domStyle.parts[j]();
+
+				delete stylesInDom[domStyle.id];
+			}
+		}
+	};
+};
+
+function addStylesToDom (styles, options) {
+	for (var i = 0; i < styles.length; i++) {
+		var item = styles[i];
+		var domStyle = stylesInDom[item.id];
+
+		if(domStyle) {
+			domStyle.refs++;
+
+			for(var j = 0; j < domStyle.parts.length; j++) {
+				domStyle.parts[j](item.parts[j]);
+			}
+
+			for(; j < item.parts.length; j++) {
+				domStyle.parts.push(addStyle(item.parts[j], options));
+			}
+		} else {
+			var parts = [];
+
+			for(var j = 0; j < item.parts.length; j++) {
+				parts.push(addStyle(item.parts[j], options));
+			}
+
+			stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
+		}
+	}
+}
+
+function listToStyles (list, options) {
+	var styles = [];
+	var newStyles = {};
+
+	for (var i = 0; i < list.length; i++) {
+		var item = list[i];
+		var id = options.base ? item[0] + options.base : item[0];
+		var css = item[1];
+		var media = item[2];
+		var sourceMap = item[3];
+		var part = {css: css, media: media, sourceMap: sourceMap};
+
+		if(!newStyles[id]) styles.push(newStyles[id] = {id: id, parts: [part]});
+		else newStyles[id].parts.push(part);
+	}
+
+	return styles;
+}
+
+function insertStyleElement (options, style) {
+	var target = getElement(options.insertInto)
+
+	if (!target) {
+		throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");
+	}
+
+	var lastStyleElementInsertedAtTop = stylesInsertedAtTop[stylesInsertedAtTop.length - 1];
+
+	if (options.insertAt === "top") {
+		if (!lastStyleElementInsertedAtTop) {
+			target.insertBefore(style, target.firstChild);
+		} else if (lastStyleElementInsertedAtTop.nextSibling) {
+			target.insertBefore(style, lastStyleElementInsertedAtTop.nextSibling);
+		} else {
+			target.appendChild(style);
+		}
+		stylesInsertedAtTop.push(style);
+	} else if (options.insertAt === "bottom") {
+		target.appendChild(style);
+	} else {
+		throw new Error("Invalid value for parameter 'insertAt'. Must be 'top' or 'bottom'.");
+	}
+}
+
+function removeStyleElement (style) {
+	if (style.parentNode === null) return false;
+	style.parentNode.removeChild(style);
+
+	var idx = stylesInsertedAtTop.indexOf(style);
+	if(idx >= 0) {
+		stylesInsertedAtTop.splice(idx, 1);
+	}
+}
+
+function createStyleElement (options) {
+	var style = document.createElement("style");
+
+	options.attrs.type = "text/css";
+
+	addAttrs(style, options.attrs);
+	insertStyleElement(options, style);
+
+	return style;
+}
+
+function createLinkElement (options) {
+	var link = document.createElement("link");
+
+	options.attrs.type = "text/css";
+	options.attrs.rel = "stylesheet";
+
+	addAttrs(link, options.attrs);
+	insertStyleElement(options, link);
+
+	return link;
+}
+
+function addAttrs (el, attrs) {
+	Object.keys(attrs).forEach(function (key) {
+		el.setAttribute(key, attrs[key]);
+	});
+}
+
+function addStyle (obj, options) {
+	var style, update, remove, result;
+
+	// If a transform function was defined, run it on the css
+	if (options.transform && obj.css) {
+	    result = options.transform(obj.css);
+
+	    if (result) {
+	    	// If transform returns a value, use that instead of the original css.
+	    	// This allows running runtime transformations on the css.
+	    	obj.css = result;
+	    } else {
+	    	// If the transform function returns a falsy value, don't add this css.
+	    	// This allows conditional loading of css
+	    	return function() {
+	    		// noop
+	    	};
+	    }
+	}
+
+	if (options.singleton) {
+		var styleIndex = singletonCounter++;
+
+		style = singleton || (singleton = createStyleElement(options));
+
+		update = applyToSingletonTag.bind(null, style, styleIndex, false);
+		remove = applyToSingletonTag.bind(null, style, styleIndex, true);
+
+	} else if (
+		obj.sourceMap &&
+		typeof URL === "function" &&
+		typeof URL.createObjectURL === "function" &&
+		typeof URL.revokeObjectURL === "function" &&
+		typeof Blob === "function" &&
+		typeof btoa === "function"
+	) {
+		style = createLinkElement(options);
+		update = updateLink.bind(null, style, options);
+		remove = function () {
+			removeStyleElement(style);
+
+			if(style.href) URL.revokeObjectURL(style.href);
+		};
+	} else {
+		style = createStyleElement(options);
+		update = applyToTag.bind(null, style);
+		remove = function () {
+			removeStyleElement(style);
+		};
+	}
+
+	update(obj);
+
+	return function updateStyle (newObj) {
+		if (newObj) {
+			if (
+				newObj.css === obj.css &&
+				newObj.media === obj.media &&
+				newObj.sourceMap === obj.sourceMap
+			) {
+				return;
+			}
+
+			update(obj = newObj);
+		} else {
+			remove();
+		}
+	};
+}
+
+var replaceText = (function () {
+	var textStore = [];
+
+	return function (index, replacement) {
+		textStore[index] = replacement;
+
+		return textStore.filter(Boolean).join('\n');
+	};
+})();
+
+function applyToSingletonTag (style, index, remove, obj) {
+	var css = remove ? "" : obj.css;
+
+	if (style.styleSheet) {
+		style.styleSheet.cssText = replaceText(index, css);
+	} else {
+		var cssNode = document.createTextNode(css);
+		var childNodes = style.childNodes;
+
+		if (childNodes[index]) style.removeChild(childNodes[index]);
+
+		if (childNodes.length) {
+			style.insertBefore(cssNode, childNodes[index]);
+		} else {
+			style.appendChild(cssNode);
+		}
+	}
+}
+
+function applyToTag (style, obj) {
+	var css = obj.css;
+	var media = obj.media;
+
+	if(media) {
+		style.setAttribute("media", media)
+	}
+
+	if(style.styleSheet) {
+		style.styleSheet.cssText = css;
+	} else {
+		while(style.firstChild) {
+			style.removeChild(style.firstChild);
+		}
+
+		style.appendChild(document.createTextNode(css));
+	}
+}
+
+function updateLink (link, options, obj) {
+	var css = obj.css;
+	var sourceMap = obj.sourceMap;
+
+	/*
+		If convertToAbsoluteUrls isn't defined, but sourcemaps are enabled
+		and there is no publicPath defined then lets turn convertToAbsoluteUrls
+		on by default.  Otherwise default to the convertToAbsoluteUrls option
+		directly
+	*/
+	var autoFixUrls = options.convertToAbsoluteUrls === undefined && sourceMap;
+
+	if (options.convertToAbsoluteUrls || autoFixUrls) {
+		css = fixUrls(css);
+	}
+
+	if (sourceMap) {
+		// http://stackoverflow.com/a/26603875
+		css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
+	}
+
+	var blob = new Blob([css], { type: "text/css" });
+
+	var oldSrc = link.href;
+
+	link.href = URL.createObjectURL(blob);
+
+	if(oldSrc) URL.revokeObjectURL(oldSrc);
+}
+
+
+/***/ }),
+/* 5 */
 /***/ (function(module, exports) {
 
 var g;
@@ -813,14 +1172,14 @@ module.exports = g;
 
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(process) {
 
 var utils = __webpack_require__(1);
-var normalizeHeaderName = __webpack_require__(22);
+var normalizeHeaderName = __webpack_require__(23);
 
 var DEFAULT_CONTENT_TYPE = {
   'Content-Type': 'application/x-www-form-urlencoded'
@@ -836,10 +1195,10 @@ function getDefaultAdapter() {
   var adapter;
   if (typeof XMLHttpRequest !== 'undefined') {
     // For browsers use XHR adapter
-    adapter = __webpack_require__(8);
+    adapter = __webpack_require__(9);
   } else if (typeof process !== 'undefined') {
     // For node use HTTP adapter
-    adapter = __webpack_require__(8);
+    adapter = __webpack_require__(9);
   }
   return adapter;
 }
@@ -910,10 +1269,10 @@ utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
 
 module.exports = defaults;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8)))
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -931,7 +1290,7 @@ module.exports = function bind(fn, thisArg) {
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -1121,19 +1480,19 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var utils = __webpack_require__(1);
-var settle = __webpack_require__(23);
-var buildURL = __webpack_require__(25);
-var parseHeaders = __webpack_require__(26);
-var isURLSameOrigin = __webpack_require__(27);
-var createError = __webpack_require__(9);
-var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(28);
+var settle = __webpack_require__(24);
+var buildURL = __webpack_require__(26);
+var parseHeaders = __webpack_require__(27);
+var isURLSameOrigin = __webpack_require__(28);
+var createError = __webpack_require__(10);
+var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(29);
 
 module.exports = function xhrAdapter(config) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -1230,7 +1589,7 @@ module.exports = function xhrAdapter(config) {
     // This is only done if running in a standard browser environment.
     // Specifically not if we're in a web worker, or react-native.
     if (utils.isStandardBrowserEnv()) {
-      var cookies = __webpack_require__(29);
+      var cookies = __webpack_require__(30);
 
       // Add xsrf header
       var xsrfValue = (config.withCredentials || isURLSameOrigin(config.url)) && config.xsrfCookieName ?
@@ -1308,13 +1667,13 @@ module.exports = function xhrAdapter(config) {
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var enhanceError = __webpack_require__(24);
+var enhanceError = __webpack_require__(25);
 
 /**
  * Create an Error with the specified message, config, error code, request and response.
@@ -1333,7 +1692,7 @@ module.exports = function createError(message, config, code, request, response) 
 
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1345,7 +1704,7 @@ module.exports = function isCancel(value) {
 
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1371,15 +1730,15 @@ module.exports = Cancel;
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(105)
+var __vue_script__ = __webpack_require__(129)
 /* template */
-var __vue_template__ = __webpack_require__(112)
+var __vue_template__ = __webpack_require__(136)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -1418,38 +1777,38 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(14);
+module.exports = __webpack_require__(15);
 
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__bootstrap__ = __webpack_require__(15);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__bootstrap__ = __webpack_require__(16);
 
 
-Vue.component('datetime-picker', __webpack_require__(45));
-Vue.component('page-controll', __webpack_require__(57));
-Vue.component('alert', __webpack_require__(67));
-Vue.component('modal', __webpack_require__(72));
-Vue.component('delete-confirm', __webpack_require__(77));
-Vue.component('drop-down', __webpack_require__(80));
-Vue.component('html-editor', __webpack_require__(85));
+Vue.component('datetime-picker', __webpack_require__(63));
+Vue.component('page-controll', __webpack_require__(73));
+Vue.component('alert', __webpack_require__(83));
+Vue.component('modal', __webpack_require__(88));
+Vue.component('delete-confirm', __webpack_require__(93));
+Vue.component('drop-down', __webpack_require__(96));
+Vue.component('html-editor', __webpack_require__(101));
 
-Vue.component('navbar', __webpack_require__(88));
-Vue.component('post-index', __webpack_require__(91));
-Vue.component('post-details', __webpack_require__(123));
+Vue.component('navbar', __webpack_require__(104));
+Vue.component('post-index', __webpack_require__(107));
+Vue.component('post-details', __webpack_require__(118));
 
-Vue.component('post-admin', __webpack_require__(97));
+Vue.component('post-admin', __webpack_require__(121));
 
-Vue.component('test', __webpack_require__(114));
+Vue.component('test', __webpack_require__(138));
 new Vue({
-    el: '#header',
+    el: '#footer',
     data: function data() {
         return {
 
@@ -1518,20 +1877,20 @@ new Vue({
 });
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_vue__ = __webpack_require__(37);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_vue__ = __webpack_require__(54);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_vue__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__helper__ = __webpack_require__(40);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utilities_Form__ = __webpack_require__(41);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__models_post__ = __webpack_require__(43);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__models_postAdmin__ = __webpack_require__(122);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__models_attachment__ = __webpack_require__(44);
-window._ = __webpack_require__(16);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__helper__ = __webpack_require__(57);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utilities_Form__ = __webpack_require__(58);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__models_post__ = __webpack_require__(60);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__models_postAdmin__ = __webpack_require__(61);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__models_attachment__ = __webpack_require__(62);
+window._ = __webpack_require__(17);
 
-window.axios = __webpack_require__(18);
+window.axios = __webpack_require__(19);
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 /**
@@ -1547,6 +1906,14 @@ if (token) {
 } else {
     //console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
 }
+
+__webpack_require__(38);
+__webpack_require__(41);
+
+__webpack_require__(43);
+__webpack_require__(45);
+
+window.Clipboard = __webpack_require__(46);
 
 
 window.Vue = __WEBPACK_IMPORTED_MODULE_0_vue___default.a;
@@ -1567,7 +1934,7 @@ window.Attachment = __WEBPACK_IMPORTED_MODULE_5__models_attachment__["a" /* defa
 window.Bus = new __WEBPACK_IMPORTED_MODULE_0_vue___default.a({});
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -18656,10 +19023,10 @@ window.Bus = new __WEBPACK_IMPORTED_MODULE_0_vue___default.a({});
   }
 }.call(this));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4), __webpack_require__(17)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5), __webpack_require__(18)(module)))
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports) {
 
 module.exports = function(module) {
@@ -18687,22 +19054,22 @@ module.exports = function(module) {
 
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(19);
+module.exports = __webpack_require__(20);
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var utils = __webpack_require__(1);
-var bind = __webpack_require__(6);
-var Axios = __webpack_require__(21);
-var defaults = __webpack_require__(5);
+var bind = __webpack_require__(7);
+var Axios = __webpack_require__(22);
+var defaults = __webpack_require__(6);
 
 /**
  * Create an instance of Axios
@@ -18735,15 +19102,15 @@ axios.create = function create(instanceConfig) {
 };
 
 // Expose Cancel & CancelToken
-axios.Cancel = __webpack_require__(11);
-axios.CancelToken = __webpack_require__(35);
-axios.isCancel = __webpack_require__(10);
+axios.Cancel = __webpack_require__(12);
+axios.CancelToken = __webpack_require__(36);
+axios.isCancel = __webpack_require__(11);
 
 // Expose all/spread
 axios.all = function all(promises) {
   return Promise.all(promises);
 };
-axios.spread = __webpack_require__(36);
+axios.spread = __webpack_require__(37);
 
 module.exports = axios;
 
@@ -18752,7 +19119,7 @@ module.exports.default = axios;
 
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports) {
 
 /*!
@@ -18779,16 +19146,16 @@ function isSlowBuffer (obj) {
 
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var defaults = __webpack_require__(5);
+var defaults = __webpack_require__(6);
 var utils = __webpack_require__(1);
-var InterceptorManager = __webpack_require__(30);
-var dispatchRequest = __webpack_require__(31);
+var InterceptorManager = __webpack_require__(31);
+var dispatchRequest = __webpack_require__(32);
 
 /**
  * Create a new instance of Axios
@@ -18865,7 +19232,7 @@ module.exports = Axios;
 
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18884,13 +19251,13 @@ module.exports = function normalizeHeaderName(headers, normalizedName) {
 
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var createError = __webpack_require__(9);
+var createError = __webpack_require__(10);
 
 /**
  * Resolve or reject a Promise based on response status.
@@ -18917,7 +19284,7 @@ module.exports = function settle(resolve, reject, response) {
 
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18945,7 +19312,7 @@ module.exports = function enhanceError(error, config, code, request, response) {
 
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19020,7 +19387,7 @@ module.exports = function buildURL(url, params, paramsSerializer) {
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19080,7 +19447,7 @@ module.exports = function parseHeaders(headers) {
 
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19155,7 +19522,7 @@ module.exports = (
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19198,7 +19565,7 @@ module.exports = btoa;
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19258,7 +19625,7 @@ module.exports = (
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19317,18 +19684,18 @@ module.exports = InterceptorManager;
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var utils = __webpack_require__(1);
-var transformData = __webpack_require__(32);
-var isCancel = __webpack_require__(10);
-var defaults = __webpack_require__(5);
-var isAbsoluteURL = __webpack_require__(33);
-var combineURLs = __webpack_require__(34);
+var transformData = __webpack_require__(33);
+var isCancel = __webpack_require__(11);
+var defaults = __webpack_require__(6);
+var isAbsoluteURL = __webpack_require__(34);
+var combineURLs = __webpack_require__(35);
 
 /**
  * Throws a `Cancel` if cancellation has been requested.
@@ -19410,7 +19777,7 @@ module.exports = function dispatchRequest(config) {
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19437,7 +19804,7 @@ module.exports = function transformData(data, headers, fns) {
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19458,7 +19825,7 @@ module.exports = function isAbsoluteURL(url) {
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19479,13 +19846,13 @@ module.exports = function combineURLs(baseURL, relativeURL) {
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var Cancel = __webpack_require__(11);
+var Cancel = __webpack_require__(12);
 
 /**
  * A `CancelToken` is an object that can be used to request cancellation of an operation.
@@ -19543,7 +19910,7 @@ module.exports = CancelToken;
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19577,7 +19944,5891 @@ module.exports = function spread(callback) {
 
 
 /***/ }),
-/* 37 */
+/* 38 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(39);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(4)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!./blog.css", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!./blog.css");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 39 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(2)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "/*\r\n * Globals\r\n */\r\n\r\n@media (min-width: 48em) {\r\n\thtml {\r\n\t\tfont-size: 18px;\r\n\t}\r\n}\r\n\r\nbody {\r\n\tfont-family: Georgia, \"Times New Roman\", Times, serif;\r\n\tcolor: #555;\r\n}\r\n\r\nh1,\r\n.h1,\r\nh2,\r\n.h2,\r\nh3,\r\n.h3,\r\nh4,\r\n.h4,\r\nh5,\r\n.h5,\r\nh6,\r\n.h6 {\r\n\tfont-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;\r\n\tfont-weight: normal;\r\n\tcolor: #333;\r\n}\r\n\r\n\r\n/*\r\n  * Override Bootstrap's default container.\r\n  */\r\n\r\n.container {\r\n\tmax-width: 60rem;\r\n}\r\n\r\n\r\n/*\r\n  * Masthead for nav\r\n  */\r\n\r\n.blog-masthead {\r\n\tmargin-bottom: 3rem;\r\n\tbackground-color: #428bca;\r\n\t-webkit-box-shadow: inset 0 -.1rem .25rem rgba(0, 0, 0, .1);\r\n\tbox-shadow: inset 0 -.1rem .25rem rgba(0, 0, 0, .1);\r\n}\r\n\r\n\r\n/* Nav links */\r\n\r\n.nav-link {\r\n\tposition: relative;\r\n\tpadding: 1rem;\r\n\tfont-weight: 500;\r\n\tcolor: #cdddeb;\r\n}\r\n\r\n\t.nav-link:hover,\r\n\t.nav-link:focus {\r\n\t\tcolor: #fff;\r\n\t\tbackground-color: transparent;\r\n\t}\r\n\r\n\r\n\t/* Active state gets a caret at the bottom */\r\n\r\n\t.nav-link.active {\r\n\t\tcolor: #fff;\r\n\t}\r\n\r\n\t\t.nav-link.active:after {\r\n\t\t\tposition: absolute;\r\n\t\t\tbottom: 0;\r\n\t\t\tleft: 50%;\r\n\t\t\twidth: 0;\r\n\t\t\theight: 0;\r\n\t\t\tmargin-left: -.3rem;\r\n\t\t\tvertical-align: middle;\r\n\t\t\tcontent: \"\";\r\n\t\t\tborder-right: .3rem solid transparent;\r\n\t\t\tborder-bottom: .3rem solid;\r\n\t\t\tborder-left: .3rem solid transparent;\r\n\t\t}\r\n\r\n\r\n/*\r\n  * Blog name and description\r\n  */\r\n\r\n.blog-header {\r\n\tpadding-bottom: 1.25rem;\r\n\tmargin-bottom: 2rem;\r\n\tborder-bottom: .05rem solid #eee;\r\n}\r\n\r\n.blog-title {\r\n\tmargin-bottom: 0;\r\n\tfont-size: 2rem;\r\n\tfont-weight: normal;\r\n}\r\n\r\n.blog-description {\r\n\tfont-size: 1.1rem;\r\n\tcolor: #999;\r\n}\r\n\r\n@media (min-width: 40em) {\r\n\t.blog-title {\r\n\t\tfont-size: 3.5rem;\r\n\t}\r\n}\r\n\r\n\r\n/*\r\n  * Main column and sidebar layout\r\n  */\r\n\r\n\r\n/* Sidebar modules for boxing content */\r\n\r\n.sidebar-module {\r\n\t/*padding: 1rem;*/\r\n\t/*margin: 0 -1rem 1rem;*/\r\n}\r\n\r\n.sidebar-module-inset {\r\n\tpadding: 1rem;\r\n\tbackground-color: #f5f5f5;\r\n\tborder-radius: .25rem;\r\n}\r\n\r\n\t.sidebar-module-inset p:last-child,\r\n\t.sidebar-module-inset ul:last-child,\r\n\t.sidebar-module-inset ol:last-child {\r\n\t\tmargin-bottom: 0;\r\n\t}\r\n\r\n\r\n/* Pagination */\r\n\r\n.blog-pagination {\r\n\tmargin-bottom: 4rem;\r\n}\r\n\r\n\t.blog-pagination > .btn {\r\n\t\tborder-radius: 2rem;\r\n\t}\r\n\r\n\r\n/*\r\n  * Blog posts\r\n  */\r\n\r\n.blog-post {\r\n\tmargin-bottom: 4rem;\r\n}\r\n\r\n.blog-post-title {\r\n\tmargin-bottom: .25rem;\r\n\tfont-size: 2.5rem;\r\n}\r\n\r\n.blog-post-meta {\r\n\tmargin-bottom: 1.25rem;\r\n\tcolor: #999;\r\n}\r\n\r\n\r\n/*\r\n  * Footer\r\n  */\r\n\r\n.blog-footer {\r\n\tpadding: 2.5rem 0;\r\n\tcolor: #999;\r\n\ttext-align: center;\r\n\tbackground-color: #f9f9f9;\r\n\tborder-top: .05rem solid #e5e5e5;\r\n}\r\n\r\n\t.blog-footer p:last-child {\r\n\t\tmargin-bottom: 0;\r\n\t}\r\n\r\n\r\n/*\r\n  * �ۭq\r\n \r\n  */\r\n\r\n.popular-post {\r\n\tbackground: #DDDDDD;\r\n}\r\n\r\n.line-item {\r\n\tbackground: url(\"https://bootdey.com/img/Content/border-top-dotted.gif\") repeat-x scroll left top rgba(0, 0, 0, 0);\r\n\tmargin: 0 0 0 30px;\r\n\tpadding: 25px 0 15px;\r\n}\r\n\r\n.content-image {\r\n\tfloat: right;\r\n\tmargin-bottom: 10px;\r\n\tmargin-left: 25px;\r\n\tmargin-top: 5px;\r\n}\r\n\r\n.post-title {\r\n\tmargin-bottom: 7px;\r\n\tmargin-top: 3px;\r\n}\r\n\r\n.post-title,\r\npost-title a {\r\n\tfont-size: 18px;\r\n\tline-height: 20px;\r\n}\r\n\r\n.summary {\r\n\tcolor: #666;\r\n\tfont-size: 14px;\r\n\tline-height: 18px;\r\n\tmargin-bottom: 8px;\r\n}\r\n\r\n.teaser {\r\n\tmargin-bottom: 32px;\r\n\tmargin-top: 19px;\r\n\ttext-align: center;\r\n}\r\n\r\n.article-info {\r\n\tpadding: 0 29px;\r\n}\r\n\r\n.item-odd .article-category {\r\n\tmargin-top: 8px;\r\n}\r\n\r\n.article-title {\r\n\tmargin-bottom: 7px;\r\n\tmargin-top: 3px;\r\n}\r\n\r\n.article-title,\r\n.subfeatured .article-title a {\r\n\tfont-size: 18px;\r\n\tfont-weight: normal;\r\n\tline-height: 20px;\r\n}\r\n\r\n.article-summary {\r\n\tcolor: #666;\r\n\tfont-size: 14px;\r\n\tline-height: 16px;\r\n\tmax-height: 64px;\r\n\toverflow: hidden;\r\n}\r\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 40 */
+/***/ (function(module, exports) {
+
+
+/**
+ * When source maps are enabled, `style-loader` uses a link element with a data-uri to
+ * embed the css on the page. This breaks all relative urls because now they are relative to a
+ * bundle instead of the current page.
+ *
+ * One solution is to only use full urls, but that may be impossible.
+ *
+ * Instead, this function "fixes" the relative urls to be absolute according to the current page location.
+ *
+ * A rudimentary test suite is located at `test/fixUrls.js` and can be run via the `npm test` command.
+ *
+ */
+
+module.exports = function (css) {
+  // get current location
+  var location = typeof window !== "undefined" && window.location;
+
+  if (!location) {
+    throw new Error("fixUrls requires window.location");
+  }
+
+	// blank or null?
+	if (!css || typeof css !== "string") {
+	  return css;
+  }
+
+  var baseUrl = location.protocol + "//" + location.host;
+  var currentDir = baseUrl + location.pathname.replace(/\/[^\/]*$/, "/");
+
+	// convert each url(...)
+	/*
+	This regular expression is just a way to recursively match brackets within
+	a string.
+
+	 /url\s*\(  = Match on the word "url" with any whitespace after it and then a parens
+	   (  = Start a capturing group
+	     (?:  = Start a non-capturing group
+	         [^)(]  = Match anything that isn't a parentheses
+	         |  = OR
+	         \(  = Match a start parentheses
+	             (?:  = Start another non-capturing groups
+	                 [^)(]+  = Match anything that isn't a parentheses
+	                 |  = OR
+	                 \(  = Match a start parentheses
+	                     [^)(]*  = Match anything that isn't a parentheses
+	                 \)  = Match a end parentheses
+	             )  = End Group
+              *\) = Match anything and then a close parens
+          )  = Close non-capturing group
+          *  = Match anything
+       )  = Close capturing group
+	 \)  = Match a close parens
+
+	 /gi  = Get all matches, not the first.  Be case insensitive.
+	 */
+	var fixedCss = css.replace(/url\s*\(((?:[^)(]|\((?:[^)(]+|\([^)(]*\))*\))*)\)/gi, function(fullMatch, origUrl) {
+		// strip quotes (if they exist)
+		var unquotedOrigUrl = origUrl
+			.trim()
+			.replace(/^"(.*)"$/, function(o, $1){ return $1; })
+			.replace(/^'(.*)'$/, function(o, $1){ return $1; });
+
+		// already a full url? no change
+		if (/^(#|data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(unquotedOrigUrl)) {
+		  return fullMatch;
+		}
+
+		// convert the url to a full url
+		var newUrl;
+
+		if (unquotedOrigUrl.indexOf("//") === 0) {
+		  	//TODO: should we add protocol?
+			newUrl = unquotedOrigUrl;
+		} else if (unquotedOrigUrl.indexOf("/") === 0) {
+			// path should be relative to the base url
+			newUrl = baseUrl + unquotedOrigUrl; // already starts with '/'
+		} else {
+			// path should be relative to current directory
+			newUrl = currentDir + unquotedOrigUrl.replace(/^\.\//, ""); // Strip leading './'
+		}
+
+		// send back the fixed url(...)
+		return "url(" + JSON.stringify(newUrl) + ")";
+	});
+
+	// send back the fixed css
+	return fixedCss;
+};
+
+
+/***/ }),
+/* 41 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(42);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(4)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!./site.css", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!./site.css");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 42 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(2)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "html * {\r\n\tfont-family: \"\\5FAE\\8EDF\\6B63\\9ED1\\9AD4\", \"Lato\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\r\n}\r\n\r\n.site-nav {\r\n\tfont-size: 1.75em;\r\n}\r\n\r\n.search-box {\r\n\tmin-width: 200px;\r\n}\r\n\r\n.summary-img {\r\n\twidth: 180px;\r\n}\r\n\r\n.author-text {\r\n\tfont-size: 0.85em\r\n}\r\n\r\n.summary-text {\r\n\tfont-size: 0.85em\r\n}\r\n\r\n\r\n/*nav {\r\n  background-color:#428bca;\r\n}*/\r\n\r\n.navbar-toggler-icon {\r\n\tdisplay: inline-block;\r\n\twidth: 1.5em;\r\n\theight: 1.5em;\r\n\tvertical-align: middle;\r\n\tcontent: \"\";\r\n\tbackground: no-repeat center center;\r\n\tbackground-size: 100% 100%;\r\n}\r\n\r\n.stylish-input-group .input-group-addon {\r\n\tbackground: white !important;\r\n}\r\n\r\n.stylish-input-group .form-control {\r\n\tborder-right: 0;\r\n\tbox-shadow: 0 0 0;\r\n\tborder-color: #ccc;\r\n}\r\n\r\n.stylish-input-group button {\r\n\tborder: 0;\r\n\tbackground: transparent;\r\n}\r\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 43 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(44);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(4)(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../../../node_modules/css-loader/index.js!./jquery.fancybox.css", function() {
+			var newContent = require("!!../../../../../node_modules/css-loader/index.js!./jquery.fancybox.css");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 44 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(2)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "@charset \"UTF-8\";\nbody.fancybox-active {\n  overflow: hidden; }\n\nbody.fancybox-iosfix {\n  position: fixed;\n  left: 0;\n  right: 0; }\n\n.fancybox-is-hidden {\n  position: absolute;\n  top: -9999px;\n  left: -9999px;\n  visibility: hidden; }\n\n.fancybox-container {\n  position: fixed;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  z-index: 99992;\n  -webkit-tap-highlight-color: transparent;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  -webkit-transform: translateZ(0);\n  transform: translateZ(0);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\"; }\n\n.fancybox-outer,\n.fancybox-inner,\n.fancybox-bg,\n.fancybox-stage {\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0; }\n\n.fancybox-outer {\n  overflow-y: auto;\n  -webkit-overflow-scrolling: touch; }\n\n.fancybox-bg {\n  background: #1e1e1e;\n  opacity: 0;\n  transition-duration: inherit;\n  transition-property: opacity;\n  transition-timing-function: cubic-bezier(0.47, 0, 0.74, 0.71); }\n\n.fancybox-is-open .fancybox-bg {\n  opacity: 0.87;\n  transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1); }\n\n.fancybox-infobar,\n.fancybox-toolbar,\n.fancybox-caption-wrap {\n  position: absolute;\n  direction: ltr;\n  z-index: 99997;\n  opacity: 0;\n  visibility: hidden;\n  transition: opacity .25s, visibility 0s linear .25s;\n  box-sizing: border-box; }\n\n.fancybox-show-infobar .fancybox-infobar,\n.fancybox-show-toolbar .fancybox-toolbar,\n.fancybox-show-caption .fancybox-caption-wrap {\n  opacity: 1;\n  visibility: visible;\n  transition: opacity .25s, visibility 0s; }\n\n.fancybox-infobar {\n  top: 0;\n  left: 0;\n  font-size: 13px;\n  padding: 0 10px;\n  height: 44px;\n  min-width: 44px;\n  line-height: 44px;\n  color: #ccc;\n  text-align: center;\n  pointer-events: none;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  -webkit-touch-callout: none;\n  -webkit-tap-highlight-color: transparent;\n  -webkit-font-smoothing: subpixel-antialiased;\n  mix-blend-mode: exclusion; }\n\n.fancybox-toolbar {\n  top: 0;\n  right: 0;\n  margin: 0;\n  padding: 0; }\n\n.fancybox-stage {\n  overflow: hidden;\n  direction: ltr;\n  z-index: 99994;\n  -webkit-transform: translate3d(0, 0, 0); }\n\n.fancybox-is-closing .fancybox-stage {\n  overflow: visible; }\n\n.fancybox-slide {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  margin: 0;\n  padding: 0;\n  overflow: auto;\n  outline: none;\n  white-space: normal;\n  box-sizing: border-box;\n  text-align: center;\n  z-index: 99994;\n  -webkit-overflow-scrolling: touch;\n  display: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  transition-property: opacity, -webkit-transform;\n  transition-property: transform, opacity;\n  transition-property: transform, opacity, -webkit-transform; }\n\n.fancybox-slide::before {\n  content: '';\n  display: inline-block;\n  vertical-align: middle;\n  height: 100%;\n  width: 0; }\n\n.fancybox-is-sliding .fancybox-slide,\n.fancybox-slide--previous,\n.fancybox-slide--current,\n.fancybox-slide--next {\n  display: block; }\n\n.fancybox-slide--image {\n  overflow: visible; }\n\n.fancybox-slide--image::before {\n  display: none; }\n\n.fancybox-slide--video .fancybox-content,\n.fancybox-slide--video iframe {\n  background: #000; }\n\n.fancybox-slide--map .fancybox-content,\n.fancybox-slide--map iframe {\n  background: #E5E3DF; }\n\n.fancybox-slide--next {\n  z-index: 99995; }\n\n.fancybox-slide > * {\n  display: inline-block;\n  position: relative;\n  padding: 24px;\n  margin: 44px 0 44px;\n  border-width: 0;\n  vertical-align: middle;\n  text-align: left;\n  background-color: #fff;\n  overflow: auto;\n  box-sizing: border-box; }\n\n.fancybox-slide > title,\n.fancybox-slide > style,\n.fancybox-slide > meta,\n.fancybox-slide > link,\n.fancybox-slide > script,\n.fancybox-slide > base {\n  display: none; }\n\n.fancybox-slide .fancybox-image-wrap {\n  position: absolute;\n  top: 0;\n  left: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  z-index: 99995;\n  background: transparent;\n  cursor: default;\n  overflow: visible;\n  -webkit-transform-origin: top left;\n  -ms-transform-origin: top left;\n  transform-origin: top left;\n  background-size: 100% 100%;\n  background-repeat: no-repeat;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  transition-property: opacity, -webkit-transform;\n  transition-property: transform, opacity;\n  transition-property: transform, opacity, -webkit-transform; }\n\n.fancybox-can-zoomOut .fancybox-image-wrap {\n  cursor: -webkit-zoom-out;\n  cursor: zoom-out; }\n\n.fancybox-can-zoomIn .fancybox-image-wrap {\n  cursor: -webkit-zoom-in;\n  cursor: zoom-in; }\n\n.fancybox-can-drag .fancybox-image-wrap {\n  cursor: -webkit-grab;\n  cursor: grab; }\n\n.fancybox-is-dragging .fancybox-image-wrap {\n  cursor: -webkit-grabbing;\n  cursor: grabbing; }\n\n.fancybox-image,\n.fancybox-spaceball {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 100%;\n  height: 100%;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  max-width: none;\n  max-height: none;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none; }\n\n.fancybox-spaceball {\n  z-index: 1; }\n\n.fancybox-slide--iframe .fancybox-content {\n  padding: 0;\n  width: 80%;\n  height: 80%;\n  max-width: calc(100% - 100px);\n  max-height: calc(100% - 88px);\n  overflow: visible;\n  background: #fff; }\n\n.fancybox-iframe {\n  display: block;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  width: 100%;\n  height: 100%;\n  background: #fff; }\n\n.fancybox-error {\n  margin: 0;\n  padding: 40px;\n  width: 100%;\n  max-width: 380px;\n  background: #fff;\n  cursor: default; }\n\n.fancybox-error p {\n  margin: 0;\n  padding: 0;\n  color: #444;\n  font-size: 16px;\n  line-height: 20px; }\n\n/* Buttons */\n.fancybox-button {\n  box-sizing: border-box;\n  display: inline-block;\n  vertical-align: top;\n  width: 44px;\n  height: 44px;\n  margin: 0;\n  padding: 10px;\n  border: 0;\n  border-radius: 0;\n  background: rgba(30, 30, 30, 0.6);\n  transition: color .3s ease;\n  cursor: pointer;\n  outline: none; }\n\n.fancybox-button,\n.fancybox-button:visited,\n.fancybox-button:link {\n  color: #ccc; }\n\n.fancybox-button:focus,\n.fancybox-button:hover {\n  color: #fff; }\n\n.fancybox-button[disabled] {\n  color: #ccc;\n  cursor: default;\n  opacity: 0.6; }\n\n.fancybox-button svg {\n  display: block;\n  position: relative;\n  overflow: visible;\n  shape-rendering: geometricPrecision; }\n\n.fancybox-button svg path {\n  fill: currentColor;\n  stroke: currentColor;\n  stroke-linejoin: round;\n  stroke-width: 3; }\n\n.fancybox-button--share svg path {\n  stroke-width: 1; }\n\n.fancybox-button--play svg path:nth-child(2) {\n  display: none; }\n\n.fancybox-button--pause svg path:nth-child(1) {\n  display: none; }\n\n.fancybox-button--zoom svg path {\n  fill: transparent; }\n\n/* Navigation arrows */\n.fancybox-navigation {\n  display: none; }\n\n.fancybox-show-nav .fancybox-navigation {\n  display: block; }\n\n.fancybox-navigation button {\n  position: absolute;\n  top: 50%;\n  margin: -50px 0 0 0;\n  z-index: 99997;\n  background: transparent;\n  width: 60px;\n  height: 100px;\n  padding: 17px; }\n\n.fancybox-navigation button:before {\n  content: \"\";\n  position: absolute;\n  top: 30px;\n  right: 10px;\n  width: 40px;\n  height: 40px;\n  background: rgba(30, 30, 30, 0.6); }\n\n.fancybox-navigation .fancybox-button--arrow_left {\n  left: 0; }\n\n.fancybox-navigation .fancybox-button--arrow_right {\n  right: 0; }\n\n/* Close button on the top right corner of html content */\n.fancybox-close-small {\n  position: absolute;\n  top: 0;\n  right: 0;\n  width: 40px;\n  height: 40px;\n  padding: 0;\n  margin: 0;\n  border: 0;\n  border-radius: 0;\n  background: transparent;\n  z-index: 10;\n  cursor: pointer; }\n\n.fancybox-close-small:after {\n  content: '\\D7';\n  position: absolute;\n  top: 5px;\n  right: 5px;\n  width: 30px;\n  height: 30px;\n  font: 22px/30px Arial,\"Helvetica Neue\",Helvetica,sans-serif;\n  color: #888;\n  font-weight: 300;\n  text-align: center;\n  border-radius: 50%;\n  border-width: 0;\n  background-color: transparent;\n  transition: background-color .25s;\n  box-sizing: border-box;\n  z-index: 2; }\n\n.fancybox-close-small:focus {\n  outline: none; }\n\n.fancybox-close-small:focus:after {\n  outline: 1px dotted #888; }\n\n.fancybox-close-small:hover:after {\n  color: #555;\n  background: #eee; }\n\n.fancybox-slide--image .fancybox-close-small,\n.fancybox-slide--iframe .fancybox-close-small {\n  top: 0;\n  right: -40px; }\n\n.fancybox-slide--image .fancybox-close-small:after,\n.fancybox-slide--iframe .fancybox-close-small:after {\n  font-size: 35px;\n  color: #aaa; }\n\n.fancybox-slide--image .fancybox-close-small:hover:after,\n.fancybox-slide--iframe .fancybox-close-small:hover:after {\n  color: #fff;\n  background: transparent; }\n\n.fancybox-is-scaling .fancybox-close-small,\n.fancybox-is-zoomable.fancybox-can-drag .fancybox-close-small {\n  display: none; }\n\n/* Caption */\n.fancybox-caption-wrap {\n  bottom: 0;\n  left: 0;\n  right: 0;\n  padding: 60px 2vw 0 2vw;\n  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.1) 20%, rgba(0, 0, 0, 0.2) 40%, rgba(0, 0, 0, 0.6) 80%, rgba(0, 0, 0, 0.8) 100%);\n  pointer-events: none; }\n\n.fancybox-caption {\n  padding: 30px 0;\n  border-top: 1px solid rgba(255, 255, 255, 0.4);\n  font-size: 14px;\n  color: #fff;\n  line-height: 20px;\n  -webkit-text-size-adjust: none; }\n\n.fancybox-caption a,\n.fancybox-caption button,\n.fancybox-caption select {\n  pointer-events: all;\n  position: relative;\n  /* Fix IE11 */ }\n\n.fancybox-caption a {\n  color: #fff;\n  text-decoration: underline; }\n\n/* Loading indicator */\n.fancybox-slide > .fancybox-loading {\n  border: 6px solid rgba(100, 100, 100, 0.4);\n  border-top: 6px solid rgba(255, 255, 255, 0.6);\n  border-radius: 100%;\n  height: 50px;\n  width: 50px;\n  -webkit-animation: fancybox-rotate .8s infinite linear;\n  animation: fancybox-rotate .8s infinite linear;\n  background: transparent;\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  margin-top: -30px;\n  margin-left: -30px;\n  z-index: 99999; }\n\n@-webkit-keyframes fancybox-rotate {\n  from {\n    -webkit-transform: rotate(0deg);\n    transform: rotate(0deg); }\n  to {\n    -webkit-transform: rotate(359deg);\n    transform: rotate(359deg); } }\n\n@keyframes fancybox-rotate {\n  from {\n    -webkit-transform: rotate(0deg);\n    transform: rotate(0deg); }\n  to {\n    -webkit-transform: rotate(359deg);\n    transform: rotate(359deg); } }\n\n/* Transition effects */\n.fancybox-animated {\n  transition-timing-function: cubic-bezier(0, 0, 0.25, 1); }\n\n/* transitionEffect: slide */\n.fancybox-fx-slide.fancybox-slide--previous {\n  -webkit-transform: translate3d(-100%, 0, 0);\n  transform: translate3d(-100%, 0, 0);\n  opacity: 0; }\n\n.fancybox-fx-slide.fancybox-slide--next {\n  -webkit-transform: translate3d(100%, 0, 0);\n  transform: translate3d(100%, 0, 0);\n  opacity: 0; }\n\n.fancybox-fx-slide.fancybox-slide--current {\n  -webkit-transform: translate3d(0, 0, 0);\n  transform: translate3d(0, 0, 0);\n  opacity: 1; }\n\n/* transitionEffect: fade */\n.fancybox-fx-fade.fancybox-slide--previous,\n.fancybox-fx-fade.fancybox-slide--next {\n  opacity: 0;\n  transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1); }\n\n.fancybox-fx-fade.fancybox-slide--current {\n  opacity: 1; }\n\n/* transitionEffect: zoom-in-out */\n.fancybox-fx-zoom-in-out.fancybox-slide--previous {\n  -webkit-transform: scale3d(1.5, 1.5, 1.5);\n  transform: scale3d(1.5, 1.5, 1.5);\n  opacity: 0; }\n\n.fancybox-fx-zoom-in-out.fancybox-slide--next {\n  -webkit-transform: scale3d(0.5, 0.5, 0.5);\n  transform: scale3d(0.5, 0.5, 0.5);\n  opacity: 0; }\n\n.fancybox-fx-zoom-in-out.fancybox-slide--current {\n  -webkit-transform: scale3d(1, 1, 1);\n  transform: scale3d(1, 1, 1);\n  opacity: 1; }\n\n/* transitionEffect: rotate */\n.fancybox-fx-rotate.fancybox-slide--previous {\n  -webkit-transform: rotate(-360deg);\n  -ms-transform: rotate(-360deg);\n  transform: rotate(-360deg);\n  opacity: 0; }\n\n.fancybox-fx-rotate.fancybox-slide--next {\n  -webkit-transform: rotate(360deg);\n  -ms-transform: rotate(360deg);\n  transform: rotate(360deg);\n  opacity: 0; }\n\n.fancybox-fx-rotate.fancybox-slide--current {\n  -webkit-transform: rotate(0deg);\n  -ms-transform: rotate(0deg);\n  transform: rotate(0deg);\n  opacity: 1; }\n\n/* transitionEffect: circular */\n.fancybox-fx-circular.fancybox-slide--previous {\n  -webkit-transform: scale3d(0, 0, 0) translate3d(-100%, 0, 0);\n  transform: scale3d(0, 0, 0) translate3d(-100%, 0, 0);\n  opacity: 0; }\n\n.fancybox-fx-circular.fancybox-slide--next {\n  -webkit-transform: scale3d(0, 0, 0) translate3d(100%, 0, 0);\n  transform: scale3d(0, 0, 0) translate3d(100%, 0, 0);\n  opacity: 0; }\n\n.fancybox-fx-circular.fancybox-slide--current {\n  -webkit-transform: scale3d(1, 1, 1) translate3d(0, 0, 0);\n  transform: scale3d(1, 1, 1) translate3d(0, 0, 0);\n  opacity: 1; }\n\n/* transitionEffect: tube */\n.fancybox-fx-tube.fancybox-slide--previous {\n  -webkit-transform: translate3d(-100%, 0, 0) scale(0.1) skew(-10deg);\n  transform: translate3d(-100%, 0, 0) scale(0.1) skew(-10deg); }\n\n.fancybox-fx-tube.fancybox-slide--next {\n  -webkit-transform: translate3d(100%, 0, 0) scale(0.1) skew(10deg);\n  transform: translate3d(100%, 0, 0) scale(0.1) skew(10deg); }\n\n.fancybox-fx-tube.fancybox-slide--current {\n  -webkit-transform: translate3d(0, 0, 0) scale(1);\n  transform: translate3d(0, 0, 0) scale(1); }\n\n/* Share */\n.fancybox-share {\n  padding: 30px;\n  border-radius: 3px;\n  background: #f4f4f4;\n  max-width: 90%;\n  text-align: center; }\n\n.fancybox-share h1 {\n  color: #222;\n  margin: 0 0 20px 0;\n  font-size: 35px;\n  font-weight: 700; }\n\n.fancybox-share p {\n  margin: 0;\n  padding: 0; }\n\np.fancybox-share__links {\n  margin-right: -10px; }\n\n.fancybox-share__button {\n  display: inline-block;\n  text-decoration: none;\n  margin: 0 10px 10px 0;\n  padding: 0 15px;\n  min-width: 130px;\n  border: 0;\n  border-radius: 3px;\n  background: #fff;\n  white-space: nowrap;\n  font-size: 14px;\n  font-weight: 700;\n  line-height: 40px;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  color: #fff;\n  transition: all .2s; }\n\n.fancybox-share__button:hover {\n  text-decoration: none; }\n\n.fancybox-share__button--fb {\n  background: #3b5998; }\n\n.fancybox-share__button--fb:hover {\n  background: #344e86; }\n\n.fancybox-share__button--pt {\n  background: #bd081d; }\n\n.fancybox-share__button--pt:hover {\n  background: #aa0719; }\n\n.fancybox-share__button--tw {\n  background: #1da1f2; }\n\n.fancybox-share__button--tw:hover {\n  background: #0d95e8; }\n\n.fancybox-share__button svg {\n  position: relative;\n  top: -1px;\n  width: 25px;\n  height: 25px;\n  margin-right: 7px;\n  vertical-align: middle; }\n\n.fancybox-share__button svg path {\n  fill: #fff; }\n\n.fancybox-share__input {\n  box-sizing: border-box;\n  width: 100%;\n  margin: 10px 0 0 0;\n  padding: 10px 15px;\n  background: transparent;\n  color: #5d5b5b;\n  font-size: 14px;\n  outline: none;\n  border: 0;\n  border-bottom: 2px solid #d7d7d7; }\n\n/* Thumbs */\n.fancybox-thumbs {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  right: 0;\n  width: 212px;\n  margin: 0;\n  padding: 2px 2px 4px 2px;\n  background: #fff;\n  -webkit-tap-highlight-color: transparent;\n  -webkit-overflow-scrolling: touch;\n  -ms-overflow-style: -ms-autohiding-scrollbar;\n  box-sizing: border-box;\n  z-index: 99995; }\n\n.fancybox-thumbs-x {\n  overflow-y: hidden;\n  overflow-x: auto; }\n\n.fancybox-show-thumbs .fancybox-thumbs {\n  display: block; }\n\n.fancybox-show-thumbs .fancybox-inner {\n  right: 212px; }\n\n.fancybox-thumbs > ul {\n  list-style: none;\n  position: absolute;\n  position: relative;\n  width: 100%;\n  height: 100%;\n  margin: 0;\n  padding: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  font-size: 0;\n  white-space: nowrap; }\n\n.fancybox-thumbs-x > ul {\n  overflow: hidden; }\n\n.fancybox-thumbs-y > ul::-webkit-scrollbar {\n  width: 7px; }\n\n.fancybox-thumbs-y > ul::-webkit-scrollbar-track {\n  background: #fff;\n  border-radius: 10px;\n  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3); }\n\n.fancybox-thumbs-y > ul::-webkit-scrollbar-thumb {\n  background: #2a2a2a;\n  border-radius: 10px; }\n\n.fancybox-thumbs > ul > li {\n  float: left;\n  overflow: hidden;\n  padding: 0;\n  margin: 2px;\n  width: 100px;\n  height: 75px;\n  max-width: calc(50% - 4px);\n  max-height: calc(100% - 8px);\n  position: relative;\n  cursor: pointer;\n  outline: none;\n  -webkit-tap-highlight-color: transparent;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  box-sizing: border-box; }\n\nli.fancybox-thumbs-loading {\n  background: rgba(0, 0, 0, 0.1); }\n\n.fancybox-thumbs > ul > li > img {\n  position: absolute;\n  top: 0;\n  left: 0;\n  max-width: none;\n  max-height: none;\n  -webkit-touch-callout: none;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none; }\n\n.fancybox-thumbs > ul > li:before {\n  content: '';\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  left: 0;\n  border: 4px solid #4ea7f9;\n  z-index: 99991;\n  opacity: 0;\n  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); }\n\n.fancybox-thumbs > ul > li.fancybox-thumbs-active:before {\n  opacity: 1; }\n\n/* Styling for Small-Screen Devices */\n@media all and (max-width: 800px) {\n  .fancybox-thumbs {\n    width: 110px; }\n  .fancybox-show-thumbs .fancybox-inner {\n    right: 110px; }\n  .fancybox-thumbs > ul > li {\n    max-width: calc(100% - 10px); } }\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 45 */
+/***/ (function(module, exports) {
+
+// ==================================================
+// fancyBox v3.2.10
+//
+// Licensed GPLv3 for open source use
+// or fancyBox Commercial License for commercial use
+//
+// http://fancyapps.com/fancybox/
+// Copyright 2017 fancyApps
+//
+// ==================================================
+;(function (window, document, $, undefined) {
+    'use strict';
+
+    // If there's no jQuery, fancyBox can't work
+    // =========================================
+
+    if (!$) {
+        return;
+    }
+
+    // Check if fancyBox is already initialized
+    // ========================================
+
+    if ($.fn.fancybox) {
+
+        if ('console' in window) {
+            console.log('fancyBox already initialized');
+        }
+
+        return;
+    }
+
+    // Private default settings
+    // ========================
+
+    var defaults = {
+
+        // Enable infinite gallery navigation
+        loop: false,
+
+        // Space around image, ignored if zoomed-in or viewport width is smaller than 800px
+        margin: [44, 0],
+
+        // Horizontal space between slides
+        gutter: 50,
+
+        // Enable keyboard navigation
+        keyboard: true,
+
+        // Should display navigation arrows at the screen edges
+        arrows: true,
+
+        // Should display infobar (counter and arrows at the top)
+        infobar: true,
+
+        // Should display toolbar (buttons at the top)
+        toolbar: true,
+
+        // What buttons should appear in the top right corner.
+        // Buttons will be created using templates from `btnTpl` option
+        // and they will be placed into toolbar (class="fancybox-toolbar"` element)
+        buttons: ['slideShow', 'fullScreen', 'thumbs', 'share',
+        //'download',
+        //'zoom',
+        'close'],
+
+        // Detect "idle" time in seconds
+        idleTime: 3,
+
+        // Should display buttons at top right corner of the content
+        // If 'auto' - they will be created for content having type 'html', 'inline' or 'ajax'
+        // Use template from `btnTpl.smallBtn` for customization
+        smallBtn: 'auto',
+
+        // Disable right-click and use simple image protection for images
+        protect: false,
+
+        // Shortcut to make content "modal" - disable keyboard navigtion, hide buttons, etc
+        modal: false,
+
+        image: {
+
+            // Wait for images to load before displaying
+            // Requires predefined image dimensions
+            // If 'auto' - will zoom in thumbnail if 'width' and 'height' attributes are found
+            preload: "auto"
+
+        },
+
+        ajax: {
+
+            // Object containing settings for ajax request
+            settings: {
+
+                // This helps to indicate that request comes from the modal
+                // Feel free to change naming
+                data: {
+                    fancybox: true
+                }
+            }
+
+        },
+
+        iframe: {
+
+            // Iframe template
+            tpl: '<iframe id="fancybox-frame{rnd}" name="fancybox-frame{rnd}" class="fancybox-iframe" frameborder="0" vspace="0" hspace="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen allowtransparency="true" src=""></iframe>',
+
+            // Preload iframe before displaying it
+            // This allows to calculate iframe content width and height
+            // (note: Due to "Same Origin Policy", you can't get cross domain data).
+            preload: true,
+
+            // Custom CSS styling for iframe wrapping element
+            // You can use this to set custom iframe dimensions
+            css: {},
+
+            // Iframe tag attributes
+            attr: {
+                scrolling: 'auto'
+            }
+
+        },
+
+        // Default content type if cannot be detected automatically
+        defaultType: 'image',
+
+        // Open/close animation type
+        // Possible values:
+        //   false            - disable
+        //   "zoom"           - zoom images from/to thumbnail
+        //   "fade"
+        //   "zoom-in-out"
+        //
+        animationEffect: "zoom",
+
+        // Duration in ms for open/close animation
+        animationDuration: 500,
+
+        // Should image change opacity while zooming
+        // If opacity is "auto", then opacity will be changed if image and thumbnail have different aspect ratios
+        zoomOpacity: "auto",
+
+        // Transition effect between slides
+        //
+        // Possible values:
+        //   false            - disable
+        //   "fade'
+        //   "slide'
+        //   "circular'
+        //   "tube'
+        //   "zoom-in-out'
+        //   "rotate'
+        //
+        transitionEffect: "fade",
+
+        // Duration in ms for transition animation
+        transitionDuration: 366,
+
+        // Custom CSS class for slide element
+        slideClass: '',
+
+        // Custom CSS class for layout
+        baseClass: '',
+
+        // Base template for layout
+        baseTpl: '<div class="fancybox-container" role="dialog" tabindex="-1">' + '<div class="fancybox-bg"></div>' + '<div class="fancybox-inner">' + '<div class="fancybox-infobar">' + '<span data-fancybox-index></span>&nbsp;/&nbsp;<span data-fancybox-count></span>' + '</div>' + '<div class="fancybox-toolbar">{{buttons}}</div>' + '<div class="fancybox-navigation">{{arrows}}</div>' + '<div class="fancybox-stage"></div>' + '<div class="fancybox-caption-wrap"><div class="fancybox-caption"></div></div>' + '</div>' + '</div>',
+
+        // Loading indicator template
+        spinnerTpl: '<div class="fancybox-loading"></div>',
+
+        // Error message template
+        errorTpl: '<div class="fancybox-error"><p>{{ERROR}}<p></div>',
+
+        btnTpl: {
+
+            download: '<a download data-fancybox-download class="fancybox-button fancybox-button--download" title="{{DOWNLOAD}}">' + '<svg viewBox="0 0 40 40">' + '<path d="M20,23 L20,8 L20,23 L13,16 L20,23 L27,16 L20,23 M26,28 L13,28 L27,28 L14,28" />' + '</svg>' + '</a>',
+
+            zoom: '<button data-fancybox-zoom class="fancybox-button fancybox-button--zoom" title="{{ZOOM}}">' + '<svg viewBox="0 0 40 40">' + '<path d="M 18,17 m-8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0 M25,23 L31,29 L25,23" />' + '</svg>' + '</button>',
+
+            close: '<button data-fancybox-close class="fancybox-button fancybox-button--close" title="{{CLOSE}}">' + '<svg viewBox="0 0 40 40">' + '<path d="M10,10 L30,30 M30,10 L10,30" />' + '</svg>' + '</button>',
+
+            // This small close button will be appended to your html/inline/ajax content by default,
+            // if "smallBtn" option is not set to false
+            smallBtn: '<button data-fancybox-close class="fancybox-close-small" title="{{CLOSE}}"></button>',
+
+            // Arrows
+            arrowLeft: '<button data-fancybox-prev class="fancybox-button fancybox-button--arrow_left" title="{{PREV}}">' + '<svg viewBox="0 0 40 40">' + '<path d="M10,20 L30,20 L10,20 L18,28 L10,20 L18,12 L10,20"></path>' + '</svg>' + '</button>',
+
+            arrowRight: '<button data-fancybox-next class="fancybox-button fancybox-button--arrow_right" title="{{NEXT}}">' + '<svg viewBox="0 0 40 40">' + '<path d="M30,20 L10,20 L30,20 L22,28 L30,20 L22,12 L30,20"></path>' + '</svg>' + '</button>'
+        },
+
+        // Container is injected into this element
+        parentEl: 'body',
+
+        // Focus handling
+        // ==============
+
+        // Try to focus on the first focusable element after opening
+        autoFocus: false,
+
+        // Put focus back to active element after closing
+        backFocus: true,
+
+        // Do not let user to focus on element outside modal content
+        trapFocus: true,
+
+        // Module specific options
+        // =======================
+
+        fullScreen: {
+            autoStart: false
+        },
+
+        // Set `touch: false` to disable dragging/swiping
+        touch: {
+            vertical: true, // Allow to drag content vertically
+            momentum: true // Continue movement after releasing mouse/touch when panning
+        },
+
+        // Hash value when initializing manually,
+        // set `false` to disable hash change
+        hash: null,
+
+        // Customize or add new media types
+        // Example:
+        /*
+        media : {
+            youtube : {
+                params : {
+                    autoplay : 0
+                }
+            }
+        }
+        */
+        media: {},
+
+        slideShow: {
+            autoStart: false,
+            speed: 4000
+        },
+
+        thumbs: {
+            autoStart: false, // Display thumbnails on opening
+            hideOnClose: true, // Hide thumbnail grid when closing animation starts
+            parentEl: '.fancybox-container', // Container is injected into this element
+            axis: 'y' // Vertical (y) or horizontal (x) scrolling
+        },
+
+        // Use mousewheel to navigate gallery
+        // If 'auto' - enabled for images only
+        wheel: 'auto',
+
+        // Callbacks
+        //==========
+
+        // See Documentation/API/Events for more information
+        // Example:
+        /*
+            afterShow: function( instance, current ) {
+                 console.info( 'Clicked element:' );
+                 console.info( current.opts.$orig );
+            }
+        */
+
+        onInit: $.noop, // When instance has been initialized
+
+        beforeLoad: $.noop, // Before the content of a slide is being loaded
+        afterLoad: $.noop, // When the content of a slide is done loading
+
+        beforeShow: $.noop, // Before open animation starts
+        afterShow: $.noop, // When content is done loading and animating
+
+        beforeClose: $.noop, // Before the instance attempts to close. Return false to cancel the close.
+        afterClose: $.noop, // After instance has been closed
+
+        onActivate: $.noop, // When instance is brought to front
+        onDeactivate: $.noop, // When other instance has been activated
+
+
+        // Interaction
+        // ===========
+
+        // Use options below to customize taken action when user clicks or double clicks on the fancyBox area,
+        // each option can be string or method that returns value.
+        //
+        // Possible values:
+        //   "close"           - close instance
+        //   "next"            - move to next gallery item
+        //   "nextOrClose"     - move to next gallery item or close if gallery has only one item
+        //   "toggleControls"  - show/hide controls
+        //   "zoom"            - zoom image (if loaded)
+        //   false             - do nothing
+
+        // Clicked on the content
+        clickContent: function clickContent(current, event) {
+            return current.type === 'image' ? 'zoom' : false;
+        },
+
+        // Clicked on the slide
+        clickSlide: 'close',
+
+        // Clicked on the background (backdrop) element
+        clickOutside: 'close',
+
+        // Same as previous two, but for double click
+        dblclickContent: false,
+        dblclickSlide: false,
+        dblclickOutside: false,
+
+        // Custom options when mobile device is detected
+        // =============================================
+
+        mobile: {
+            idleTime: false,
+            margin: 0,
+
+            clickContent: function clickContent(current, event) {
+                return current.type === 'image' ? 'toggleControls' : false;
+            },
+            clickSlide: function clickSlide(current, event) {
+                return current.type === 'image' ? 'toggleControls' : 'close';
+            },
+            dblclickContent: function dblclickContent(current, event) {
+                return current.type === 'image' ? 'zoom' : false;
+            },
+            dblclickSlide: function dblclickSlide(current, event) {
+                return current.type === 'image' ? 'zoom' : false;
+            }
+        },
+
+        // Internationalization
+        // ============
+
+        lang: 'en',
+        i18n: {
+            'en': {
+                CLOSE: 'Close',
+                NEXT: 'Next',
+                PREV: 'Previous',
+                ERROR: 'The requested content cannot be loaded. <br/> Please try again later.',
+                PLAY_START: 'Start slideshow',
+                PLAY_STOP: 'Pause slideshow',
+                FULL_SCREEN: 'Full screen',
+                THUMBS: 'Thumbnails',
+                DOWNLOAD: 'Download',
+                SHARE: 'Share',
+                ZOOM: 'Zoom'
+            },
+            'de': {
+                CLOSE: 'Schliessen',
+                NEXT: 'Weiter',
+                PREV: 'Zurück',
+                ERROR: 'Die angeforderten Daten konnten nicht geladen werden. <br/> Bitte versuchen Sie es später nochmal.',
+                PLAY_START: 'Diaschau starten',
+                PLAY_STOP: 'Diaschau beenden',
+                FULL_SCREEN: 'Vollbild',
+                THUMBS: 'Vorschaubilder',
+                DOWNLOAD: 'Herunterladen',
+                SHARE: 'Teilen',
+                ZOOM: 'Maßstab'
+            }
+        }
+
+    };
+
+    // Few useful variables and methods
+    // ================================
+
+    var $W = $(window);
+    var $D = $(document);
+
+    var called = 0;
+
+    // Check if an object is a jQuery object and not a native JavaScript object
+    // ========================================================================
+
+    var isQuery = function isQuery(obj) {
+        return obj && obj.hasOwnProperty && obj instanceof $;
+    };
+
+    // Handle multiple browsers for "requestAnimationFrame" and "cancelAnimationFrame"
+    // ===============================================================================
+
+    var requestAFrame = function () {
+        return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame ||
+        // if all else fails, use setTimeout
+        function (callback) {
+            return window.setTimeout(callback, 1000 / 60);
+        };
+    }();
+
+    // Detect the supported transition-end event property name
+    // =======================================================
+
+    var transitionEnd = function () {
+        var t,
+            el = document.createElement("fakeelement");
+
+        var transitions = {
+            "transition": "transitionend",
+            "OTransition": "oTransitionEnd",
+            "MozTransition": "transitionend",
+            "WebkitTransition": "webkitTransitionEnd"
+        };
+
+        for (t in transitions) {
+            if (el.style[t] !== undefined) {
+                return transitions[t];
+            }
+        }
+
+        return 'transitionend';
+    }();
+
+    // Force redraw on an element.
+    // This helps in cases where the browser doesn't redraw an updated element properly.
+    // =================================================================================
+
+    var forceRedraw = function forceRedraw($el) {
+        return $el && $el.length && $el[0].offsetHeight;
+    };
+
+    // Class definition
+    // ================
+
+    var FancyBox = function FancyBox(content, opts, index) {
+        var self = this;
+
+        self.opts = $.extend(true, { index: index }, $.fancybox.defaults, opts || {});
+
+        if ($.fancybox.isMobile) {
+            self.opts = $.extend(true, {}, self.opts, self.opts.mobile);
+        }
+
+        // Exclude buttons option from deep merging
+        if (opts && $.isArray(opts.buttons)) {
+            self.opts.buttons = opts.buttons;
+        }
+
+        self.id = self.opts.id || ++called;
+        self.group = [];
+
+        self.currIndex = parseInt(self.opts.index, 10) || 0;
+        self.prevIndex = null;
+
+        self.prevPos = null;
+        self.currPos = 0;
+
+        self.firstRun = null;
+
+        // Create group elements from original item collection
+        self.createGroup(content);
+
+        if (!self.group.length) {
+            return;
+        }
+
+        // Save last active element and current scroll position
+        self.$lastFocus = $(document.activeElement).blur();
+
+        // Collection of gallery objects
+        self.slides = {};
+
+        self.init();
+    };
+
+    $.extend(FancyBox.prototype, {
+
+        // Create DOM structure
+        // ====================
+
+        init: function init() {
+            var self = this,
+                firstItem = self.group[self.currIndex],
+                firstItemOpts = firstItem.opts,
+                scrollbarWidth = $.fancybox.scrollbarWidth,
+                $scrollDiv,
+                $container,
+                buttonStr;
+
+            self.scrollTop = $D.scrollTop();
+            self.scrollLeft = $D.scrollLeft();
+
+            // Hide scrollbars
+            // ===============
+
+            if (!$.fancybox.getInstance()) {
+
+                $('body').addClass('fancybox-active');
+
+                // iOS hack
+                if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+
+                    // iOS has problems for input elements inside fixed containers,
+                    // the workaround is to apply `position: fixed` to `<body>` element,
+                    // unfortunately, this makes it lose the scrollbars and forces address bar to appear.
+
+                    if (firstItem.type !== 'image') {
+                        $('body').css('top', $('body').scrollTop() * -1).addClass('fancybox-iosfix');
+                    }
+                } else if (!$.fancybox.isMobile && document.body.scrollHeight > window.innerHeight) {
+
+                    if (scrollbarWidth === undefined) {
+                        $scrollDiv = $('<div style="width:50px;height:50px;overflow:scroll;" />').appendTo('body');
+
+                        scrollbarWidth = $.fancybox.scrollbarWidth = $scrollDiv[0].offsetWidth - $scrollDiv[0].clientWidth;
+
+                        $scrollDiv.remove();
+                    }
+
+                    $('head').append('<style id="fancybox-style-noscroll" type="text/css">.compensate-for-scrollbar { margin-right: ' + scrollbarWidth + 'px; }</style>');
+                    $('body').addClass('compensate-for-scrollbar');
+                }
+            }
+
+            // Build html markup and set references
+            // ====================================
+
+            // Build html code for buttons and insert into main template
+            buttonStr = '';
+
+            $.each(firstItemOpts.buttons, function (index, value) {
+                buttonStr += firstItemOpts.btnTpl[value] || '';
+            });
+
+            // Create markup from base template, it will be initially hidden to
+            // avoid unnecessary work like painting while initializing is not complete
+            $container = $(self.translate(self, firstItemOpts.baseTpl.replace('\{\{buttons\}\}', buttonStr).replace('\{\{arrows\}\}', firstItemOpts.btnTpl.arrowLeft + firstItemOpts.btnTpl.arrowRight))).attr('id', 'fancybox-container-' + self.id).addClass('fancybox-is-hidden').addClass(firstItemOpts.baseClass).data('FancyBox', self).appendTo(firstItemOpts.parentEl);
+
+            // Create object holding references to jQuery wrapped nodes
+            self.$refs = {
+                container: $container
+            };
+
+            ['bg', 'inner', 'infobar', 'toolbar', 'stage', 'caption', 'navigation'].forEach(function (item) {
+                self.$refs[item] = $container.find('.fancybox-' + item);
+            });
+
+            self.trigger('onInit');
+
+            // Enable events, deactive previous instances
+            self.activate();
+
+            // Build slides, load and reveal content
+            self.jumpTo(self.currIndex);
+        },
+
+        // Simple i18n support - replaces object keys found in template
+        // with corresponding values
+        // ============================================================
+
+        translate: function translate(obj, str) {
+            var arr = obj.opts.i18n[obj.opts.lang];
+
+            return str.replace(/\{\{(\w+)\}\}/g, function (match, n) {
+                var value = arr[n];
+
+                if (value === undefined) {
+                    return match;
+                }
+
+                return value;
+            });
+        },
+
+        // Create array of gally item objects
+        // Check if each object has valid type and content
+        // ===============================================
+
+        createGroup: function createGroup(content) {
+            var self = this;
+            var items = $.makeArray(content);
+
+            $.each(items, function (i, item) {
+                var obj = {},
+                    opts = {},
+                    $item,
+                    type,
+                    found,
+                    src,
+                    srcParts;
+
+                // Step 1 - Make sure we have an object
+                // ====================================
+
+                if ($.isPlainObject(item)) {
+
+                    // We probably have manual usage here, something like
+                    // $.fancybox.open( [ { src : "image.jpg", type : "image" } ] )
+
+                    obj = item;
+                    opts = item.opts || item;
+                } else if ($.type(item) === 'object' && $(item).length) {
+
+                    // Here we probably have jQuery collection returned by some selector
+                    $item = $(item);
+
+                    opts = $item.data();
+                    opts = $.extend({}, opts, opts.options || {});
+
+                    // Here we store clicked element
+                    opts.$orig = $item;
+
+                    obj.src = opts.src || $item.attr('href');
+
+                    // Assume that simple syntax is used, for example:
+                    //   `$.fancybox.open( $("#test"), {} );`
+                    if (!obj.type && !obj.src) {
+                        obj.type = 'inline';
+                        obj.src = item;
+                    }
+                } else {
+
+                    // Assume we have a simple html code, for example:
+                    //   $.fancybox.open( '<div><h1>Hi!</h1></div>' );
+
+                    obj = {
+                        type: 'html',
+                        src: item + ''
+                    };
+                }
+
+                // Each gallery object has full collection of options
+                obj.opts = $.extend(true, {}, self.opts, opts);
+
+                // Do not merge buttons array
+                if ($.isArray(opts.buttons)) {
+                    obj.opts.buttons = opts.buttons;
+                }
+
+                // Step 2 - Make sure we have content type, if not - try to guess
+                // ==============================================================
+
+                type = obj.type || obj.opts.type;
+                src = obj.src || '';
+
+                if (!type && src) {
+                    if (src.match(/(^data:image\/[a-z0-9+\/=]*,)|(\.(jp(e|g|eg)|gif|png|bmp|webp|svg|ico)((\?|#).*)?$)/i)) {
+                        type = 'image';
+                    } else if (src.match(/\.(pdf)((\?|#).*)?$/i)) {
+                        type = 'pdf';
+                    } else if (found = src.match(/\.(mp4|mov|ogv)((\?|#).*)?$/i)) {
+                        type = 'video';
+
+                        if (!obj.opts.videoFormat) {
+                            obj.opts.videoFormat = 'video/' + (found[1] === 'ogv' ? 'ogg' : found[1]);
+                        }
+                    } else if (src.charAt(0) === '#') {
+                        type = 'inline';
+                    }
+                }
+
+                if (type) {
+                    obj.type = type;
+                } else {
+                    self.trigger('objectNeedsType', obj);
+                }
+
+                // Step 3 - Some adjustments
+                // =========================
+
+                obj.index = self.group.length;
+
+                // Check if $orig and $thumb objects exist
+                if (obj.opts.$orig && !obj.opts.$orig.length) {
+                    delete obj.opts.$orig;
+                }
+
+                if (!obj.opts.$thumb && obj.opts.$orig) {
+                    obj.opts.$thumb = obj.opts.$orig.find('img:first');
+                }
+
+                if (obj.opts.$thumb && !obj.opts.$thumb.length) {
+                    delete obj.opts.$thumb;
+                }
+
+                // "caption" is a "special" option, it can be used to customize caption per gallery item ..
+                if ($.type(obj.opts.caption) === 'function') {
+                    obj.opts.caption = obj.opts.caption.apply(item, [self, obj]);
+                }
+
+                if ($.type(self.opts.caption) === 'function') {
+                    obj.opts.caption = self.opts.caption.apply(item, [self, obj]);
+                }
+
+                // Make sure we have caption as a string or jQuery object
+                if (!(obj.opts.caption instanceof $)) {
+                    obj.opts.caption = obj.opts.caption === undefined ? '' : obj.opts.caption + '';
+                }
+
+                // Check if url contains "filter" used to filter the content
+                // Example: "ajax.html #something"
+                if (type === 'ajax') {
+                    srcParts = src.split(/\s+/, 2);
+
+                    if (srcParts.length > 1) {
+                        obj.src = srcParts.shift();
+
+                        obj.opts.filter = srcParts.shift();
+                    }
+                }
+
+                if (obj.opts.smallBtn == 'auto') {
+
+                    if ($.inArray(type, ['html', 'inline', 'ajax']) > -1) {
+                        obj.opts.toolbar = false;
+                        obj.opts.smallBtn = true;
+                    } else {
+                        obj.opts.smallBtn = false;
+                    }
+                }
+
+                // If the type is "pdf", then simply load file into iframe
+                if (type === 'pdf') {
+                    obj.type = 'iframe';
+
+                    obj.opts.iframe.preload = false;
+                }
+
+                // Hide all buttons and disable interactivity for modal items
+                if (obj.opts.modal) {
+
+                    obj.opts = $.extend(true, obj.opts, {
+                        // Remove buttons
+                        infobar: 0,
+                        toolbar: 0,
+
+                        smallBtn: 0,
+
+                        // Disable keyboard navigation
+                        keyboard: 0,
+
+                        // Disable some modules
+                        slideShow: 0,
+                        fullScreen: 0,
+                        thumbs: 0,
+                        touch: 0,
+
+                        // Disable click event handlers
+                        clickContent: false,
+                        clickSlide: false,
+                        clickOutside: false,
+                        dblclickContent: false,
+                        dblclickSlide: false,
+                        dblclickOutside: false
+                    });
+                }
+
+                // Step 4 - Add processed object to group
+                // ======================================
+
+                self.group.push(obj);
+            });
+        },
+
+        // Attach an event handler functions for:
+        //   - navigation buttons
+        //   - browser scrolling, resizing;
+        //   - focusing
+        //   - keyboard
+        //   - detect idle
+        // ======================================
+
+        addEvents: function addEvents() {
+            var self = this;
+
+            self.removeEvents();
+
+            // Make navigation elements clickable
+            self.$refs.container.on('click.fb-close', '[data-fancybox-close]', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                self.close(e);
+            }).on('click.fb-prev touchend.fb-prev', '[data-fancybox-prev]', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                self.previous();
+            }).on('click.fb-next touchend.fb-next', '[data-fancybox-next]', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                self.next();
+            }).on('click.fb', '[data-fancybox-zoom]', function (e) {
+                // Click handler for zoom button
+                self[self.isScaledDown() ? 'scaleToActual' : 'scaleToFit']();
+            });
+
+            // Handle page scrolling and browser resizing
+            $W.on('orientationchange.fb resize.fb', function (e) {
+
+                if (e && e.originalEvent && e.originalEvent.type === "resize") {
+
+                    requestAFrame(function () {
+                        self.update();
+                    });
+                } else {
+
+                    self.$refs.stage.hide();
+
+                    setTimeout(function () {
+                        self.$refs.stage.show();
+
+                        self.update();
+                    }, 600);
+                }
+            });
+
+            // Trap keyboard focus inside of the modal, so the user does not accidentally tab outside of the modal
+            // (a.k.a. "escaping the modal")
+            $D.on('focusin.fb', function (e) {
+                var instance = $.fancybox ? $.fancybox.getInstance() : null;
+
+                if (instance.isClosing || !instance.current || !instance.current.opts.trapFocus || $(e.target).hasClass('fancybox-container') || $(e.target).is(document)) {
+                    return;
+                }
+
+                if (instance && $(e.target).css('position') !== 'fixed' && !instance.$refs.container.has(e.target).length) {
+                    e.stopPropagation();
+
+                    instance.focus();
+
+                    // Sometimes page gets scrolled, set it back
+                    $W.scrollTop(self.scrollTop).scrollLeft(self.scrollLeft);
+                }
+            });
+
+            // Enable keyboard navigation
+            $D.on('keydown.fb', function (e) {
+                var current = self.current,
+                    keycode = e.keyCode || e.which;
+
+                if (!current || !current.opts.keyboard) {
+                    return;
+                }
+
+                if ($(e.target).is('input') || $(e.target).is('textarea')) {
+                    return;
+                }
+
+                // Backspace and Esc keys
+                if (keycode === 8 || keycode === 27) {
+                    e.preventDefault();
+
+                    self.close(e);
+
+                    return;
+                }
+
+                // Left arrow and Up arrow
+                if (keycode === 37 || keycode === 38) {
+                    e.preventDefault();
+
+                    self.previous();
+
+                    return;
+                }
+
+                // Righ arrow and Down arrow
+                if (keycode === 39 || keycode === 40) {
+                    e.preventDefault();
+
+                    self.next();
+
+                    return;
+                }
+
+                self.trigger('afterKeydown', e, keycode);
+            });
+
+            // Hide controls after some inactivity period
+            if (self.group[self.currIndex].opts.idleTime) {
+                self.idleSecondsCounter = 0;
+
+                $D.on('mousemove.fb-idle mouseleave.fb-idle mousedown.fb-idle touchstart.fb-idle touchmove.fb-idle scroll.fb-idle keydown.fb-idle', function (e) {
+                    self.idleSecondsCounter = 0;
+
+                    if (self.isIdle) {
+                        self.showControls();
+                    }
+
+                    self.isIdle = false;
+                });
+
+                self.idleInterval = window.setInterval(function () {
+                    self.idleSecondsCounter++;
+
+                    if (self.idleSecondsCounter >= self.group[self.currIndex].opts.idleTime && !self.isDragging) {
+                        self.isIdle = true;
+                        self.idleSecondsCounter = 0;
+
+                        self.hideControls();
+                    }
+                }, 1000);
+            }
+        },
+
+        // Remove events added by the core
+        // ===============================
+
+        removeEvents: function removeEvents() {
+            var self = this;
+
+            $W.off('orientationchange.fb resize.fb');
+            $D.off('focusin.fb keydown.fb .fb-idle');
+
+            this.$refs.container.off('.fb-close .fb-prev .fb-next');
+
+            if (self.idleInterval) {
+                window.clearInterval(self.idleInterval);
+
+                self.idleInterval = null;
+            }
+        },
+
+        // Change to previous gallery item
+        // ===============================
+
+        previous: function previous(duration) {
+            return this.jumpTo(this.currPos - 1, duration);
+        },
+
+        // Change to next gallery item
+        // ===========================
+
+        next: function next(duration) {
+            return this.jumpTo(this.currPos + 1, duration);
+        },
+
+        // Switch to selected gallery item
+        // ===============================
+
+        jumpTo: function jumpTo(pos, duration, slide) {
+            var self = this,
+                firstRun,
+                loop,
+                current,
+                previous,
+                canvasWidth,
+                currentPos,
+                transitionProps;
+
+            var groupLen = self.group.length;
+
+            if (self.isDragging || self.isClosing || self.isAnimating && self.firstRun) {
+                return;
+            }
+
+            pos = parseInt(pos, 10);
+            loop = self.current ? self.current.opts.loop : self.opts.loop;
+
+            if (!loop && (pos < 0 || pos >= groupLen)) {
+                return false;
+            }
+
+            firstRun = self.firstRun = self.firstRun === null;
+
+            if (groupLen < 2 && !firstRun && !!self.isDragging) {
+                return;
+            }
+
+            previous = self.current;
+
+            self.prevIndex = self.currIndex;
+            self.prevPos = self.currPos;
+
+            // Create slides
+            current = self.createSlide(pos);
+
+            if (groupLen > 1) {
+                if (loop || current.index > 0) {
+                    self.createSlide(pos - 1);
+                }
+
+                if (loop || current.index < groupLen - 1) {
+                    self.createSlide(pos + 1);
+                }
+            }
+
+            self.current = current;
+            self.currIndex = current.index;
+            self.currPos = current.pos;
+
+            self.trigger('beforeShow', firstRun);
+
+            self.updateControls();
+
+            currentPos = $.fancybox.getTranslate(current.$slide);
+
+            current.isMoved = (currentPos.left !== 0 || currentPos.top !== 0) && !current.$slide.hasClass('fancybox-animated');
+            current.forcedDuration = undefined;
+
+            if ($.isNumeric(duration)) {
+                current.forcedDuration = duration;
+            } else {
+                duration = current.opts[firstRun ? 'animationDuration' : 'transitionDuration'];
+            }
+
+            duration = parseInt(duration, 10);
+
+            // Fresh start - reveal container, current slide and start loading content
+            if (firstRun) {
+
+                if (current.opts.animationEffect && duration) {
+                    self.$refs.container.css('transition-duration', duration + 'ms');
+                }
+
+                self.$refs.container.removeClass('fancybox-is-hidden');
+
+                forceRedraw(self.$refs.container);
+
+                self.$refs.container.addClass('fancybox-is-open');
+
+                // Make first slide visible (to display loading icon, if needed)
+                current.$slide.addClass('fancybox-slide--current');
+
+                self.loadSlide(current);
+
+                self.preload('image');
+
+                return;
+            }
+
+            // Clean up
+            $.each(self.slides, function (index, slide) {
+                $.fancybox.stop(slide.$slide);
+            });
+
+            // Make current that slide is visible even if content is still loading
+            current.$slide.removeClass('fancybox-slide--next fancybox-slide--previous').addClass('fancybox-slide--current');
+
+            // If slides have been dragged, animate them to correct position
+            if (current.isMoved) {
+                canvasWidth = Math.round(current.$slide.width());
+
+                $.each(self.slides, function (index, slide) {
+                    var pos = slide.pos - current.pos;
+
+                    $.fancybox.animate(slide.$slide, {
+                        top: 0,
+                        left: pos * canvasWidth + pos * slide.opts.gutter
+                    }, duration, function () {
+
+                        slide.$slide.removeAttr('style').removeClass('fancybox-slide--next fancybox-slide--previous');
+
+                        if (slide.pos === self.currPos) {
+                            current.isMoved = false;
+
+                            self.complete();
+                        }
+                    });
+                });
+            } else {
+                self.$refs.stage.children().removeAttr('style');
+            }
+
+            // Start transition that reveals current content
+            // or wait when it will be loaded
+
+            if (current.isLoaded) {
+                self.revealContent(current);
+            } else {
+                self.loadSlide(current);
+            }
+
+            self.preload('image');
+
+            if (previous.pos === current.pos) {
+                return;
+            }
+
+            // Handle previous slide
+            // =====================
+
+            transitionProps = 'fancybox-slide--' + (previous.pos > current.pos ? 'next' : 'previous');
+
+            previous.$slide.removeClass('fancybox-slide--complete fancybox-slide--current fancybox-slide--next fancybox-slide--previous');
+
+            previous.isComplete = false;
+
+            if (!duration || !current.isMoved && !current.opts.transitionEffect) {
+                return;
+            }
+
+            if (current.isMoved) {
+                previous.$slide.addClass(transitionProps);
+            } else {
+
+                transitionProps = 'fancybox-animated ' + transitionProps + ' fancybox-fx-' + current.opts.transitionEffect;
+
+                $.fancybox.animate(previous.$slide, transitionProps, duration, function () {
+                    previous.$slide.removeClass(transitionProps).removeAttr('style');
+                });
+            }
+        },
+
+        // Create new "slide" element
+        // These are gallery items  that are actually added to DOM
+        // =======================================================
+
+        createSlide: function createSlide(pos) {
+
+            var self = this;
+            var $slide;
+            var index;
+
+            index = pos % self.group.length;
+            index = index < 0 ? self.group.length + index : index;
+
+            if (!self.slides[pos] && self.group[index]) {
+                $slide = $('<div class="fancybox-slide"></div>').appendTo(self.$refs.stage);
+
+                self.slides[pos] = $.extend(true, {}, self.group[index], {
+                    pos: pos,
+                    $slide: $slide,
+                    isLoaded: false
+                });
+
+                self.updateSlide(self.slides[pos]);
+            }
+
+            return self.slides[pos];
+        },
+
+        // Scale image to the actual size of the image
+        // ===========================================
+
+        scaleToActual: function scaleToActual(x, y, duration) {
+
+            var self = this;
+
+            var current = self.current;
+            var $what = current.$content;
+
+            var imgPos, posX, posY, scaleX, scaleY;
+
+            var canvasWidth = parseInt(current.$slide.width(), 10);
+            var canvasHeight = parseInt(current.$slide.height(), 10);
+
+            var newImgWidth = current.width;
+            var newImgHeight = current.height;
+
+            if (!(current.type == 'image' && !current.hasError) || !$what || self.isAnimating) {
+                return;
+            }
+
+            $.fancybox.stop($what);
+
+            self.isAnimating = true;
+
+            x = x === undefined ? canvasWidth * 0.5 : x;
+            y = y === undefined ? canvasHeight * 0.5 : y;
+
+            imgPos = $.fancybox.getTranslate($what);
+
+            scaleX = newImgWidth / imgPos.width;
+            scaleY = newImgHeight / imgPos.height;
+
+            // Get center position for original image
+            posX = canvasWidth * 0.5 - newImgWidth * 0.5;
+            posY = canvasHeight * 0.5 - newImgHeight * 0.5;
+
+            // Make sure image does not move away from edges
+            if (newImgWidth > canvasWidth) {
+                posX = imgPos.left * scaleX - (x * scaleX - x);
+
+                if (posX > 0) {
+                    posX = 0;
+                }
+
+                if (posX < canvasWidth - newImgWidth) {
+                    posX = canvasWidth - newImgWidth;
+                }
+            }
+
+            if (newImgHeight > canvasHeight) {
+                posY = imgPos.top * scaleY - (y * scaleY - y);
+
+                if (posY > 0) {
+                    posY = 0;
+                }
+
+                if (posY < canvasHeight - newImgHeight) {
+                    posY = canvasHeight - newImgHeight;
+                }
+            }
+
+            self.updateCursor(newImgWidth, newImgHeight);
+
+            $.fancybox.animate($what, {
+                top: posY,
+                left: posX,
+                scaleX: scaleX,
+                scaleY: scaleY
+            }, duration || 330, function () {
+                self.isAnimating = false;
+            });
+
+            // Stop slideshow
+            if (self.SlideShow && self.SlideShow.isActive) {
+                self.SlideShow.stop();
+            }
+        },
+
+        // Scale image to fit inside parent element
+        // ========================================
+
+        scaleToFit: function scaleToFit(duration) {
+
+            var self = this;
+
+            var current = self.current;
+            var $what = current.$content;
+            var end;
+
+            if (!(current.type == 'image' && !current.hasError) || !$what || self.isAnimating) {
+                return;
+            }
+
+            $.fancybox.stop($what);
+
+            self.isAnimating = true;
+
+            end = self.getFitPos(current);
+
+            self.updateCursor(end.width, end.height);
+
+            $.fancybox.animate($what, {
+                top: end.top,
+                left: end.left,
+                scaleX: end.width / $what.width(),
+                scaleY: end.height / $what.height()
+            }, duration || 330, function () {
+                self.isAnimating = false;
+            });
+        },
+
+        // Calculate image size to fit inside viewport
+        // ===========================================
+
+        getFitPos: function getFitPos(slide) {
+            var self = this;
+            var $what = slide.$content;
+
+            var imgWidth = slide.width;
+            var imgHeight = slide.height;
+
+            var margin = slide.opts.margin;
+
+            var canvasWidth, canvasHeight, minRatio, width, height;
+
+            if (!$what || !$what.length || !imgWidth && !imgHeight) {
+                return false;
+            }
+
+            // Convert "margin to CSS style: [ top, right, bottom, left ]
+            if ($.type(margin) === "number") {
+                margin = [margin, margin];
+            }
+
+            if (margin.length == 2) {
+                margin = [margin[0], margin[1], margin[0], margin[1]];
+            }
+
+            // We can not use $slide width here, because it can have different diemensions while in transiton
+            canvasWidth = parseInt(self.$refs.stage.width(), 10) - (margin[1] + margin[3]);
+            canvasHeight = parseInt(self.$refs.stage.height(), 10) - (margin[0] + margin[2]);
+
+            minRatio = Math.min(1, canvasWidth / imgWidth, canvasHeight / imgHeight);
+
+            width = Math.floor(minRatio * imgWidth);
+            height = Math.floor(minRatio * imgHeight);
+
+            // Use floor rounding to make sure it really fits
+            return {
+                top: Math.floor((canvasHeight - height) * 0.5) + margin[0],
+                left: Math.floor((canvasWidth - width) * 0.5) + margin[3],
+                width: width,
+                height: height
+            };
+        },
+
+        // Update content size and position for all slides
+        // ==============================================
+
+        update: function update() {
+            var self = this;
+
+            $.each(self.slides, function (key, slide) {
+                self.updateSlide(slide);
+            });
+        },
+
+        // Update slide content position and size
+        // ======================================
+
+        updateSlide: function updateSlide(slide, duration) {
+            var self = this,
+                $what = slide && slide.$content;
+
+            if ($what && (slide.width || slide.height)) {
+                self.isAnimating = false;
+
+                $.fancybox.stop($what);
+
+                $.fancybox.setTranslate($what, self.getFitPos(slide));
+
+                if (slide.pos === self.currPos) {
+                    self.updateCursor();
+                }
+            }
+
+            slide.$slide.trigger('refresh');
+
+            self.trigger('onUpdate', slide);
+        },
+
+        // Horizontally center slide
+        // =========================
+
+        centerSlide: function centerSlide(slide, duration) {
+            var self = this,
+                canvasWidth,
+                pos;
+
+            if (self.current) {
+                canvasWidth = Math.round(slide.$slide.width());
+                pos = slide.pos - self.current.pos;
+
+                $.fancybox.animate(slide.$slide, {
+                    top: 0,
+                    left: pos * canvasWidth + pos * slide.opts.gutter,
+                    opacity: 1
+                }, duration === undefined ? 0 : duration, null, false);
+            }
+        },
+
+        // Update cursor style depending if content can be zoomed
+        // ======================================================
+
+        updateCursor: function updateCursor(nextWidth, nextHeight) {
+
+            var self = this;
+            var isScaledDown;
+
+            var $container = self.$refs.container.removeClass('fancybox-is-zoomable fancybox-can-zoomIn fancybox-can-drag fancybox-can-zoomOut');
+
+            if (!self.current || self.isClosing) {
+                return;
+            }
+
+            if (self.isZoomable()) {
+
+                $container.addClass('fancybox-is-zoomable');
+
+                if (nextWidth !== undefined && nextHeight !== undefined) {
+                    isScaledDown = nextWidth < self.current.width && nextHeight < self.current.height;
+                } else {
+                    isScaledDown = self.isScaledDown();
+                }
+
+                if (isScaledDown) {
+
+                    // If image is scaled down, then, obviously, it can be zoomed to full size
+                    $container.addClass('fancybox-can-zoomIn');
+                } else {
+
+                    if (self.current.opts.touch) {
+
+                        // If image size ir largen than available available and touch module is not disable,
+                        // then user can do panning
+                        $container.addClass('fancybox-can-drag');
+                    } else {
+                        $container.addClass('fancybox-can-zoomOut');
+                    }
+                }
+            } else if (self.current.opts.touch) {
+                $container.addClass('fancybox-can-drag');
+            }
+        },
+
+        // Check if current slide is zoomable
+        // ==================================
+
+        isZoomable: function isZoomable() {
+
+            var self = this;
+
+            var current = self.current;
+            var fitPos;
+
+            if (!current || self.isClosing) {
+                return;
+            }
+
+            // Assume that slide is zoomable if
+            //   - image is loaded successfuly
+            //   - click action is "zoom"
+            //   - actual size of the image is smaller than available area
+            if (current.type === 'image' && current.isLoaded && !current.hasError && (current.opts.clickContent === 'zoom' || $.isFunction(current.opts.clickContent) && current.opts.clickContent(current) === "zoom")) {
+
+                fitPos = self.getFitPos(current);
+
+                if (current.width > fitPos.width || current.height > fitPos.height) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+
+        // Check if current image dimensions are smaller than actual
+        // =========================================================
+
+        isScaledDown: function isScaledDown() {
+
+            var self = this;
+
+            var current = self.current;
+            var $what = current.$content;
+
+            var rez = false;
+
+            if ($what) {
+                rez = $.fancybox.getTranslate($what);
+                rez = rez.width < current.width || rez.height < current.height;
+            }
+
+            return rez;
+        },
+
+        // Check if image dimensions exceed parent element
+        // ===============================================
+
+        canPan: function canPan() {
+
+            var self = this;
+
+            var current = self.current;
+            var $what = current.$content;
+
+            var rez = false;
+
+            if ($what) {
+                rez = self.getFitPos(current);
+                rez = Math.abs($what.width() - rez.width) > 1 || Math.abs($what.height() - rez.height) > 1;
+            }
+
+            return rez;
+        },
+
+        // Load content into the slide
+        // ===========================
+
+        loadSlide: function loadSlide(slide) {
+
+            var self = this,
+                type,
+                $slide;
+            var ajaxLoad;
+
+            if (slide.isLoading) {
+                return;
+            }
+
+            if (slide.isLoaded) {
+                return;
+            }
+
+            slide.isLoading = true;
+
+            self.trigger('beforeLoad', slide);
+
+            type = slide.type;
+            $slide = slide.$slide;
+
+            $slide.off('refresh').trigger('onReset').addClass('fancybox-slide--' + (type || 'unknown')).addClass(slide.opts.slideClass);
+
+            // Create content depending on the type
+
+            switch (type) {
+
+                case 'image':
+
+                    self.setImage(slide);
+
+                    break;
+
+                case 'iframe':
+
+                    self.setIframe(slide);
+
+                    break;
+
+                case 'html':
+
+                    self.setContent(slide, slide.src || slide.content);
+
+                    break;
+
+                case 'inline':
+
+                    if ($(slide.src).length) {
+                        self.setContent(slide, $(slide.src));
+                    } else {
+                        self.setError(slide);
+                    }
+
+                    break;
+
+                case 'ajax':
+
+                    self.showLoading(slide);
+
+                    ajaxLoad = $.ajax($.extend({}, slide.opts.ajax.settings, {
+                        url: slide.src,
+                        success: function success(data, textStatus) {
+
+                            if (textStatus === 'success') {
+                                self.setContent(slide, data);
+                            }
+                        },
+                        error: function error(jqXHR, textStatus) {
+
+                            if (jqXHR && textStatus !== 'abort') {
+                                self.setError(slide);
+                            }
+                        }
+                    }));
+
+                    $slide.one('onReset', function () {
+                        ajaxLoad.abort();
+                    });
+
+                    break;
+
+                case 'video':
+
+                    self.setContent(slide, '<video controls>' + '<source src="' + slide.src + '" type="' + slide.opts.videoFormat + '">' + 'Your browser doesn\'t support HTML5 video' + '</video>');
+
+                    break;
+
+                default:
+
+                    self.setError(slide);
+
+                    break;
+
+            }
+
+            return true;
+        },
+
+        // Use thumbnail image, if possible
+        // ================================
+
+        setImage: function setImage(slide) {
+
+            var self = this;
+            var srcset = slide.opts.srcset || slide.opts.image.srcset;
+
+            var found, temp, pxRatio, windowWidth;
+
+            // If we have "srcset", then we need to find matching "src" value.
+            // This is necessary, because when you set an src attribute, the browser will preload the image
+            // before any javascript or even CSS is applied.
+            if (srcset) {
+                pxRatio = window.devicePixelRatio || 1;
+                windowWidth = window.innerWidth * pxRatio;
+
+                temp = srcset.split(',').map(function (el) {
+                    var ret = {};
+
+                    el.trim().split(/\s+/).forEach(function (el, i) {
+                        var value = parseInt(el.substring(0, el.length - 1), 10);
+
+                        if (i === 0) {
+                            return ret.url = el;
+                        }
+
+                        if (value) {
+                            ret.value = value;
+                            ret.postfix = el[el.length - 1];
+                        }
+                    });
+
+                    return ret;
+                });
+
+                // Sort by value
+                temp.sort(function (a, b) {
+                    return a.value - b.value;
+                });
+
+                // Ok, now we have an array of all srcset values
+                for (var j = 0; j < temp.length; j++) {
+                    var el = temp[j];
+
+                    if (el.postfix === 'w' && el.value >= windowWidth || el.postfix === 'x' && el.value >= pxRatio) {
+                        found = el;
+                        break;
+                    }
+                }
+
+                // If not found, take the last one
+                if (!found && temp.length) {
+                    found = temp[temp.length - 1];
+                }
+
+                if (found) {
+                    slide.src = found.url;
+
+                    // If we have default width/height values, we can calculate height for matching source
+                    if (slide.width && slide.height && found.postfix == 'w') {
+                        slide.height = slide.width / slide.height * found.value;
+                        slide.width = found.value;
+                    }
+                }
+            }
+
+            // This will be wrapper containing both ghost and actual image
+            slide.$content = $('<div class="fancybox-image-wrap"></div>').addClass('fancybox-is-hidden').appendTo(slide.$slide);
+
+            // If we have a thumbnail, we can display it while actual image is loading
+            // Users will not stare at black screen and actual image will appear gradually
+            if (slide.opts.preload !== false && slide.opts.width && slide.opts.height && (slide.opts.thumb || slide.opts.$thumb)) {
+
+                slide.width = slide.opts.width;
+                slide.height = slide.opts.height;
+
+                slide.$ghost = $('<img />').one('error', function () {
+
+                    $(this).remove();
+
+                    slide.$ghost = null;
+
+                    self.setBigImage(slide);
+                }).one('load', function () {
+
+                    self.afterLoad(slide);
+
+                    self.setBigImage(slide);
+                }).addClass('fancybox-image').appendTo(slide.$content).attr('src', slide.opts.thumb || slide.opts.$thumb.attr('src'));
+            } else {
+
+                self.setBigImage(slide);
+            }
+        },
+
+        // Create full-size image
+        // ======================
+
+        setBigImage: function setBigImage(slide) {
+            var self = this;
+            var $img = $('<img />');
+
+            slide.$image = $img.one('error', function () {
+
+                self.setError(slide);
+            }).one('load', function () {
+
+                // Clear timeout that checks if loading icon needs to be displayed
+                clearTimeout(slide.timouts);
+
+                slide.timouts = null;
+
+                if (self.isClosing) {
+                    return;
+                }
+
+                slide.width = slide.opts.width || this.naturalWidth;
+                slide.height = slide.opts.height || this.naturalHeight;
+
+                if (slide.opts.image.srcset) {
+                    $img.attr('sizes', '100vw').attr('srcset', slide.opts.image.srcset);
+                }
+
+                self.hideLoading(slide);
+
+                if (slide.$ghost) {
+
+                    slide.timouts = setTimeout(function () {
+                        slide.timouts = null;
+
+                        slide.$ghost.hide();
+                    }, Math.min(300, Math.max(1000, slide.height / 1600)));
+                } else {
+                    self.afterLoad(slide);
+                }
+            }).addClass('fancybox-image').attr('src', slide.src).appendTo(slide.$content);
+
+            if (($img[0].complete || $img[0].readyState == "complete") && $img[0].naturalWidth && $img[0].naturalHeight) {
+                $img.trigger('load');
+            } else if ($img[0].error) {
+                $img.trigger('error');
+            } else {
+
+                slide.timouts = setTimeout(function () {
+                    if (!$img[0].complete && !slide.hasError) {
+                        self.showLoading(slide);
+                    }
+                }, 100);
+            }
+        },
+
+        // Create iframe wrapper, iframe and bindings
+        // ==========================================
+
+        setIframe: function setIframe(slide) {
+            var self = this,
+                opts = slide.opts.iframe,
+                $slide = slide.$slide,
+                $iframe;
+
+            slide.$content = $('<div class="fancybox-content' + (opts.preload ? ' fancybox-is-hidden' : '') + '"></div>').css(opts.css).appendTo($slide);
+
+            $iframe = $(opts.tpl.replace(/\{rnd\}/g, new Date().getTime())).attr(opts.attr).appendTo(slide.$content);
+
+            if (opts.preload) {
+
+                self.showLoading(slide);
+
+                // Unfortunately, it is not always possible to determine if iframe is successfully loaded
+                // (due to browser security policy)
+
+                $iframe.on('load.fb error.fb', function (e) {
+                    this.isReady = 1;
+
+                    slide.$slide.trigger('refresh');
+
+                    self.afterLoad(slide);
+                });
+
+                // Recalculate iframe content size
+                // ===============================
+
+                $slide.on('refresh.fb', function () {
+                    var $wrap = slide.$content,
+                        frameWidth = opts.css.width,
+                        frameHeight = opts.css.height,
+                        scrollWidth,
+                        $contents,
+                        $body;
+
+                    if ($iframe[0].isReady !== 1) {
+                        return;
+                    }
+
+                    // Check if content is accessible,
+                    // it will fail if frame is not with the same origin
+
+                    try {
+                        $contents = $iframe.contents();
+                        $body = $contents.find('body');
+                    } catch (ignore) {}
+
+                    // Calculate dimensions for the wrapper
+                    if ($body && $body.length) {
+
+                        if (frameWidth === undefined) {
+                            scrollWidth = $iframe[0].contentWindow.document.documentElement.scrollWidth;
+
+                            frameWidth = Math.ceil($body.outerWidth(true) + ($wrap.width() - scrollWidth));
+                            frameWidth += $wrap.outerWidth() - $wrap.innerWidth();
+                        }
+
+                        if (frameHeight === undefined) {
+                            frameHeight = Math.ceil($body.outerHeight(true));
+                            frameHeight += $wrap.outerHeight() - $wrap.innerHeight();
+                        }
+
+                        // Resize wrapper to fit iframe content
+                        if (frameWidth) {
+                            $wrap.width(frameWidth);
+                        }
+
+                        if (frameHeight) {
+                            $wrap.height(frameHeight);
+                        }
+                    }
+
+                    $wrap.removeClass('fancybox-is-hidden');
+                });
+            } else {
+
+                this.afterLoad(slide);
+            }
+
+            $iframe.attr('src', slide.src);
+
+            if (slide.opts.smallBtn === true) {
+                slide.$content.prepend(self.translate(slide, slide.opts.btnTpl.smallBtn));
+            }
+
+            // Remove iframe if closing or changing gallery item
+            $slide.one('onReset', function () {
+
+                // This helps IE not to throw errors when closing
+                try {
+
+                    $(this).find('iframe').hide().attr('src', '//about:blank');
+                } catch (ignore) {}
+
+                $(this).empty();
+
+                slide.isLoaded = false;
+            });
+        },
+
+        // Wrap and append content to the slide
+        // ======================================
+
+        setContent: function setContent(slide, content) {
+
+            var self = this;
+
+            if (self.isClosing) {
+                return;
+            }
+
+            self.hideLoading(slide);
+
+            slide.$slide.empty();
+
+            if (isQuery(content) && content.parent().length) {
+
+                // If content is a jQuery object, then it will be moved to the slide.
+                // The placeholder is created so we will know where to put it back.
+                // If user is navigating gallery fast, then the content might be already inside fancyBox
+                // =====================================================================================
+
+                // Make sure content is not already moved to fancyBox
+                content.parent('.fancybox-slide--inline').trigger('onReset');
+
+                // Create temporary element marking original place of the content
+                slide.$placeholder = $('<div></div>').hide().insertAfter(content);
+
+                // Make sure content is visible
+                content.css('display', 'inline-block');
+            } else if (!slide.hasError) {
+
+                // If content is just a plain text, try to convert it to html
+                if ($.type(content) === 'string') {
+                    content = $('<div>').append($.trim(content)).contents();
+
+                    // If we have text node, then add wrapping element to make vertical alignment work
+                    if (content[0].nodeType === 3) {
+                        content = $('<div>').html(content);
+                    }
+                }
+
+                // If "filter" option is provided, then filter content
+                if (slide.opts.filter) {
+                    content = $('<div>').html(content).find(slide.opts.filter);
+                }
+            }
+
+            slide.$slide.one('onReset', function () {
+
+                // Pause all html5 video/audio
+                $(this).find('video,audio').trigger('pause');
+
+                // Put content back
+                if (slide.$placeholder) {
+                    slide.$placeholder.after(content.hide()).remove();
+
+                    slide.$placeholder = null;
+                }
+
+                // Remove custom close button
+                if (slide.$smallBtn) {
+                    slide.$smallBtn.remove();
+
+                    slide.$smallBtn = null;
+                }
+
+                // Remove content and mark slide as not loaded
+                if (!slide.hasError) {
+                    $(this).empty();
+
+                    slide.isLoaded = false;
+                }
+            });
+
+            slide.$content = $(content).appendTo(slide.$slide);
+
+            this.afterLoad(slide);
+        },
+
+        // Display error message
+        // =====================
+
+        setError: function setError(slide) {
+
+            slide.hasError = true;
+
+            slide.$slide.removeClass('fancybox-slide--' + slide.type);
+
+            this.setContent(slide, this.translate(slide, slide.opts.errorTpl));
+        },
+
+        // Show loading icon inside the slide
+        // ==================================
+
+        showLoading: function showLoading(slide) {
+
+            var self = this;
+
+            slide = slide || self.current;
+
+            if (slide && !slide.$spinner) {
+                slide.$spinner = $(self.opts.spinnerTpl).appendTo(slide.$slide);
+            }
+        },
+
+        // Remove loading icon from the slide
+        // ==================================
+
+        hideLoading: function hideLoading(slide) {
+
+            var self = this;
+
+            slide = slide || self.current;
+
+            if (slide && slide.$spinner) {
+                slide.$spinner.remove();
+
+                delete slide.$spinner;
+            }
+        },
+
+        // Adjustments after slide content has been loaded
+        // ===============================================
+
+        afterLoad: function afterLoad(slide) {
+
+            var self = this;
+
+            if (self.isClosing) {
+                return;
+            }
+
+            slide.isLoading = false;
+            slide.isLoaded = true;
+
+            self.trigger('afterLoad', slide);
+
+            self.hideLoading(slide);
+
+            if (slide.opts.smallBtn && !slide.$smallBtn) {
+                slide.$smallBtn = $(self.translate(slide, slide.opts.btnTpl.smallBtn)).appendTo(slide.$content.filter('div,form').first());
+            }
+
+            if (slide.opts.protect && slide.$content && !slide.hasError) {
+
+                // Disable right click
+                slide.$content.on('contextmenu.fb', function (e) {
+                    if (e.button == 2) {
+                        e.preventDefault();
+                    }
+
+                    return true;
+                });
+
+                // Add fake element on top of the image
+                // This makes a bit harder for user to select image
+                if (slide.type === 'image') {
+                    $('<div class="fancybox-spaceball"></div>').appendTo(slide.$content);
+                }
+            }
+
+            self.revealContent(slide);
+        },
+
+        // Make content visible
+        // This method is called right after content has been loaded or
+        // user navigates gallery and transition should start
+        // ============================================================
+
+        revealContent: function revealContent(slide) {
+
+            var self = this;
+            var $slide = slide.$slide;
+
+            var effect,
+                effectClassName,
+                duration,
+                opacity,
+                end,
+                start = false;
+
+            effect = slide.opts[self.firstRun ? 'animationEffect' : 'transitionEffect'];
+            duration = slide.opts[self.firstRun ? 'animationDuration' : 'transitionDuration'];
+
+            duration = parseInt(slide.forcedDuration === undefined ? duration : slide.forcedDuration, 10);
+
+            if (slide.isMoved || slide.pos !== self.currPos || !duration) {
+                effect = false;
+            }
+
+            // Check if can zoom
+            if (effect === 'zoom' && !(slide.pos === self.currPos && duration && slide.type === 'image' && !slide.hasError && (start = self.getThumbPos(slide)))) {
+                effect = 'fade';
+            }
+
+            // Zoom animation
+            // ==============
+
+            if (effect === 'zoom') {
+                end = self.getFitPos(slide);
+
+                end.scaleX = end.width / start.width;
+                end.scaleY = end.height / start.height;
+
+                delete end.width;
+                delete end.height;
+
+                // Check if we need to animate opacity
+                opacity = slide.opts.zoomOpacity;
+
+                if (opacity == 'auto') {
+                    opacity = Math.abs(slide.width / slide.height - start.width / start.height) > 0.1;
+                }
+
+                if (opacity) {
+                    start.opacity = 0.1;
+                    end.opacity = 1;
+                }
+
+                // Draw image at start position
+                $.fancybox.setTranslate(slide.$content.removeClass('fancybox-is-hidden'), start);
+
+                forceRedraw(slide.$content);
+
+                // Start animation
+                $.fancybox.animate(slide.$content, end, duration, function () {
+                    self.complete();
+                });
+
+                return;
+            }
+
+            self.updateSlide(slide);
+
+            // Simply show content
+            // ===================
+
+            if (!effect) {
+                forceRedraw($slide);
+
+                slide.$content.removeClass('fancybox-is-hidden');
+
+                if (slide.pos === self.currPos) {
+                    self.complete();
+                }
+
+                return;
+            }
+
+            $.fancybox.stop($slide);
+
+            effectClassName = 'fancybox-animated fancybox-slide--' + (slide.pos >= self.prevPos ? 'next' : 'previous') + ' fancybox-fx-' + effect;
+
+            $slide.removeAttr('style').removeClass('fancybox-slide--current fancybox-slide--next fancybox-slide--previous').addClass(effectClassName);
+
+            slide.$content.removeClass('fancybox-is-hidden');
+
+            //Force reflow for CSS3 transitions
+            forceRedraw($slide);
+
+            $.fancybox.animate($slide, 'fancybox-slide--current', duration, function (e) {
+                $slide.removeClass(effectClassName).removeAttr('style');
+
+                if (slide.pos === self.currPos) {
+                    self.complete();
+                }
+            }, true);
+        },
+
+        // Check if we can and have to zoom from thumbnail
+        //================================================
+
+        getThumbPos: function getThumbPos(slide) {
+
+            var self = this;
+            var rez = false;
+
+            // Check if element is inside the viewport by at least 1 pixel
+            var isElementVisible = function isElementVisible($el) {
+                var element = $el[0];
+
+                var elementRect = element.getBoundingClientRect();
+                var parentRects = [];
+
+                var visibleInAllParents;
+
+                while (element.parentElement !== null) {
+                    if ($(element.parentElement).css('overflow') === 'hidden' || $(element.parentElement).css('overflow') === 'auto') {
+                        parentRects.push(element.parentElement.getBoundingClientRect());
+                    }
+
+                    element = element.parentElement;
+                }
+
+                visibleInAllParents = parentRects.every(function (parentRect) {
+                    var visiblePixelX = Math.min(elementRect.right, parentRect.right) - Math.max(elementRect.left, parentRect.left);
+                    var visiblePixelY = Math.min(elementRect.bottom, parentRect.bottom) - Math.max(elementRect.top, parentRect.top);
+
+                    return visiblePixelX > 0 && visiblePixelY > 0;
+                });
+
+                return visibleInAllParents && elementRect.bottom > 0 && elementRect.right > 0 && elementRect.left < $(window).width() && elementRect.top < $(window).height();
+            };
+
+            var $thumb = slide.opts.$thumb;
+            var thumbPos = $thumb ? $thumb.offset() : 0;
+            var slidePos;
+
+            if (thumbPos && $thumb[0].ownerDocument === document && isElementVisible($thumb)) {
+                slidePos = self.$refs.stage.offset();
+
+                rez = {
+                    top: thumbPos.top - slidePos.top + parseFloat($thumb.css("border-top-width") || 0),
+                    left: thumbPos.left - slidePos.left + parseFloat($thumb.css("border-left-width") || 0),
+                    width: $thumb.width(),
+                    height: $thumb.height(),
+                    scaleX: 1,
+                    scaleY: 1
+                };
+            }
+
+            return rez;
+        },
+
+        // Final adjustments after current gallery item is moved to position
+        // and it`s content is loaded
+        // ==================================================================
+
+        complete: function complete() {
+            var self = this,
+                current = self.current,
+                slides = {},
+                promise;
+
+            if (current.isMoved || !current.isLoaded || current.isComplete) {
+                return;
+            }
+
+            current.isComplete = true;
+
+            current.$slide.siblings().trigger('onReset');
+
+            self.preload('inline');
+
+            // Trigger any CSS3 transiton inside the slide
+            forceRedraw(current.$slide);
+
+            current.$slide.addClass('fancybox-slide--complete');
+
+            // Remove unnecessary slides
+            $.each(self.slides, function (key, slide) {
+                if (slide.pos >= self.currPos - 1 && slide.pos <= self.currPos + 1) {
+                    slides[slide.pos] = slide;
+                } else if (slide) {
+                    $.fancybox.stop(slide.$slide);
+
+                    slide.$slide.off().remove();
+                }
+            });
+
+            self.slides = slides;
+
+            self.updateCursor();
+
+            self.trigger('afterShow');
+
+            // Play first html5 video/audio
+            current.$slide.find('video,audio').first().trigger('play');
+
+            // Try to focus on the first focusable element
+            if ($(document.activeElement).is('[disabled]') || current.opts.autoFocus && !(current.type == 'image' || current.type === 'iframe')) {
+                self.focus();
+            }
+        },
+
+        // Preload next and previous slides
+        // ================================
+
+        preload: function preload(type) {
+            var self = this,
+                next = self.slides[self.currPos + 1],
+                prev = self.slides[self.currPos - 1];
+
+            if (next && next.type === type) {
+                self.loadSlide(next);
+            }
+
+            if (prev && prev.type === type) {
+                self.loadSlide(prev);
+            }
+        },
+
+        // Try to find and focus on the first focusable element
+        // ====================================================
+
+        focus: function focus() {
+            var current = this.current;
+            var $el;
+
+            if (this.isClosing) {
+                return;
+            }
+
+            if (current && current.isComplete) {
+
+                // Look for first input with autofocus attribute
+                $el = current.$slide.find('input[autofocus]:enabled:visible:first');
+
+                if (!$el.length) {
+                    $el = current.$slide.find('button,:input,[tabindex],a').filter(':enabled:visible:first');
+                }
+            }
+
+            $el = $el && $el.length ? $el : this.$refs.container;
+
+            $el.focus();
+        },
+
+        // Activates current instance - brings container to the front and enables keyboard,
+        // notifies other instances about deactivating
+        // =================================================================================
+
+        activate: function activate() {
+            var self = this;
+
+            // Deactivate all instances
+            $('.fancybox-container').each(function () {
+                var instance = $(this).data('FancyBox');
+
+                // Skip self and closing instances
+                if (instance && instance.id !== self.id && !instance.isClosing) {
+                    instance.trigger('onDeactivate');
+
+                    instance.removeEvents();
+
+                    instance.isVisible = false;
+                }
+            });
+
+            self.isVisible = true;
+
+            if (self.current || self.isIdle) {
+                self.update();
+
+                self.updateControls();
+            }
+
+            self.trigger('onActivate');
+
+            self.addEvents();
+        },
+
+        // Start closing procedure
+        // This will start "zoom-out" animation if needed and clean everything up afterwards
+        // =================================================================================
+
+        close: function close(e, d) {
+
+            var self = this;
+            var current = self.current;
+
+            var effect, duration;
+            var $what, opacity, start, end;
+
+            var done = function done() {
+                self.cleanUp(e);
+            };
+
+            if (self.isClosing) {
+                return false;
+            }
+
+            self.isClosing = true;
+
+            // If beforeClose callback prevents closing, make sure content is centered
+            if (self.trigger('beforeClose', e) === false) {
+                self.isClosing = false;
+
+                requestAFrame(function () {
+                    self.update();
+                });
+
+                return false;
+            }
+
+            // Remove all events
+            // If there are multiple instances, they will be set again by "activate" method
+            self.removeEvents();
+
+            if (current.timouts) {
+                clearTimeout(current.timouts);
+            }
+
+            $what = current.$content;
+            effect = current.opts.animationEffect;
+            duration = $.isNumeric(d) ? d : effect ? current.opts.animationDuration : 0;
+
+            // Remove other slides
+            current.$slide.off(transitionEnd).removeClass('fancybox-slide--complete fancybox-slide--next fancybox-slide--previous fancybox-animated');
+
+            current.$slide.siblings().trigger('onReset').remove();
+
+            // Trigger animations
+            if (duration) {
+                self.$refs.container.removeClass('fancybox-is-open').addClass('fancybox-is-closing');
+            }
+
+            // Clean up
+            self.hideLoading(current);
+
+            self.hideControls();
+
+            self.updateCursor();
+
+            // Check if possible to zoom-out
+            if (effect === 'zoom' && !(e !== true && $what && duration && current.type === 'image' && !current.hasError && (end = self.getThumbPos(current)))) {
+                effect = 'fade';
+            }
+
+            if (effect === 'zoom') {
+                $.fancybox.stop($what);
+
+                start = $.fancybox.getTranslate($what);
+
+                start.width = start.width * start.scaleX;
+                start.height = start.height * start.scaleY;
+
+                // Check if we need to animate opacity
+                opacity = current.opts.zoomOpacity;
+
+                if (opacity == 'auto') {
+                    opacity = Math.abs(current.width / current.height - end.width / end.height) > 0.1;
+                }
+
+                if (opacity) {
+                    end.opacity = 0;
+                }
+
+                start.scaleX = start.width / end.width;
+                start.scaleY = start.height / end.height;
+
+                start.width = end.width;
+                start.height = end.height;
+
+                $.fancybox.setTranslate(current.$content, start);
+
+                forceRedraw(current.$content);
+
+                $.fancybox.animate(current.$content, end, duration, done);
+
+                return true;
+            }
+
+            if (effect && duration) {
+
+                // If skip animation
+                if (e === true) {
+                    setTimeout(done, duration);
+                } else {
+                    $.fancybox.animate(current.$slide.removeClass('fancybox-slide--current'), 'fancybox-animated fancybox-slide--previous fancybox-fx-' + effect, duration, done);
+                }
+            } else {
+                done();
+            }
+
+            return true;
+        },
+
+        // Final adjustments after removing the instance
+        // =============================================
+
+        cleanUp: function cleanUp(e) {
+            var self = this,
+                $body = $('body'),
+                instance,
+                offset;
+
+            self.current.$slide.trigger('onReset');
+
+            self.$refs.container.empty().remove();
+
+            self.trigger('afterClose', e);
+
+            // Place back focus
+            if (self.$lastFocus && !!self.current.opts.backFocus) {
+                self.$lastFocus.focus();
+            }
+
+            self.current = null;
+
+            // Check if there are other instances
+            instance = $.fancybox.getInstance();
+
+            if (instance) {
+                instance.activate();
+            } else {
+
+                $W.scrollTop(self.scrollTop).scrollLeft(self.scrollLeft);
+
+                $body.removeClass('fancybox-active compensate-for-scrollbar');
+
+                if ($body.hasClass('fancybox-iosfix')) {
+                    offset = parseInt(document.body.style.top, 10);
+
+                    $body.removeClass('fancybox-iosfix').css('top', '').scrollTop(offset * -1);
+                }
+
+                $('#fancybox-style-noscroll').remove();
+            }
+        },
+
+        // Call callback and trigger an event
+        // ==================================
+
+        trigger: function trigger(name, slide) {
+            var args = Array.prototype.slice.call(arguments, 1),
+                self = this,
+                obj = slide && slide.opts ? slide : self.current,
+                rez;
+
+            if (obj) {
+                args.unshift(obj);
+            } else {
+                obj = self;
+            }
+
+            args.unshift(self);
+
+            if ($.isFunction(obj.opts[name])) {
+                rez = obj.opts[name].apply(obj, args);
+            }
+
+            if (rez === false) {
+                return rez;
+            }
+
+            if (name === 'afterClose' || !self.$refs) {
+                $D.trigger(name + '.fb', args);
+            } else {
+                self.$refs.container.trigger(name + '.fb', args);
+            }
+        },
+
+        // Update infobar values, navigation button states and reveal caption
+        // ==================================================================
+
+        updateControls: function updateControls(force) {
+
+            var self = this;
+
+            var current = self.current,
+                index = current.index,
+                caption = current.opts.caption,
+                $container = self.$refs.container,
+                $caption = self.$refs.caption;
+
+            // Recalculate content dimensions
+            current.$slide.trigger('refresh');
+
+            self.$caption = caption && caption.length ? $caption.html(caption) : null;
+
+            if (!self.isHiddenControls && !self.isIdle) {
+                self.showControls();
+            }
+
+            // Update info and navigation elements
+            $container.find('[data-fancybox-count]').html(self.group.length);
+            $container.find('[data-fancybox-index]').html(index + 1);
+
+            $container.find('[data-fancybox-prev]').prop('disabled', !current.opts.loop && index <= 0);
+            $container.find('[data-fancybox-next]').prop('disabled', !current.opts.loop && index >= self.group.length - 1);
+
+            if (current.type === 'image') {
+
+                // Update download button source
+                $container.find('[data-fancybox-download]').attr('href', current.opts.image.src || current.src).show();
+            } else {
+                $container.find('[data-fancybox-download],[data-fancybox-zoom]').hide();
+            }
+        },
+
+        // Hide toolbar and caption
+        // ========================
+
+        hideControls: function hideControls() {
+
+            this.isHiddenControls = true;
+
+            this.$refs.container.removeClass('fancybox-show-infobar fancybox-show-toolbar fancybox-show-caption fancybox-show-nav');
+        },
+
+        showControls: function showControls() {
+            var self = this;
+            var opts = self.current ? self.current.opts : self.opts;
+            var $container = self.$refs.container;
+
+            self.isHiddenControls = false;
+            self.idleSecondsCounter = 0;
+
+            $container.toggleClass('fancybox-show-toolbar', !!(opts.toolbar && opts.buttons)).toggleClass('fancybox-show-infobar', !!(opts.infobar && self.group.length > 1)).toggleClass('fancybox-show-nav', !!(opts.arrows && self.group.length > 1)).toggleClass('fancybox-is-modal', !!opts.modal);
+
+            if (self.$caption) {
+                $container.addClass('fancybox-show-caption ');
+            } else {
+                $container.removeClass('fancybox-show-caption');
+            }
+        },
+
+        // Toggle toolbar and caption
+        // ==========================
+
+        toggleControls: function toggleControls() {
+            if (this.isHiddenControls) {
+                this.showControls();
+            } else {
+                this.hideControls();
+            }
+        }
+
+    });
+
+    $.fancybox = {
+
+        version: "3.2.10",
+        defaults: defaults,
+
+        // Get current instance and execute a command.
+        //
+        // Examples of usage:
+        //
+        //   $instance = $.fancybox.getInstance();
+        //   $.fancybox.getInstance().jumpTo( 1 );
+        //   $.fancybox.getInstance( 'jumpTo', 1 );
+        //   $.fancybox.getInstance( function() {
+        //       console.info( this.currIndex );
+        //   });
+        // ======================================================
+
+        getInstance: function getInstance(command) {
+            var instance = $('.fancybox-container:not(".fancybox-is-closing"):last').data('FancyBox');
+            var args = Array.prototype.slice.call(arguments, 1);
+
+            if (instance instanceof FancyBox) {
+
+                if ($.type(command) === 'string') {
+                    instance[command].apply(instance, args);
+                } else if ($.type(command) === 'function') {
+                    command.apply(instance, args);
+                }
+
+                return instance;
+            }
+
+            return false;
+        },
+
+        // Create new instance
+        // ===================
+
+        open: function open(items, opts, index) {
+            return new FancyBox(items, opts, index);
+        },
+
+        // Close current or all instances
+        // ==============================
+
+        close: function close(all) {
+            var instance = this.getInstance();
+
+            if (instance) {
+                instance.close();
+
+                // Try to find and close next instance
+
+                if (all === true) {
+                    this.close();
+                }
+            }
+        },
+
+        // Close instances and unbind all events
+        // ==============================
+
+        destroy: function destroy() {
+
+            this.close(true);
+
+            $D.off('click.fb-start');
+        },
+
+        // Try to detect mobile devices
+        // ============================
+
+        isMobile: document.createTouch !== undefined && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+
+        // Detect if 'translate3d' support is available
+        // ============================================
+
+        use3d: function () {
+            var div = document.createElement('div');
+
+            return window.getComputedStyle && window.getComputedStyle(div).getPropertyValue('transform') && !(document.documentMode && document.documentMode < 11);
+        }(),
+
+        // Helper function to get current visual state of an element
+        // returns array[ top, left, horizontal-scale, vertical-scale, opacity ]
+        // =====================================================================
+
+        getTranslate: function getTranslate($el) {
+            var matrix;
+
+            if (!$el || !$el.length) {
+                return false;
+            }
+
+            matrix = $el.eq(0).css('transform');
+
+            if (matrix && matrix.indexOf('matrix') !== -1) {
+                matrix = matrix.split('(')[1];
+                matrix = matrix.split(')')[0];
+                matrix = matrix.split(',');
+            } else {
+                matrix = [];
+            }
+
+            if (matrix.length) {
+
+                // If IE
+                if (matrix.length > 10) {
+                    matrix = [matrix[13], matrix[12], matrix[0], matrix[5]];
+                } else {
+                    matrix = [matrix[5], matrix[4], matrix[0], matrix[3]];
+                }
+
+                matrix = matrix.map(parseFloat);
+            } else {
+                matrix = [0, 0, 1, 1];
+
+                var transRegex = /\.*translate\((.*)px,(.*)px\)/i;
+                var transRez = transRegex.exec($el.eq(0).attr('style'));
+
+                if (transRez) {
+                    matrix[0] = parseFloat(transRez[2]);
+                    matrix[1] = parseFloat(transRez[1]);
+                }
+            }
+
+            return {
+                top: matrix[0],
+                left: matrix[1],
+                scaleX: matrix[2],
+                scaleY: matrix[3],
+                opacity: parseFloat($el.css('opacity')),
+                width: $el.width(),
+                height: $el.height()
+            };
+        },
+
+        // Shortcut for setting "translate3d" properties for element
+        // Can set be used to set opacity, too
+        // ========================================================
+
+        setTranslate: function setTranslate($el, props) {
+            var str = '';
+            var css = {};
+
+            if (!$el || !props) {
+                return;
+            }
+
+            if (props.left !== undefined || props.top !== undefined) {
+                str = (props.left === undefined ? $el.position().left : props.left) + 'px, ' + (props.top === undefined ? $el.position().top : props.top) + 'px';
+
+                if (this.use3d) {
+                    str = 'translate3d(' + str + ', 0px)';
+                } else {
+                    str = 'translate(' + str + ')';
+                }
+            }
+
+            if (props.scaleX !== undefined && props.scaleY !== undefined) {
+                str = (str.length ? str + ' ' : '') + 'scale(' + props.scaleX + ', ' + props.scaleY + ')';
+            }
+
+            if (str.length) {
+                css.transform = str;
+            }
+
+            if (props.opacity !== undefined) {
+                css.opacity = props.opacity;
+            }
+
+            if (props.width !== undefined) {
+                css.width = props.width;
+            }
+
+            if (props.height !== undefined) {
+                css.height = props.height;
+            }
+
+            return $el.css(css);
+        },
+
+        // Simple CSS transition handler
+        // =============================
+
+        animate: function animate($el, to, duration, callback, leaveAnimationName) {
+            if ($.isFunction(duration)) {
+                callback = duration;
+                duration = null;
+            }
+
+            if (!$.isPlainObject(to)) {
+                $el.removeAttr('style');
+            }
+
+            $el.on(transitionEnd, function (e) {
+
+                // Skip events from child elements and z-index change
+                if (e && e.originalEvent && (!$el.is(e.originalEvent.target) || e.originalEvent.propertyName == 'z-index')) {
+                    return;
+                }
+
+                $.fancybox.stop($el);
+
+                if ($.isPlainObject(to)) {
+
+                    if (to.scaleX !== undefined && to.scaleY !== undefined) {
+                        $el.css('transition-duration', '');
+
+                        to.width = Math.round($el.width() * to.scaleX);
+                        to.height = Math.round($el.height() * to.scaleY);
+
+                        to.scaleX = 1;
+                        to.scaleY = 1;
+
+                        $.fancybox.setTranslate($el, to);
+                    }
+
+                    if (leaveAnimationName === false) {
+                        $el.removeAttr('style');
+                    }
+                } else if (leaveAnimationName !== true) {
+                    $el.removeClass(to);
+                }
+
+                if ($.isFunction(callback)) {
+                    callback(e);
+                }
+            });
+
+            if ($.isNumeric(duration)) {
+                $el.css('transition-duration', duration + 'ms');
+            }
+
+            if ($.isPlainObject(to)) {
+                $.fancybox.setTranslate($el, to);
+            } else {
+                $el.addClass(to);
+            }
+
+            if (to.scaleX && $el.hasClass('fancybox-image-wrap')) {
+                $el.parent().addClass('fancybox-is-scaling');
+            }
+
+            // Make sure that `transitionend` callback gets fired
+            $el.data("timer", setTimeout(function () {
+                $el.trigger('transitionend');
+            }, duration + 16));
+        },
+
+        stop: function stop($el) {
+            clearTimeout($el.data("timer"));
+
+            $el.off('transitionend').css('transition-duration', '');
+
+            if ($el.hasClass('fancybox-image-wrap')) {
+                $el.parent().removeClass('fancybox-is-scaling');
+            }
+        }
+
+    };
+
+    // Default click handler for "fancyboxed" links
+    // ============================================
+
+    function _run(e) {
+        var $target = $(e.currentTarget),
+            opts = e.data ? e.data.options : {},
+            value = $target.attr('data-fancybox') || '',
+            index = 0,
+            items = [];
+
+        // Avoid opening multiple times
+        if (e.isDefaultPrevented()) {
+            return;
+        }
+
+        e.preventDefault();
+
+        // Get all related items and find index for clicked one
+        if (value) {
+            items = opts.selector ? $(opts.selector) : e.data ? e.data.items : [];
+            items = items.length ? items.filter('[data-fancybox="' + value + '"]') : $('[data-fancybox="' + value + '"]');
+
+            index = items.index($target);
+
+            // Sometimes current item can not be found
+            // (for example, when slider clones items)
+            if (index < 0) {
+                index = 0;
+            }
+        } else {
+            items = [$target];
+        }
+
+        $.fancybox.open(items, opts, index);
+    }
+
+    // Create a jQuery plugin
+    // ======================
+
+    $.fn.fancybox = function (options) {
+        var selector;
+
+        options = options || {};
+        selector = options.selector || false;
+
+        if (selector) {
+
+            $('body').off('click.fb-start', selector).on('click.fb-start', selector, {
+                options: options
+            }, _run);
+        } else {
+
+            this.off('click.fb-start').on('click.fb-start', {
+                items: this,
+                options: options
+            }, _run);
+        }
+
+        return this;
+    };
+
+    // Self initializing plugin
+    // ========================
+
+    $D.on('click.fb-start', '[data-fancybox]', _run);
+})(window, document, window.jQuery || jQuery);
+
+// ==========================================================================
+//
+// Media
+// Adds additional media type support
+//
+// ==========================================================================
+;(function ($) {
+
+    'use strict';
+
+    // Formats matching url to final form
+
+    var format = function format(url, rez, params) {
+        if (!url) {
+            return;
+        }
+
+        params = params || '';
+
+        if ($.type(params) === "object") {
+            params = $.param(params, true);
+        }
+
+        $.each(rez, function (key, value) {
+            url = url.replace('$' + key, value || '');
+        });
+
+        if (params.length) {
+            url += (url.indexOf('?') > 0 ? '&' : '?') + params;
+        }
+
+        return url;
+    };
+
+    // Object containing properties for each media type
+
+    var defaults = {
+        youtube: {
+            matcher: /(youtube\.com|youtu\.be|youtube\-nocookie\.com)\/(watch\?(.*&)?v=|v\/|u\/|embed\/?)?(videoseries\?list=(.*)|[\w-]{11}|\?listType=(.*)&list=(.*))(.*)/i,
+            params: {
+                autoplay: 1,
+                autohide: 1,
+                fs: 1,
+                rel: 0,
+                hd: 1,
+                wmode: 'transparent',
+                enablejsapi: 1,
+                html5: 1
+            },
+            paramPlace: 8,
+            type: 'iframe',
+            url: '//www.youtube.com/embed/$4',
+            thumb: '//img.youtube.com/vi/$4/hqdefault.jpg'
+        },
+
+        vimeo: {
+            matcher: /^.+vimeo.com\/(.*\/)?([\d]+)(.*)?/,
+            params: {
+                autoplay: 1,
+                hd: 1,
+                show_title: 1,
+                show_byline: 1,
+                show_portrait: 0,
+                fullscreen: 1,
+                api: 1
+            },
+            paramPlace: 3,
+            type: 'iframe',
+            url: '//player.vimeo.com/video/$2'
+        },
+
+        metacafe: {
+            matcher: /metacafe.com\/watch\/(\d+)\/(.*)?/,
+            type: 'iframe',
+            url: '//www.metacafe.com/embed/$1/?ap=1'
+        },
+
+        dailymotion: {
+            matcher: /dailymotion.com\/video\/(.*)\/?(.*)/,
+            params: {
+                additionalInfos: 0,
+                autoStart: 1
+            },
+            type: 'iframe',
+            url: '//www.dailymotion.com/embed/video/$1'
+        },
+
+        vine: {
+            matcher: /vine.co\/v\/([a-zA-Z0-9\?\=\-]+)/,
+            type: 'iframe',
+            url: '//vine.co/v/$1/embed/simple'
+        },
+
+        instagram: {
+            matcher: /(instagr\.am|instagram\.com)\/p\/([a-zA-Z0-9_\-]+)\/?/i,
+            type: 'image',
+            url: '//$1/p/$2/media/?size=l'
+        },
+
+        // Examples:
+        // http://maps.google.com/?ll=48.857995,2.294297&spn=0.007666,0.021136&t=m&z=16
+        // https://www.google.com/maps/@37.7852006,-122.4146355,14.65z
+        // https://www.google.com/maps/place/Googleplex/@37.4220041,-122.0833494,17z/data=!4m5!3m4!1s0x0:0x6c296c66619367e0!8m2!3d37.4219998!4d-122.0840572
+        gmap_place: {
+            matcher: /(maps\.)?google\.([a-z]{2,3}(\.[a-z]{2})?)\/(((maps\/(place\/(.*)\/)?\@(.*),(\d+.?\d+?)z))|(\?ll=))(.*)?/i,
+            type: 'iframe',
+            url: function url(rez) {
+                return '//maps.google.' + rez[2] + '/?ll=' + (rez[9] ? rez[9] + '&z=' + Math.floor(rez[10]) + (rez[12] ? rez[12].replace(/^\//, "&") : '') : rez[12]) + '&output=' + (rez[12] && rez[12].indexOf('layer=c') > 0 ? 'svembed' : 'embed');
+            }
+        },
+
+        // Examples:
+        // https://www.google.com/maps/search/Empire+State+Building/
+        // https://www.google.com/maps/search/?api=1&query=centurylink+field
+        // https://www.google.com/maps/search/?api=1&query=47.5951518,-122.3316393
+        gmap_search: {
+            matcher: /(maps\.)?google\.([a-z]{2,3}(\.[a-z]{2})?)\/(maps\/search\/)(.*)/i,
+            type: 'iframe',
+            url: function url(rez) {
+                return '//maps.google.' + rez[2] + '/maps?q=' + rez[5].replace('query=', 'q=').replace('api=1', '') + '&output=embed';
+            }
+        }
+    };
+
+    $(document).on('objectNeedsType.fb', function (e, instance, item) {
+
+        var url = item.src || '',
+            type = false,
+            media,
+            thumb,
+            rez,
+            params,
+            urlParams,
+            paramObj,
+            provider;
+
+        media = $.extend(true, {}, defaults, item.opts.media);
+
+        // Look for any matching media type
+        $.each(media, function (providerName, providerOpts) {
+            rez = url.match(providerOpts.matcher);
+
+            if (!rez) {
+                return;
+            }
+
+            type = providerOpts.type;
+            paramObj = {};
+
+            if (providerOpts.paramPlace && rez[providerOpts.paramPlace]) {
+                urlParams = rez[providerOpts.paramPlace];
+
+                if (urlParams[0] == '?') {
+                    urlParams = urlParams.substring(1);
+                }
+
+                urlParams = urlParams.split('&');
+
+                for (var m = 0; m < urlParams.length; ++m) {
+                    var p = urlParams[m].split('=', 2);
+
+                    if (p.length == 2) {
+                        paramObj[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+                    }
+                }
+            }
+
+            params = $.extend(true, {}, providerOpts.params, item.opts[providerName], paramObj);
+
+            url = $.type(providerOpts.url) === "function" ? providerOpts.url.call(this, rez, params, item) : format(providerOpts.url, rez, params);
+            thumb = $.type(providerOpts.thumb) === "function" ? providerOpts.thumb.call(this, rez, params, item) : format(providerOpts.thumb, rez);
+
+            if (providerName === 'vimeo') {
+                url = url.replace('&%23', '#');
+            }
+
+            return false;
+        });
+
+        // If it is found, then change content type and update the url
+
+        if (type) {
+            item.src = url;
+            item.type = type;
+
+            if (!item.opts.thumb && !(item.opts.$thumb && item.opts.$thumb.length)) {
+                item.opts.thumb = thumb;
+            }
+
+            if (type === 'iframe') {
+                $.extend(true, item.opts, {
+                    iframe: {
+                        preload: false,
+                        attr: {
+                            scrolling: "no"
+                        }
+                    }
+                });
+
+                item.contentProvider = provider;
+
+                item.opts.slideClass += ' fancybox-slide--' + (provider == 'gmap_place' || provider == 'gmap_search' ? 'map' : 'video');
+            }
+        } else if (url) {
+            item.type = item.opts.defaultType;
+        }
+    });
+})(window.jQuery || jQuery);
+
+// ==========================================================================
+//
+// Guestures
+// Adds touch guestures, handles click and tap events
+//
+// ==========================================================================
+;(function (window, document, $) {
+    'use strict';
+
+    var requestAFrame = function () {
+        return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame ||
+        // if all else fails, use setTimeout
+        function (callback) {
+            return window.setTimeout(callback, 1000 / 60);
+        };
+    }();
+
+    var cancelAFrame = function () {
+        return window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || function (id) {
+            window.clearTimeout(id);
+        };
+    }();
+
+    var pointers = function pointers(e) {
+        var result = [];
+
+        e = e.originalEvent || e || window.e;
+        e = e.touches && e.touches.length ? e.touches : e.changedTouches && e.changedTouches.length ? e.changedTouches : [e];
+
+        for (var key in e) {
+
+            if (e[key].pageX) {
+                result.push({ x: e[key].pageX, y: e[key].pageY });
+            } else if (e[key].clientX) {
+                result.push({ x: e[key].clientX, y: e[key].clientY });
+            }
+        }
+
+        return result;
+    };
+
+    var distance = function distance(point2, point1, what) {
+        if (!point1 || !point2) {
+            return 0;
+        }
+
+        if (what === 'x') {
+            return point2.x - point1.x;
+        } else if (what === 'y') {
+            return point2.y - point1.y;
+        }
+
+        return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+    };
+
+    var isClickable = function isClickable($el) {
+        if ($el.is('a,area,button,[role="button"],input,label,select,summary,textarea') || $.isFunction($el.get(0).onclick) || $el.data('selectable')) {
+            return true;
+        }
+
+        // Check for attributes like data-fancybox-next or data-fancybox-close
+        for (var i = 0, atts = $el[0].attributes, n = atts.length; i < n; i++) {
+            if (atts[i].nodeName.substr(0, 14) === 'data-fancybox-') {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    var hasScrollbars = function hasScrollbars(el) {
+        var overflowY = window.getComputedStyle(el)['overflow-y'];
+        var overflowX = window.getComputedStyle(el)['overflow-x'];
+
+        var vertical = (overflowY === 'scroll' || overflowY === 'auto') && el.scrollHeight > el.clientHeight;
+        var horizontal = (overflowX === 'scroll' || overflowX === 'auto') && el.scrollWidth > el.clientWidth;
+
+        return vertical || horizontal;
+    };
+
+    var isScrollable = function isScrollable($el) {
+        var rez = false;
+
+        while (true) {
+            rez = hasScrollbars($el.get(0));
+
+            if (rez) {
+                break;
+            }
+
+            $el = $el.parent();
+
+            if (!$el.length || $el.hasClass('fancybox-stage') || $el.is('body')) {
+                break;
+            }
+        }
+
+        return rez;
+    };
+
+    var Guestures = function Guestures(instance) {
+        var self = this;
+
+        self.instance = instance;
+
+        self.$bg = instance.$refs.bg;
+        self.$stage = instance.$refs.stage;
+        self.$container = instance.$refs.container;
+
+        self.destroy();
+
+        self.$container.on('touchstart.fb.touch mousedown.fb.touch', $.proxy(self, 'ontouchstart'));
+    };
+
+    Guestures.prototype.destroy = function () {
+        this.$container.off('.fb.touch');
+    };
+
+    Guestures.prototype.ontouchstart = function (e) {
+        var self = this;
+
+        var $target = $(e.target);
+        var instance = self.instance;
+        var current = instance.current;
+        var $content = current.$content;
+
+        var isTouchDevice = e.type == 'touchstart';
+
+        // Do not respond to both (touch and mouse) events
+        if (isTouchDevice) {
+            self.$container.off('mousedown.fb.touch');
+        }
+
+        // Ignore right click
+        if (e.originalEvent && e.originalEvent.button == 2) {
+            return;
+        }
+
+        // Ignore taping on links, buttons, input elements
+        if (!$target.length || isClickable($target) || isClickable($target.parent())) {
+            return;
+        }
+
+        // Ignore clicks on the scrollbar
+        if (!$target.is('img') && e.originalEvent.clientX > $target[0].clientWidth + $target.offset().left) {
+            return;
+        }
+
+        // Ignore clicks while zooming or closing
+        if (!current || self.instance.isAnimating || self.instance.isClosing) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            return;
+        }
+
+        self.realPoints = self.startPoints = pointers(e);
+
+        if (!self.startPoints) {
+            return;
+        }
+
+        e.stopPropagation();
+
+        self.startEvent = e;
+
+        self.canTap = true;
+        self.$target = $target;
+        self.$content = $content;
+        self.opts = current.opts.touch;
+
+        self.isPanning = false;
+        self.isSwiping = false;
+        self.isZooming = false;
+        self.isScrolling = false;
+
+        self.sliderStartPos = self.sliderLastPos || { top: 0, left: 0 };
+        self.contentStartPos = $.fancybox.getTranslate(self.$content);
+        self.contentLastPos = null;
+
+        self.startTime = new Date().getTime();
+        self.distanceX = self.distanceY = self.distance = 0;
+
+        self.canvasWidth = Math.round(current.$slide[0].clientWidth);
+        self.canvasHeight = Math.round(current.$slide[0].clientHeight);
+
+        $(document).off('.fb.touch').on(isTouchDevice ? 'touchend.fb.touch touchcancel.fb.touch' : 'mouseup.fb.touch mouseleave.fb.touch', $.proxy(self, "ontouchend")).on(isTouchDevice ? 'touchmove.fb.touch' : 'mousemove.fb.touch', $.proxy(self, "ontouchmove"));
+
+        if ($.fancybox.isMobile) {
+            document.addEventListener('scroll', self.onscroll, true);
+        }
+
+        if (!(self.opts || instance.canPan()) || !($target.is(self.$stage) || self.$stage.find($target).length)) {
+
+            // Prevent image ghosting while dragging
+            if ($target.is('img')) {
+                e.preventDefault();
+            }
+
+            return;
+        }
+
+        if (!($.fancybox.isMobile && (isScrollable($target) || isScrollable($target.parent())))) {
+            e.preventDefault();
+        }
+
+        if (self.startPoints.length === 1) {
+            if (current.type === 'image' && (self.contentStartPos.width > self.canvasWidth + 1 || self.contentStartPos.height > self.canvasHeight + 1)) {
+                $.fancybox.stop(self.$content);
+
+                self.$content.css('transition-duration', '');
+
+                self.isPanning = true;
+            } else {
+                self.isSwiping = true;
+            }
+
+            self.$container.addClass('fancybox-controls--isGrabbing');
+        }
+
+        if (self.startPoints.length === 2 && !instance.isAnimating && !current.hasError && current.type === 'image' && (current.isLoaded || current.$ghost)) {
+            self.canTap = false;
+            self.isSwiping = false;
+            self.isPanning = false;
+
+            self.isZooming = true;
+
+            $.fancybox.stop(self.$content);
+
+            self.$content.css('transition-duration', '');
+
+            self.centerPointStartX = (self.startPoints[0].x + self.startPoints[1].x) * 0.5 - $(window).scrollLeft();
+            self.centerPointStartY = (self.startPoints[0].y + self.startPoints[1].y) * 0.5 - $(window).scrollTop();
+
+            self.percentageOfImageAtPinchPointX = (self.centerPointStartX - self.contentStartPos.left) / self.contentStartPos.width;
+            self.percentageOfImageAtPinchPointY = (self.centerPointStartY - self.contentStartPos.top) / self.contentStartPos.height;
+
+            self.startDistanceBetweenFingers = distance(self.startPoints[0], self.startPoints[1]);
+        }
+    };
+
+    Guestures.prototype.onscroll = function (e) {
+        self.isScrolling = true;
+    };
+
+    Guestures.prototype.ontouchmove = function (e) {
+        var self = this,
+            $target = $(e.target);
+
+        if (self.isScrolling || !($target.is(self.$stage) || self.$stage.find($target).length)) {
+            self.canTap = false;
+
+            return;
+        }
+
+        self.newPoints = pointers(e);
+
+        if (!(self.opts || self.instance.canPan()) || !self.newPoints || !self.newPoints.length) {
+            return;
+        }
+
+        if (!(self.isSwiping && self.isSwiping === true)) {
+            e.preventDefault();
+        }
+
+        self.distanceX = distance(self.newPoints[0], self.startPoints[0], 'x');
+        self.distanceY = distance(self.newPoints[0], self.startPoints[0], 'y');
+
+        self.distance = distance(self.newPoints[0], self.startPoints[0]);
+
+        // Skip false ontouchmove events (Chrome)
+        if (self.distance > 0) {
+            if (self.isSwiping) {
+                self.onSwipe(e);
+            } else if (self.isPanning) {
+                self.onPan();
+            } else if (self.isZooming) {
+                self.onZoom();
+            }
+        }
+    };
+
+    Guestures.prototype.onSwipe = function (e) {
+        var self = this,
+            swiping = self.isSwiping,
+            left = self.sliderStartPos.left || 0,
+            angle;
+
+        // If direction is not yet determined
+        if (swiping === true) {
+
+            // We need at least 10px distance to correctly calculate an angle
+            if (Math.abs(self.distance) > 10) {
+                self.canTap = false;
+
+                if (self.instance.group.length < 2 && self.opts.vertical) {
+                    self.isSwiping = 'y';
+                } else if (self.instance.isDragging || self.opts.vertical === false || self.opts.vertical === 'auto' && $(window).width() > 800) {
+                    self.isSwiping = 'x';
+                } else {
+                    angle = Math.abs(Math.atan2(self.distanceY, self.distanceX) * 180 / Math.PI);
+
+                    self.isSwiping = angle > 45 && angle < 135 ? 'y' : 'x';
+                }
+
+                self.canTap = false;
+
+                if (self.isSwiping === 'y' && $.fancybox.isMobile && (isScrollable(self.$target) || isScrollable(self.$target.parent()))) {
+                    self.isScrolling = true;
+
+                    return;
+                }
+
+                self.instance.isDragging = self.isSwiping;
+
+                // Reset points to avoid jumping, because we dropped first swipes to calculate the angle
+                self.startPoints = self.newPoints;
+
+                $.each(self.instance.slides, function (index, slide) {
+                    $.fancybox.stop(slide.$slide);
+
+                    slide.$slide.css('transition-duration', '');
+
+                    slide.inTransition = false;
+
+                    if (slide.pos === self.instance.current.pos) {
+                        self.sliderStartPos.left = $.fancybox.getTranslate(slide.$slide).left;
+                    }
+                });
+
+                // Stop slideshow
+                if (self.instance.SlideShow && self.instance.SlideShow.isActive) {
+                    self.instance.SlideShow.stop();
+                }
+            }
+
+            return;
+        }
+
+        // Sticky edges
+        if (swiping == 'x') {
+            if (self.distanceX > 0 && (self.instance.group.length < 2 || self.instance.current.index === 0 && !self.instance.current.opts.loop)) {
+                left = left + Math.pow(self.distanceX, 0.8);
+            } else if (self.distanceX < 0 && (self.instance.group.length < 2 || self.instance.current.index === self.instance.group.length - 1 && !self.instance.current.opts.loop)) {
+                left = left - Math.pow(-self.distanceX, 0.8);
+            } else {
+                left = left + self.distanceX;
+            }
+        }
+
+        self.sliderLastPos = {
+            top: swiping == 'x' ? 0 : self.sliderStartPos.top + self.distanceY,
+            left: left
+        };
+
+        if (self.requestId) {
+            cancelAFrame(self.requestId);
+
+            self.requestId = null;
+        }
+
+        self.requestId = requestAFrame(function () {
+
+            if (self.sliderLastPos) {
+                $.each(self.instance.slides, function (index, slide) {
+                    var pos = slide.pos - self.instance.currPos;
+
+                    $.fancybox.setTranslate(slide.$slide, {
+                        top: self.sliderLastPos.top,
+                        left: self.sliderLastPos.left + pos * self.canvasWidth + pos * slide.opts.gutter
+                    });
+                });
+
+                self.$container.addClass('fancybox-is-sliding');
+            }
+        });
+    };
+
+    Guestures.prototype.onPan = function () {
+        var self = this;
+
+        // Sometimes, when tapping causally, image can move a bit and that breaks double tapping
+        if (distance(self.newPoints[0], self.realPoints[0]) < ($.fancybox.isMobile ? 10 : 5)) {
+            self.startPoints = self.newPoints;
+            return;
+        }
+
+        self.canTap = false;
+
+        self.contentLastPos = self.limitMovement();
+
+        if (self.requestId) {
+            cancelAFrame(self.requestId);
+
+            self.requestId = null;
+        }
+
+        self.requestId = requestAFrame(function () {
+            $.fancybox.setTranslate(self.$content, self.contentLastPos);
+        });
+    };
+
+    // Make panning sticky to the edges
+    Guestures.prototype.limitMovement = function () {
+        var self = this;
+
+        var canvasWidth = self.canvasWidth;
+        var canvasHeight = self.canvasHeight;
+
+        var distanceX = self.distanceX;
+        var distanceY = self.distanceY;
+
+        var contentStartPos = self.contentStartPos;
+
+        var currentOffsetX = contentStartPos.left;
+        var currentOffsetY = contentStartPos.top;
+
+        var currentWidth = contentStartPos.width;
+        var currentHeight = contentStartPos.height;
+
+        var minTranslateX, minTranslateY, maxTranslateX, maxTranslateY, newOffsetX, newOffsetY;
+
+        if (currentWidth > canvasWidth) {
+            newOffsetX = currentOffsetX + distanceX;
+        } else {
+            newOffsetX = currentOffsetX;
+        }
+
+        newOffsetY = currentOffsetY + distanceY;
+
+        // Slow down proportionally to traveled distance
+        minTranslateX = Math.max(0, canvasWidth * 0.5 - currentWidth * 0.5);
+        minTranslateY = Math.max(0, canvasHeight * 0.5 - currentHeight * 0.5);
+
+        maxTranslateX = Math.min(canvasWidth - currentWidth, canvasWidth * 0.5 - currentWidth * 0.5);
+        maxTranslateY = Math.min(canvasHeight - currentHeight, canvasHeight * 0.5 - currentHeight * 0.5);
+
+        if (currentWidth > canvasWidth) {
+
+            //   ->
+            if (distanceX > 0 && newOffsetX > minTranslateX) {
+                newOffsetX = minTranslateX - 1 + Math.pow(-minTranslateX + currentOffsetX + distanceX, 0.8) || 0;
+            }
+
+            //    <-
+            if (distanceX < 0 && newOffsetX < maxTranslateX) {
+                newOffsetX = maxTranslateX + 1 - Math.pow(maxTranslateX - currentOffsetX - distanceX, 0.8) || 0;
+            }
+        }
+
+        if (currentHeight > canvasHeight) {
+
+            //   \/
+            if (distanceY > 0 && newOffsetY > minTranslateY) {
+                newOffsetY = minTranslateY - 1 + Math.pow(-minTranslateY + currentOffsetY + distanceY, 0.8) || 0;
+            }
+
+            //   /\
+            if (distanceY < 0 && newOffsetY < maxTranslateY) {
+                newOffsetY = maxTranslateY + 1 - Math.pow(maxTranslateY - currentOffsetY - distanceY, 0.8) || 0;
+            }
+        }
+
+        return {
+            top: newOffsetY,
+            left: newOffsetX,
+            scaleX: contentStartPos.scaleX,
+            scaleY: contentStartPos.scaleY
+        };
+    };
+
+    Guestures.prototype.limitPosition = function (newOffsetX, newOffsetY, newWidth, newHeight) {
+        var self = this;
+
+        var canvasWidth = self.canvasWidth;
+        var canvasHeight = self.canvasHeight;
+
+        if (newWidth > canvasWidth) {
+            newOffsetX = newOffsetX > 0 ? 0 : newOffsetX;
+            newOffsetX = newOffsetX < canvasWidth - newWidth ? canvasWidth - newWidth : newOffsetX;
+        } else {
+
+            // Center horizontally
+            newOffsetX = Math.max(0, canvasWidth / 2 - newWidth / 2);
+        }
+
+        if (newHeight > canvasHeight) {
+            newOffsetY = newOffsetY > 0 ? 0 : newOffsetY;
+            newOffsetY = newOffsetY < canvasHeight - newHeight ? canvasHeight - newHeight : newOffsetY;
+        } else {
+
+            // Center vertically
+            newOffsetY = Math.max(0, canvasHeight / 2 - newHeight / 2);
+        }
+
+        return {
+            top: newOffsetY,
+            left: newOffsetX
+        };
+    };
+
+    Guestures.prototype.onZoom = function () {
+        var self = this;
+
+        // Calculate current distance between points to get pinch ratio and new width and height
+
+        var currentWidth = self.contentStartPos.width;
+        var currentHeight = self.contentStartPos.height;
+
+        var currentOffsetX = self.contentStartPos.left;
+        var currentOffsetY = self.contentStartPos.top;
+
+        var endDistanceBetweenFingers = distance(self.newPoints[0], self.newPoints[1]);
+
+        var pinchRatio = endDistanceBetweenFingers / self.startDistanceBetweenFingers;
+
+        var newWidth = Math.floor(currentWidth * pinchRatio);
+        var newHeight = Math.floor(currentHeight * pinchRatio);
+
+        // This is the translation due to pinch-zooming
+        var translateFromZoomingX = (currentWidth - newWidth) * self.percentageOfImageAtPinchPointX;
+        var translateFromZoomingY = (currentHeight - newHeight) * self.percentageOfImageAtPinchPointY;
+
+        //Point between the two touches
+
+        var centerPointEndX = (self.newPoints[0].x + self.newPoints[1].x) / 2 - $(window).scrollLeft();
+        var centerPointEndY = (self.newPoints[0].y + self.newPoints[1].y) / 2 - $(window).scrollTop();
+
+        // And this is the translation due to translation of the centerpoint
+        // between the two fingers
+
+        var translateFromTranslatingX = centerPointEndX - self.centerPointStartX;
+        var translateFromTranslatingY = centerPointEndY - self.centerPointStartY;
+
+        // The new offset is the old/current one plus the total translation
+
+        var newOffsetX = currentOffsetX + (translateFromZoomingX + translateFromTranslatingX);
+        var newOffsetY = currentOffsetY + (translateFromZoomingY + translateFromTranslatingY);
+
+        var newPos = {
+            top: newOffsetY,
+            left: newOffsetX,
+            scaleX: self.contentStartPos.scaleX * pinchRatio,
+            scaleY: self.contentStartPos.scaleY * pinchRatio
+        };
+
+        self.canTap = false;
+
+        self.newWidth = newWidth;
+        self.newHeight = newHeight;
+
+        self.contentLastPos = newPos;
+
+        if (self.requestId) {
+            cancelAFrame(self.requestId);
+
+            self.requestId = null;
+        }
+
+        self.requestId = requestAFrame(function () {
+            $.fancybox.setTranslate(self.$content, self.contentLastPos);
+        });
+    };
+
+    Guestures.prototype.ontouchend = function (e) {
+        var self = this;
+        var dMs = Math.max(new Date().getTime() - self.startTime, 1);
+
+        var swiping = self.isSwiping;
+        var panning = self.isPanning;
+        var zooming = self.isZooming;
+        var scrolling = self.isScrolling;
+
+        self.endPoints = pointers(e);
+
+        self.$container.removeClass('fancybox-controls--isGrabbing');
+
+        $(document).off('.fb.touch');
+
+        document.removeEventListener('scroll', self.onscroll, true);
+
+        if (self.requestId) {
+            cancelAFrame(self.requestId);
+
+            self.requestId = null;
+        }
+
+        self.isSwiping = false;
+        self.isPanning = false;
+        self.isZooming = false;
+        self.isScrolling = false;
+
+        self.instance.isDragging = false;
+
+        if (self.canTap) {
+            return self.onTap(e);
+        }
+
+        self.speed = 366;
+
+        // Speed in px/ms
+        self.velocityX = self.distanceX / dMs * 0.5;
+        self.velocityY = self.distanceY / dMs * 0.5;
+
+        self.speedX = Math.max(self.speed * 0.5, Math.min(self.speed * 1.5, 1 / Math.abs(self.velocityX) * self.speed));
+
+        if (panning) {
+            self.endPanning();
+        } else if (zooming) {
+            self.endZooming();
+        } else {
+            self.endSwiping(swiping, scrolling);
+        }
+
+        return;
+    };
+
+    Guestures.prototype.endSwiping = function (swiping, scrolling) {
+        var self = this,
+            ret = false,
+            len = self.instance.group.length;
+
+        self.sliderLastPos = null;
+
+        // Close if swiped vertically / navigate if horizontally
+        if (swiping == 'y' && !scrolling && Math.abs(self.distanceY) > 50) {
+
+            // Continue vertical movement
+            $.fancybox.animate(self.instance.current.$slide, {
+                top: self.sliderStartPos.top + self.distanceY + self.velocityY * 150,
+                opacity: 0
+            }, 150);
+
+            ret = self.instance.close(true, 300);
+        } else if (swiping == 'x' && self.distanceX > 50 && len > 1) {
+            ret = self.instance.previous(self.speedX);
+        } else if (swiping == 'x' && self.distanceX < -50 && len > 1) {
+            ret = self.instance.next(self.speedX);
+        }
+
+        if (ret === false && (swiping == 'x' || swiping == 'y')) {
+            if (scrolling || len < 2) {
+                self.instance.centerSlide(self.instance.current, 150);
+            } else {
+                self.instance.jumpTo(self.instance.current.index);
+            }
+        }
+
+        self.$container.removeClass('fancybox-is-sliding');
+    };
+
+    // Limit panning from edges
+    // ========================
+
+    Guestures.prototype.endPanning = function () {
+
+        var self = this;
+        var newOffsetX, newOffsetY, newPos;
+
+        if (!self.contentLastPos) {
+            return;
+        }
+
+        if (self.opts.momentum === false) {
+            newOffsetX = self.contentLastPos.left;
+            newOffsetY = self.contentLastPos.top;
+        } else {
+
+            // Continue movement
+            newOffsetX = self.contentLastPos.left + self.velocityX * self.speed;
+            newOffsetY = self.contentLastPos.top + self.velocityY * self.speed;
+        }
+
+        newPos = self.limitPosition(newOffsetX, newOffsetY, self.contentStartPos.width, self.contentStartPos.height);
+
+        newPos.width = self.contentStartPos.width;
+        newPos.height = self.contentStartPos.height;
+
+        $.fancybox.animate(self.$content, newPos, 330);
+    };
+
+    Guestures.prototype.endZooming = function () {
+        var self = this;
+
+        var current = self.instance.current;
+
+        var newOffsetX, newOffsetY, newPos, reset;
+
+        var newWidth = self.newWidth;
+        var newHeight = self.newHeight;
+
+        if (!self.contentLastPos) {
+            return;
+        }
+
+        newOffsetX = self.contentLastPos.left;
+        newOffsetY = self.contentLastPos.top;
+
+        reset = {
+            top: newOffsetY,
+            left: newOffsetX,
+            width: newWidth,
+            height: newHeight,
+            scaleX: 1,
+            scaleY: 1
+        };
+
+        // Reset scalex/scaleY values; this helps for perfomance and does not break animation
+        $.fancybox.setTranslate(self.$content, reset);
+
+        if (newWidth < self.canvasWidth && newHeight < self.canvasHeight) {
+            self.instance.scaleToFit(150);
+        } else if (newWidth > current.width || newHeight > current.height) {
+            self.instance.scaleToActual(self.centerPointStartX, self.centerPointStartY, 150);
+        } else {
+
+            newPos = self.limitPosition(newOffsetX, newOffsetY, newWidth, newHeight);
+
+            // Switch from scale() to width/height or animation will not work correctly
+            $.fancybox.setTranslate(self.content, $.fancybox.getTranslate(self.$content));
+
+            $.fancybox.animate(self.$content, newPos, 150);
+        }
+    };
+
+    Guestures.prototype.onTap = function (e) {
+        var self = this;
+        var $target = $(e.target);
+
+        var instance = self.instance;
+        var current = instance.current;
+
+        var endPoints = e && pointers(e) || self.startPoints;
+
+        var tapX = endPoints[0] ? endPoints[0].x - self.$stage.offset().left : 0;
+        var tapY = endPoints[0] ? endPoints[0].y - self.$stage.offset().top : 0;
+
+        var where;
+
+        var process = function process(prefix) {
+
+            var action = current.opts[prefix];
+
+            if ($.isFunction(action)) {
+                action = action.apply(instance, [current, e]);
+            }
+
+            if (!action) {
+                return;
+            }
+
+            switch (action) {
+
+                case "close":
+
+                    instance.close(self.startEvent);
+
+                    break;
+
+                case "toggleControls":
+
+                    instance.toggleControls(true);
+
+                    break;
+
+                case "next":
+
+                    instance.next();
+
+                    break;
+
+                case "nextOrClose":
+
+                    if (instance.group.length > 1) {
+                        instance.next();
+                    } else {
+                        instance.close(self.startEvent);
+                    }
+
+                    break;
+
+                case "zoom":
+
+                    if (current.type == 'image' && (current.isLoaded || current.$ghost)) {
+
+                        if (instance.canPan()) {
+                            instance.scaleToFit();
+                        } else if (instance.isScaledDown()) {
+                            instance.scaleToActual(tapX, tapY);
+                        } else if (instance.group.length < 2) {
+                            instance.close(self.startEvent);
+                        }
+                    }
+
+                    break;
+            }
+        };
+
+        // Ignore right click
+        if (e.originalEvent && e.originalEvent.button == 2) {
+            return;
+        }
+
+        // Skip if clicked on the scrollbar
+        if (!$target.is('img') && tapX > $target[0].clientWidth + $target.offset().left) {
+            return;
+        }
+
+        // Check where is clicked
+        if ($target.is('.fancybox-bg,.fancybox-inner,.fancybox-outer,.fancybox-container')) {
+            where = 'Outside';
+        } else if ($target.is('.fancybox-slide')) {
+            where = 'Slide';
+        } else if (instance.current.$content && instance.current.$content.find($target).addBack().filter($target).length) {
+            where = 'Content';
+        } else {
+            return;
+        }
+
+        // Check if this is a double tap
+        if (self.tapped) {
+
+            // Stop previously created single tap
+            clearTimeout(self.tapped);
+            self.tapped = null;
+
+            // Skip if distance between taps is too big
+            if (Math.abs(tapX - self.tapX) > 50 || Math.abs(tapY - self.tapY) > 50) {
+                return this;
+            }
+
+            // OK, now we assume that this is a double-tap
+            process('dblclick' + where);
+        } else {
+
+            // Single tap will be processed if user has not clicked second time within 300ms
+            // or there is no need to wait for double-tap
+            self.tapX = tapX;
+            self.tapY = tapY;
+
+            if (current.opts['dblclick' + where] && current.opts['dblclick' + where] !== current.opts['click' + where]) {
+
+                self.tapped = setTimeout(function () {
+                    self.tapped = null;
+
+                    process('click' + where);
+                }, 500);
+            } else {
+                process('click' + where);
+            }
+        }
+
+        return this;
+    };
+
+    $(document).on('onActivate.fb', function (e, instance) {
+        if (instance && !instance.Guestures) {
+            instance.Guestures = new Guestures(instance);
+        }
+    });
+})(window, document, window.jQuery || jQuery);
+
+// ==========================================================================
+//
+// SlideShow
+// Enables slideshow functionality
+//
+// Example of usage:
+// $.fancybox.getInstance().SlideShow.start()
+//
+// ==========================================================================
+;(function (document, $) {
+    'use strict';
+
+    $.extend(true, $.fancybox.defaults, {
+        btnTpl: {
+            slideShow: '<button data-fancybox-play class="fancybox-button fancybox-button--play" title="{{PLAY_START}}">' + '<svg viewBox="0 0 40 40">' + '<path d="M13,12 L27,20 L13,27 Z" />' + '<path d="M15,10 v19 M23,10 v19" />' + '</svg>' + '</button>'
+        },
+        slideShow: {
+            autoStart: false,
+            speed: 3000
+        }
+    });
+
+    var SlideShow = function SlideShow(instance) {
+        this.instance = instance;
+        this.init();
+    };
+
+    $.extend(SlideShow.prototype, {
+        timer: null,
+        isActive: false,
+        $button: null,
+
+        init: function init() {
+            var self = this;
+
+            self.$button = self.instance.$refs.toolbar.find('[data-fancybox-play]').on('click', function () {
+                self.toggle();
+            });
+
+            if (self.instance.group.length < 2 || !self.instance.group[self.instance.currIndex].opts.slideShow) {
+                self.$button.hide();
+            }
+        },
+
+        set: function set(force) {
+            var self = this;
+
+            // Check if reached last element
+            if (self.instance && self.instance.current && (force === true || self.instance.current.opts.loop || self.instance.currIndex < self.instance.group.length - 1)) {
+                self.timer = setTimeout(function () {
+                    if (self.isActive) {
+                        self.instance.jumpTo((self.instance.currIndex + 1) % self.instance.group.length);
+                    }
+                }, self.instance.current.opts.slideShow.speed);
+            } else {
+                self.stop();
+                self.instance.idleSecondsCounter = 0;
+                self.instance.showControls();
+            }
+        },
+
+        clear: function clear() {
+            var self = this;
+
+            clearTimeout(self.timer);
+
+            self.timer = null;
+        },
+
+        start: function start() {
+            var self = this;
+            var current = self.instance.current;
+
+            if (current) {
+                self.isActive = true;
+
+                self.$button.attr('title', current.opts.i18n[current.opts.lang].PLAY_STOP).removeClass('fancybox-button--play').addClass('fancybox-button--pause');
+
+                self.set(true);
+            }
+        },
+
+        stop: function stop() {
+            var self = this;
+            var current = self.instance.current;
+
+            self.clear();
+
+            self.$button.attr('title', current.opts.i18n[current.opts.lang].PLAY_START).removeClass('fancybox-button--pause').addClass('fancybox-button--play');
+
+            self.isActive = false;
+        },
+
+        toggle: function toggle() {
+            var self = this;
+
+            if (self.isActive) {
+                self.stop();
+            } else {
+                self.start();
+            }
+        }
+
+    });
+
+    $(document).on({
+        'onInit.fb': function onInitFb(e, instance) {
+            if (instance && !instance.SlideShow) {
+                instance.SlideShow = new SlideShow(instance);
+            }
+        },
+
+        'beforeShow.fb': function beforeShowFb(e, instance, current, firstRun) {
+            var SlideShow = instance && instance.SlideShow;
+
+            if (firstRun) {
+
+                if (SlideShow && current.opts.slideShow.autoStart) {
+                    SlideShow.start();
+                }
+            } else if (SlideShow && SlideShow.isActive) {
+                SlideShow.clear();
+            }
+        },
+
+        'afterShow.fb': function afterShowFb(e, instance, current) {
+            var SlideShow = instance && instance.SlideShow;
+
+            if (SlideShow && SlideShow.isActive) {
+                SlideShow.set();
+            }
+        },
+
+        'afterKeydown.fb': function afterKeydownFb(e, instance, current, keypress, keycode) {
+            var SlideShow = instance && instance.SlideShow;
+
+            // "P" or Spacebar
+            if (SlideShow && current.opts.slideShow && (keycode === 80 || keycode === 32) && !$(document.activeElement).is('button,a,input')) {
+                keypress.preventDefault();
+
+                SlideShow.toggle();
+            }
+        },
+
+        'beforeClose.fb onDeactivate.fb': function beforeCloseFbOnDeactivateFb(e, instance) {
+            var SlideShow = instance && instance.SlideShow;
+
+            if (SlideShow) {
+                SlideShow.stop();
+            }
+        }
+    });
+
+    // Page Visibility API to pause slideshow when window is not active
+    $(document).on("visibilitychange", function () {
+        var instance = $.fancybox.getInstance();
+        var SlideShow = instance && instance.SlideShow;
+
+        if (SlideShow && SlideShow.isActive) {
+            if (document.hidden) {
+                SlideShow.clear();
+            } else {
+                SlideShow.set();
+            }
+        }
+    });
+})(document, window.jQuery || jQuery);
+
+// ==========================================================================
+//
+// FullScreen
+// Adds fullscreen functionality
+//
+// ==========================================================================
+;(function (document, $) {
+    'use strict';
+
+    // Collection of methods supported by user browser
+
+    var fn = function () {
+
+        var fnMap = [['requestFullscreen', 'exitFullscreen', 'fullscreenElement', 'fullscreenEnabled', 'fullscreenchange', 'fullscreenerror'],
+        // new WebKit
+        ['webkitRequestFullscreen', 'webkitExitFullscreen', 'webkitFullscreenElement', 'webkitFullscreenEnabled', 'webkitfullscreenchange', 'webkitfullscreenerror'],
+        // old WebKit (Safari 5.1)
+        ['webkitRequestFullScreen', 'webkitCancelFullScreen', 'webkitCurrentFullScreenElement', 'webkitCancelFullScreen', 'webkitfullscreenchange', 'webkitfullscreenerror'], ['mozRequestFullScreen', 'mozCancelFullScreen', 'mozFullScreenElement', 'mozFullScreenEnabled', 'mozfullscreenchange', 'mozfullscreenerror'], ['msRequestFullscreen', 'msExitFullscreen', 'msFullscreenElement', 'msFullscreenEnabled', 'MSFullscreenChange', 'MSFullscreenError']];
+
+        var val;
+        var ret = {};
+        var i, j;
+
+        for (i = 0; i < fnMap.length; i++) {
+            val = fnMap[i];
+
+            if (val && val[1] in document) {
+                for (j = 0; j < val.length; j++) {
+                    ret[fnMap[0][j]] = val[j];
+                }
+
+                return ret;
+            }
+        }
+
+        return false;
+    }();
+
+    // If browser does not have Full Screen API, then simply unset default button template and stop
+    if (!fn) {
+
+        if ($ && $.fancybox) {
+            $.fancybox.defaults.btnTpl.fullScreen = false;
+        }
+
+        return;
+    }
+
+    var FullScreen = {
+
+        request: function request(elem) {
+
+            elem = elem || document.documentElement;
+
+            elem[fn.requestFullscreen](elem.ALLOW_KEYBOARD_INPUT);
+        },
+        exit: function exit() {
+
+            document[fn.exitFullscreen]();
+        },
+        toggle: function toggle(elem) {
+
+            elem = elem || document.documentElement;
+
+            if (this.isFullscreen()) {
+                this.exit();
+            } else {
+                this.request(elem);
+            }
+        },
+        isFullscreen: function isFullscreen() {
+
+            return Boolean(document[fn.fullscreenElement]);
+        },
+        enabled: function enabled() {
+
+            return Boolean(document[fn.fullscreenEnabled]);
+        }
+    };
+
+    $.extend(true, $.fancybox.defaults, {
+        btnTpl: {
+            fullScreen: '<button data-fancybox-fullscreen class="fancybox-button fancybox-button--fullscreen" title="{{FULL_SCREEN}}">' + '<svg viewBox="0 0 40 40">' + '<path d="M9,12 h22 v16 h-22 v-16 v16 h22 v-16 Z" />' + '</svg>' + '</button>'
+        },
+        fullScreen: {
+            autoStart: false
+        }
+    });
+
+    $(document).on({
+        'onInit.fb': function onInitFb(e, instance) {
+            var $container;
+
+            if (instance && instance.group[instance.currIndex].opts.fullScreen) {
+                $container = instance.$refs.container;
+
+                $container.on('click.fb-fullscreen', '[data-fancybox-fullscreen]', function (e) {
+
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    FullScreen.toggle($container[0]);
+                });
+
+                if (instance.opts.fullScreen && instance.opts.fullScreen.autoStart === true) {
+                    FullScreen.request($container[0]);
+                }
+
+                // Expose API
+                instance.FullScreen = FullScreen;
+            } else if (instance) {
+                instance.$refs.toolbar.find('[data-fancybox-fullscreen]').hide();
+            }
+        },
+
+        'afterKeydown.fb': function afterKeydownFb(e, instance, current, keypress, keycode) {
+
+            // "P" or Spacebar
+            if (instance && instance.FullScreen && keycode === 70) {
+                keypress.preventDefault();
+
+                instance.FullScreen.toggle(instance.$refs.container[0]);
+            }
+        },
+
+        'beforeClose.fb': function beforeCloseFb(instance) {
+            if (instance && instance.FullScreen) {
+                FullScreen.exit();
+            }
+        }
+    });
+
+    $(document).on(fn.fullscreenchange, function () {
+        var isFullscreen = FullScreen.isFullscreen(),
+            instance = $.fancybox.getInstance();
+
+        if (instance) {
+
+            // If image is zooming, then force to stop and reposition properly
+            if (instance.current && instance.current.type === 'image' && instance.isAnimating) {
+                instance.current.$content.css('transition', 'none');
+
+                instance.isAnimating = false;
+
+                instance.update(true, true, 0);
+            }
+
+            instance.trigger('onFullscreenChange', isFullscreen);
+
+            instance.$refs.container.toggleClass('fancybox-is-fullscreen', isFullscreen);
+        }
+    });
+})(document, window.jQuery || jQuery);
+
+// ==========================================================================
+//
+// Thumbs
+// Displays thumbnails in a grid
+//
+// ==========================================================================
+;(function (document, $) {
+    'use strict';
+
+    // Make sure there are default values
+
+    $.fancybox.defaults = $.extend(true, {
+        btnTpl: {
+            thumbs: '<button data-fancybox-thumbs class="fancybox-button fancybox-button--thumbs" title="{{THUMBS}}">' + '<svg viewBox="0 0 120 120">' + '<path d="M30,30 h14 v14 h-14 Z M50,30 h14 v14 h-14 Z M70,30 h14 v14 h-14 Z M30,50 h14 v14 h-14 Z M50,50 h14 v14 h-14 Z M70,50 h14 v14 h-14 Z M30,70 h14 v14 h-14 Z M50,70 h14 v14 h-14 Z M70,70 h14 v14 h-14 Z" />' + '</svg>' + '</button>'
+        },
+        thumbs: {
+            autoStart: false, // Display thumbnails on opening
+            hideOnClose: true, // Hide thumbnail grid when closing animation starts
+            parentEl: '.fancybox-container', // Container is injected into this element
+            axis: 'y' // Vertical (y) or horizontal (x) scrolling
+        }
+    }, $.fancybox.defaults);
+
+    var FancyThumbs = function FancyThumbs(instance) {
+        this.init(instance);
+    };
+
+    $.extend(FancyThumbs.prototype, {
+
+        $button: null,
+        $grid: null,
+        $list: null,
+        isVisible: false,
+        isActive: false,
+
+        init: function init(instance) {
+            var self = this;
+
+            self.instance = instance;
+
+            instance.Thumbs = self;
+
+            // Enable thumbs if at least two group items have thumbnails
+            var first = instance.group[0],
+                second = instance.group[1];
+
+            self.opts = instance.group[instance.currIndex].opts.thumbs;
+
+            self.$button = instance.$refs.toolbar.find('[data-fancybox-thumbs]');
+
+            if (self.opts && first && second && (first.type == 'image' || first.opts.thumb || first.opts.$thumb) && (second.type == 'image' || second.opts.thumb || second.opts.$thumb)) {
+
+                self.$button.show().on('click', function () {
+                    self.toggle();
+                });
+
+                self.isActive = true;
+            } else {
+                self.$button.hide();
+            }
+        },
+
+        create: function create() {
+            var self = this,
+                instance = self.instance,
+                parentEl = self.opts.parentEl,
+                list,
+                src;
+
+            self.$grid = $('<div class="fancybox-thumbs fancybox-thumbs-' + self.opts.axis + '"></div>').appendTo(instance.$refs.container.find(parentEl).addBack().filter(parentEl));
+
+            // Build list HTML
+            list = '<ul>';
+
+            $.each(instance.group, function (i, item) {
+                src = item.opts.thumb || (item.opts.$thumb ? item.opts.$thumb.attr('src') : null);
+
+                if (!src && item.type === 'image') {
+                    src = item.src;
+                }
+
+                if (src && src.length) {
+                    list += '<li data-index="' + i + '"  tabindex="0" class="fancybox-thumbs-loading"><img data-src="' + src + '" /></li>';
+                }
+            });
+
+            list += '</ul>';
+
+            self.$list = $(list).appendTo(self.$grid).on('click', 'li', function () {
+                instance.jumpTo($(this).data('index'));
+            });
+
+            self.$list.find('img').hide().one('load', function () {
+                var $parent = $(this).parent().removeClass('fancybox-thumbs-loading'),
+                    thumbWidth = $parent.outerWidth(),
+                    thumbHeight = $parent.outerHeight(),
+                    width,
+                    height,
+                    widthRatio,
+                    heightRatio;
+
+                width = this.naturalWidth || this.width;
+                height = this.naturalHeight || this.height;
+
+                // Calculate thumbnail dimensions; center vertically and horizontally
+                widthRatio = width / thumbWidth;
+                heightRatio = height / thumbHeight;
+
+                if (widthRatio >= 1 && heightRatio >= 1) {
+                    if (widthRatio > heightRatio) {
+                        width = width / heightRatio;
+                        height = thumbHeight;
+                    } else {
+                        width = thumbWidth;
+                        height = height / widthRatio;
+                    }
+                }
+
+                $(this).css({
+                    width: Math.floor(width),
+                    height: Math.floor(height),
+                    'margin-top': height > thumbHeight ? Math.floor(thumbHeight * 0.3 - height * 0.3) : Math.floor(thumbHeight * 0.5 - height * 0.5),
+                    'margin-left': Math.floor(thumbWidth * 0.5 - width * 0.5)
+                }).show();
+            }).each(function () {
+                this.src = $(this).data('src');
+            });
+
+            if (self.opts.axis === 'x') {
+                self.$list.width(parseInt(self.$grid.css("padding-right")) + instance.group.length * self.$list.children().eq(0).outerWidth(true) + 'px');
+            }
+        },
+
+        focus: function focus(duration) {
+            var self = this,
+                $list = self.$list,
+                thumb,
+                thumbPos;
+
+            if (self.instance.current) {
+                thumb = $list.children().removeClass('fancybox-thumbs-active').filter('[data-index="' + self.instance.current.index + '"]').addClass('fancybox-thumbs-active');
+
+                thumbPos = thumb.position();
+
+                // Check if need to scroll to make current thumb visible
+                if (self.opts.axis === 'y' && (thumbPos.top < 0 || thumbPos.top > $list.height() - thumb.outerHeight())) {
+                    $list.stop().animate({ 'scrollTop': $list.scrollTop() + thumbPos.top }, duration);
+                } else if (self.opts.axis === 'x' && (thumbPos.left < $list.parent().scrollLeft() || thumbPos.left > $list.parent().scrollLeft() + ($list.parent().width() - thumb.outerWidth()))) {
+                    $list.parent().stop().animate({ 'scrollLeft': thumbPos.left }, duration);
+                }
+            }
+        },
+
+        update: function update() {
+            this.instance.$refs.container.toggleClass('fancybox-show-thumbs', this.isVisible);
+
+            if (this.isVisible) {
+                if (!this.$grid) {
+                    this.create();
+                }
+
+                this.instance.trigger('onThumbsShow');
+
+                this.focus(0);
+            } else if (this.$grid) {
+                this.instance.trigger('onThumbsHide');
+            }
+
+            // Update content position
+            this.instance.update();
+        },
+
+        hide: function hide() {
+            this.isVisible = false;
+            this.update();
+        },
+
+        show: function show() {
+            this.isVisible = true;
+            this.update();
+        },
+
+        toggle: function toggle() {
+            this.isVisible = !this.isVisible;
+            this.update();
+        }
+    });
+
+    $(document).on({
+
+        'onInit.fb': function onInitFb(e, instance) {
+            var Thumbs;
+
+            if (instance && !instance.Thumbs) {
+                Thumbs = new FancyThumbs(instance);
+
+                if (Thumbs.isActive && Thumbs.opts.autoStart === true) {
+                    Thumbs.show();
+                }
+            }
+        },
+
+        'beforeShow.fb': function beforeShowFb(e, instance, item, firstRun) {
+            var Thumbs = instance && instance.Thumbs;
+
+            if (Thumbs && Thumbs.isVisible) {
+                Thumbs.focus(firstRun ? 0 : 250);
+            }
+        },
+
+        'afterKeydown.fb': function afterKeydownFb(e, instance, current, keypress, keycode) {
+            var Thumbs = instance && instance.Thumbs;
+
+            // "G"
+            if (Thumbs && Thumbs.isActive && keycode === 71) {
+                keypress.preventDefault();
+
+                Thumbs.toggle();
+            }
+        },
+
+        'beforeClose.fb': function beforeCloseFb(e, instance) {
+            var Thumbs = instance && instance.Thumbs;
+
+            if (Thumbs && Thumbs.isVisible && Thumbs.opts.hideOnClose !== false) {
+                Thumbs.$grid.hide();
+            }
+        }
+
+    });
+})(document, window.jQuery);
+
+//// ==========================================================================
+//
+// Share
+// Displays simple form for sharing current url
+//
+// ==========================================================================
+;(function (document, $) {
+    'use strict';
+
+    $.extend(true, $.fancybox.defaults, {
+        btnTpl: {
+            share: '<button data-fancybox-share class="fancybox-button fancybox-button--share" title="{{SHARE}}">' + '<svg viewBox="0 0 40 40">' + '<path d="M6,30 C8,18 19,16 23,16 L23,16 L23,10 L33,20 L23,29 L23,24 C19,24 8,27 6,30 Z">' + '</svg>' + '</button>'
+        },
+        share: {
+            tpl: '<div class="fancybox-share">' + '<h1>{{SHARE}}</h1>' + '<p class="fancybox-share__links">' + '<a class="fancybox-share__button fancybox-share__button--fb" href="https://www.facebook.com/sharer/sharer.php?u={{url}}">' + '<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m287 456v-299c0-21 6-35 35-35h38v-63c-7-1-29-3-55-3-54 0-91 33-91 94v306m143-254h-205v72h196" /></svg>' + '<span>Facebook</span>' + '</a>' + '<a class="fancybox-share__button fancybox-share__button--pt" href="https://www.pinterest.com/pin/create/button/?url={{url}}&description={{descr}}&media={{media}}">' + '<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m265 56c-109 0-164 78-164 144 0 39 15 74 47 87 5 2 10 0 12-5l4-19c2-6 1-8-3-13-9-11-15-25-15-45 0-58 43-110 113-110 62 0 96 38 96 88 0 67-30 122-73 122-24 0-42-19-36-44 6-29 20-60 20-81 0-19-10-35-31-35-25 0-44 26-44 60 0 21 7 36 7 36l-30 125c-8 37-1 83 0 87 0 3 4 4 5 2 2-3 32-39 42-75l16-64c8 16 31 29 56 29 74 0 124-67 124-157 0-69-58-132-146-132z" fill="#fff"/></svg>' + '<span>Pinterest</span>' + '</a>' + '<a class="fancybox-share__button fancybox-share__button--tw" href="https://twitter.com/intent/tweet?url={{url}}&text={{descr}}">' + '<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m456 133c-14 7-31 11-47 13 17-10 30-27 37-46-15 10-34 16-52 20-61-62-157-7-141 75-68-3-129-35-169-85-22 37-11 86 26 109-13 0-26-4-37-9 0 39 28 72 65 80-12 3-25 4-37 2 10 33 41 57 77 57-42 30-77 38-122 34 170 111 378-32 359-208 16-11 30-25 41-42z" /></svg>' + '<span>Twitter</span>' + '</a>' + '</p>' + '<p><input class="fancybox-share__input" type="text" value="{{url_raw}}" /></p>' + '</div>'
+        }
+    });
+
+    function escapeHtml(string) {
+        var entityMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '/': '&#x2F;',
+            '`': '&#x60;',
+            '=': '&#x3D;'
+        };
+
+        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+            return entityMap[s];
+        });
+    }
+
+    $(document).on('click', '[data-fancybox-share]', function () {
+        var f = $.fancybox.getInstance(),
+            url,
+            tpl;
+
+        if (f) {
+            url = f.current.opts.hash === false ? f.current.src : window.location;
+            tpl = f.current.opts.share.tpl.replace(/\{\{media\}\}/g, f.current.type === 'image' ? encodeURIComponent(f.current.src) : '').replace(/\{\{url\}\}/g, encodeURIComponent(url)).replace(/\{\{url_raw\}\}/g, escapeHtml(url)).replace(/\{\{descr\}\}/g, f.$caption ? encodeURIComponent(f.$caption.text()) : '');
+
+            $.fancybox.open({
+                src: f.translate(f, tpl),
+                type: 'html',
+                opts: {
+                    animationEffect: "fade",
+                    animationDuration: 250,
+                    afterLoad: function afterLoad(instance, current) {
+                        // Opening links in a popup window
+                        current.$content.find('.fancybox-share__links a').click(function () {
+                            window.open(this.href, "Share", "width=550, height=450");
+                            return false;
+                        });
+                    }
+                }
+            });
+        }
+    });
+})(document, window.jQuery || jQuery);
+
+// ==========================================================================
+//
+// Hash
+// Enables linking to each modal
+//
+// ==========================================================================
+;(function (document, window, $) {
+    'use strict';
+
+    // Simple $.escapeSelector polyfill (for jQuery prior v3)
+
+    if (!$.escapeSelector) {
+        $.escapeSelector = function (sel) {
+            var rcssescape = /([\0-\x1f\x7f]|^-?\d)|^-$|[^\x80-\uFFFF\w-]/g;
+            var fcssescape = function fcssescape(ch, asCodePoint) {
+                if (asCodePoint) {
+                    // U+0000 NULL becomes U+FFFD REPLACEMENT CHARACTER
+                    if (ch === "\0") {
+                        return '\uFFFD';
+                    }
+
+                    // Control characters and (dependent upon position) numbers get escaped as code points
+                    return ch.slice(0, -1) + "\\" + ch.charCodeAt(ch.length - 1).toString(16) + " ";
+                }
+
+                // Other potentially-special ASCII characters get backslash-escaped
+                return "\\" + ch;
+            };
+
+            return (sel + "").replace(rcssescape, fcssescape);
+        };
+    }
+
+    // Create new history entry only once
+    var shouldCreateHistory = true;
+
+    // Variable containing last hash value set by fancyBox
+    // It will be used to determine if fancyBox needs to close after hash change is detected
+    var currentHash = null;
+
+    // Throttling the history change
+    var timerID = null;
+
+    // Get info about gallery name and current index from url
+    function parseUrl() {
+        var hash = window.location.hash.substr(1);
+        var rez = hash.split('-');
+        var index = rez.length > 1 && /^\+?\d+$/.test(rez[rez.length - 1]) ? parseInt(rez.pop(-1), 10) || 1 : 1;
+        var gallery = rez.join('-');
+
+        // Index is starting from 1
+        if (index < 1) {
+            index = 1;
+        }
+
+        return {
+            hash: hash,
+            index: index,
+            gallery: gallery
+        };
+    }
+
+    // Trigger click evnt on links to open new fancyBox instance
+    function triggerFromUrl(url) {
+        var $el;
+
+        if (url.gallery !== '') {
+
+            // If we can find element matching 'data-fancybox' atribute, then trigger click event for that ..
+            $el = $("[data-fancybox='" + $.escapeSelector(url.gallery) + "']").eq(url.index - 1);
+
+            if (!$el.length) {
+                // .. if not, try finding element by ID
+                $el = $("#" + $.escapeSelector(url.gallery) + "");
+            }
+
+            if ($el.length) {
+                shouldCreateHistory = false;
+
+                $el.trigger('click');
+            }
+        }
+    }
+
+    // Get gallery name from current instance
+    function getGalleryID(instance) {
+        var opts;
+
+        if (!instance) {
+            return false;
+        }
+
+        opts = instance.current ? instance.current.opts : instance.opts;
+
+        return opts.hash || (opts.$orig ? opts.$orig.data('fancybox') : '');
+    }
+
+    // Start when DOM becomes ready
+    $(function () {
+
+        // Check if user has disabled this module
+        if ($.fancybox.defaults.hash === false) {
+            return;
+        }
+
+        // Update hash when opening/closing fancyBox
+        $(document).on({
+            'onInit.fb': function onInitFb(e, instance) {
+                var url, gallery;
+
+                if (instance.group[instance.currIndex].opts.hash === false) {
+                    return;
+                }
+
+                url = parseUrl();
+                gallery = getGalleryID(instance);
+
+                // Make sure gallery start index matches index from hash
+                if (gallery && url.gallery && gallery == url.gallery) {
+                    instance.currIndex = url.index - 1;
+                }
+            },
+
+            'beforeShow.fb': function beforeShowFb(e, instance, current) {
+                var gallery;
+
+                if (!current || current.opts.hash === false) {
+                    return;
+                }
+
+                gallery = getGalleryID(instance);
+
+                // Update window hash
+                if (gallery && gallery !== '') {
+
+                    if (window.location.hash.indexOf(gallery) < 0) {
+                        instance.opts.origHash = window.location.hash;
+                    }
+
+                    currentHash = gallery + (instance.group.length > 1 ? '-' + (current.index + 1) : '');
+
+                    if ('replaceState' in window.history) {
+                        if (timerID) {
+                            clearTimeout(timerID);
+                        }
+
+                        timerID = setTimeout(function () {
+                            window.history[shouldCreateHistory ? 'pushState' : 'replaceState']({}, document.title, window.location.pathname + window.location.search + '#' + currentHash);
+
+                            timerID = null;
+
+                            shouldCreateHistory = false;
+                        }, 300);
+                    } else {
+                        window.location.hash = currentHash;
+                    }
+                }
+            },
+
+            'beforeClose.fb': function beforeCloseFb(e, instance, current) {
+                var gallery, origHash;
+
+                if (timerID) {
+                    clearTimeout(timerID);
+                }
+
+                if (current.opts.hash === false) {
+                    return;
+                }
+
+                gallery = getGalleryID(instance);
+                origHash = instance && instance.opts.origHash ? instance.opts.origHash : '';
+
+                // Remove hash from location bar
+                if (gallery && gallery !== '') {
+
+                    if ('replaceState' in history) {
+                        window.history.replaceState({}, document.title, window.location.pathname + window.location.search + origHash);
+                    } else {
+                        window.location.hash = origHash;
+
+                        // Keep original scroll position
+                        $(window).scrollTop(instance.scrollTop).scrollLeft(instance.scrollLeft);
+                    }
+                }
+
+                currentHash = null;
+            }
+        });
+
+        // Check if need to close after url has changed
+        $(window).on('hashchange.fb', function () {
+            var url = parseUrl();
+
+            if ($.fancybox.getInstance()) {
+                if (currentHash && currentHash !== url.gallery + '-' + url.index && !(url.index === 1 && currentHash == url.gallery)) {
+                    currentHash = null;
+
+                    $.fancybox.close();
+                }
+            } else if (url.gallery !== '') {
+                triggerFromUrl(url);
+            }
+        });
+
+        // Check current hash and trigger click event on matching element to start fancyBox, if needed
+        setTimeout(function () {
+            triggerFromUrl(parseUrl());
+        }, 50);
+    });
+})(document, window, window.jQuery || jQuery);
+
+;(function (document, $) {
+    'use strict';
+
+    var prevTime = new Date().getTime();
+
+    $(document).on({
+        'onInit.fb': function onInitFb(e, instance, current) {
+            instance.$refs.stage.on('mousewheel DOMMouseScroll wheel MozMousePixelScroll', function (e) {
+                var current = instance.current,
+                    currTime = new Date().getTime();
+
+                if (instance.group.length < 1 || current.opts.wheel === false || current.opts.wheel === 'auto' && current.type !== 'image') {
+                    return;
+                }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (current.$slide.hasClass('fancybox-animated')) {
+                    return;
+                }
+
+                e = e.originalEvent || e;
+
+                if (currTime - prevTime < 250) {
+                    return;
+                }
+
+                prevTime = currTime;
+
+                instance[(-e.deltaY || -e.deltaX || e.wheelDelta || -e.detail) < 0 ? 'next' : 'previous']();
+            });
+        }
+    });
+})(document, window.jQuery || jQuery);
+
+/***/ }),
+/* 46 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (global, factory) {
+    if (true) {
+        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [module, __webpack_require__(47), __webpack_require__(49), __webpack_require__(50)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+    } else if (typeof exports !== "undefined") {
+        factory(module, require('./clipboard-action'), require('tiny-emitter'), require('good-listener'));
+    } else {
+        var mod = {
+            exports: {}
+        };
+        factory(mod, global.clipboardAction, global.tinyEmitter, global.goodListener);
+        global.clipboard = mod.exports;
+    }
+})(this, function (module, _clipboardAction, _tinyEmitter, _goodListener) {
+    'use strict';
+
+    var _clipboardAction2 = _interopRequireDefault(_clipboardAction);
+
+    var _tinyEmitter2 = _interopRequireDefault(_tinyEmitter);
+
+    var _goodListener2 = _interopRequireDefault(_goodListener);
+
+    function _interopRequireDefault(obj) {
+        return obj && obj.__esModule ? obj : {
+            default: obj
+        };
+    }
+
+    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+        return typeof obj;
+    } : function (obj) {
+        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+
+    function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+            throw new TypeError("Cannot call a class as a function");
+        }
+    }
+
+    var _createClass = function () {
+        function defineProperties(target, props) {
+            for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ("value" in descriptor) descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+            }
+        }
+
+        return function (Constructor, protoProps, staticProps) {
+            if (protoProps) defineProperties(Constructor.prototype, protoProps);
+            if (staticProps) defineProperties(Constructor, staticProps);
+            return Constructor;
+        };
+    }();
+
+    function _possibleConstructorReturn(self, call) {
+        if (!self) {
+            throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+        }
+
+        return call && (typeof call === "object" || typeof call === "function") ? call : self;
+    }
+
+    function _inherits(subClass, superClass) {
+        if (typeof superClass !== "function" && superClass !== null) {
+            throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+        }
+
+        subClass.prototype = Object.create(superClass && superClass.prototype, {
+            constructor: {
+                value: subClass,
+                enumerable: false,
+                writable: true,
+                configurable: true
+            }
+        });
+        if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+    }
+
+    var Clipboard = function (_Emitter) {
+        _inherits(Clipboard, _Emitter);
+
+        /**
+         * @param {String|HTMLElement|HTMLCollection|NodeList} trigger
+         * @param {Object} options
+         */
+        function Clipboard(trigger, options) {
+            _classCallCheck(this, Clipboard);
+
+            var _this = _possibleConstructorReturn(this, (Clipboard.__proto__ || Object.getPrototypeOf(Clipboard)).call(this));
+
+            _this.resolveOptions(options);
+            _this.listenClick(trigger);
+            return _this;
+        }
+
+        /**
+         * Defines if attributes would be resolved using internal setter functions
+         * or custom functions that were passed in the constructor.
+         * @param {Object} options
+         */
+
+
+        _createClass(Clipboard, [{
+            key: 'resolveOptions',
+            value: function resolveOptions() {
+                var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+                this.action = typeof options.action === 'function' ? options.action : this.defaultAction;
+                this.target = typeof options.target === 'function' ? options.target : this.defaultTarget;
+                this.text = typeof options.text === 'function' ? options.text : this.defaultText;
+                this.container = _typeof(options.container) === 'object' ? options.container : document.body;
+            }
+        }, {
+            key: 'listenClick',
+            value: function listenClick(trigger) {
+                var _this2 = this;
+
+                this.listener = (0, _goodListener2.default)(trigger, 'click', function (e) {
+                    return _this2.onClick(e);
+                });
+            }
+        }, {
+            key: 'onClick',
+            value: function onClick(e) {
+                var trigger = e.delegateTarget || e.currentTarget;
+
+                if (this.clipboardAction) {
+                    this.clipboardAction = null;
+                }
+
+                this.clipboardAction = new _clipboardAction2.default({
+                    action: this.action(trigger),
+                    target: this.target(trigger),
+                    text: this.text(trigger),
+                    container: this.container,
+                    trigger: trigger,
+                    emitter: this
+                });
+            }
+        }, {
+            key: 'defaultAction',
+            value: function defaultAction(trigger) {
+                return getAttributeValue('action', trigger);
+            }
+        }, {
+            key: 'defaultTarget',
+            value: function defaultTarget(trigger) {
+                var selector = getAttributeValue('target', trigger);
+
+                if (selector) {
+                    return document.querySelector(selector);
+                }
+            }
+        }, {
+            key: 'defaultText',
+            value: function defaultText(trigger) {
+                return getAttributeValue('text', trigger);
+            }
+        }, {
+            key: 'destroy',
+            value: function destroy() {
+                this.listener.destroy();
+
+                if (this.clipboardAction) {
+                    this.clipboardAction.destroy();
+                    this.clipboardAction = null;
+                }
+            }
+        }], [{
+            key: 'isSupported',
+            value: function isSupported() {
+                var action = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : ['copy', 'cut'];
+
+                var actions = typeof action === 'string' ? [action] : action;
+                var support = !!document.queryCommandSupported;
+
+                actions.forEach(function (action) {
+                    support = support && !!document.queryCommandSupported(action);
+                });
+
+                return support;
+            }
+        }]);
+
+        return Clipboard;
+    }(_tinyEmitter2.default);
+
+    /**
+     * Helper function to retrieve attribute value.
+     * @param {String} suffix
+     * @param {Element} element
+     */
+    function getAttributeValue(suffix, element) {
+        var attribute = 'data-clipboard-' + suffix;
+
+        if (!element.hasAttribute(attribute)) {
+            return;
+        }
+
+        return element.getAttribute(attribute);
+    }
+
+    module.exports = Clipboard;
+});
+
+/***/ }),
+/* 47 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (global, factory) {
+    if (true) {
+        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [module, __webpack_require__(48)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+    } else if (typeof exports !== "undefined") {
+        factory(module, require('select'));
+    } else {
+        var mod = {
+            exports: {}
+        };
+        factory(mod, global.select);
+        global.clipboardAction = mod.exports;
+    }
+})(this, function (module, _select) {
+    'use strict';
+
+    var _select2 = _interopRequireDefault(_select);
+
+    function _interopRequireDefault(obj) {
+        return obj && obj.__esModule ? obj : {
+            default: obj
+        };
+    }
+
+    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+        return typeof obj;
+    } : function (obj) {
+        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+
+    function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+            throw new TypeError("Cannot call a class as a function");
+        }
+    }
+
+    var _createClass = function () {
+        function defineProperties(target, props) {
+            for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ("value" in descriptor) descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+            }
+        }
+
+        return function (Constructor, protoProps, staticProps) {
+            if (protoProps) defineProperties(Constructor.prototype, protoProps);
+            if (staticProps) defineProperties(Constructor, staticProps);
+            return Constructor;
+        };
+    }();
+
+    var ClipboardAction = function () {
+        /**
+         * @param {Object} options
+         */
+        function ClipboardAction(options) {
+            _classCallCheck(this, ClipboardAction);
+
+            this.resolveOptions(options);
+            this.initSelection();
+        }
+
+        /**
+         * Defines base properties passed from constructor.
+         * @param {Object} options
+         */
+
+
+        _createClass(ClipboardAction, [{
+            key: 'resolveOptions',
+            value: function resolveOptions() {
+                var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+                this.action = options.action;
+                this.container = options.container;
+                this.emitter = options.emitter;
+                this.target = options.target;
+                this.text = options.text;
+                this.trigger = options.trigger;
+
+                this.selectedText = '';
+            }
+        }, {
+            key: 'initSelection',
+            value: function initSelection() {
+                if (this.text) {
+                    this.selectFake();
+                } else if (this.target) {
+                    this.selectTarget();
+                }
+            }
+        }, {
+            key: 'selectFake',
+            value: function selectFake() {
+                var _this = this;
+
+                var isRTL = document.documentElement.getAttribute('dir') == 'rtl';
+
+                this.removeFake();
+
+                this.fakeHandlerCallback = function () {
+                    return _this.removeFake();
+                };
+                this.fakeHandler = this.container.addEventListener('click', this.fakeHandlerCallback) || true;
+
+                this.fakeElem = document.createElement('textarea');
+                // Prevent zooming on iOS
+                this.fakeElem.style.fontSize = '12pt';
+                // Reset box model
+                this.fakeElem.style.border = '0';
+                this.fakeElem.style.padding = '0';
+                this.fakeElem.style.margin = '0';
+                // Move element out of screen horizontally
+                this.fakeElem.style.position = 'absolute';
+                this.fakeElem.style[isRTL ? 'right' : 'left'] = '-9999px';
+                // Move element to the same position vertically
+                var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+                this.fakeElem.style.top = yPosition + 'px';
+
+                this.fakeElem.setAttribute('readonly', '');
+                this.fakeElem.value = this.text;
+
+                this.container.appendChild(this.fakeElem);
+
+                this.selectedText = (0, _select2.default)(this.fakeElem);
+                this.copyText();
+            }
+        }, {
+            key: 'removeFake',
+            value: function removeFake() {
+                if (this.fakeHandler) {
+                    this.container.removeEventListener('click', this.fakeHandlerCallback);
+                    this.fakeHandler = null;
+                    this.fakeHandlerCallback = null;
+                }
+
+                if (this.fakeElem) {
+                    this.container.removeChild(this.fakeElem);
+                    this.fakeElem = null;
+                }
+            }
+        }, {
+            key: 'selectTarget',
+            value: function selectTarget() {
+                this.selectedText = (0, _select2.default)(this.target);
+                this.copyText();
+            }
+        }, {
+            key: 'copyText',
+            value: function copyText() {
+                var succeeded = void 0;
+
+                try {
+                    succeeded = document.execCommand(this.action);
+                } catch (err) {
+                    succeeded = false;
+                }
+
+                this.handleResult(succeeded);
+            }
+        }, {
+            key: 'handleResult',
+            value: function handleResult(succeeded) {
+                this.emitter.emit(succeeded ? 'success' : 'error', {
+                    action: this.action,
+                    text: this.selectedText,
+                    trigger: this.trigger,
+                    clearSelection: this.clearSelection.bind(this)
+                });
+            }
+        }, {
+            key: 'clearSelection',
+            value: function clearSelection() {
+                if (this.trigger) {
+                    this.trigger.focus();
+                }
+
+                window.getSelection().removeAllRanges();
+            }
+        }, {
+            key: 'destroy',
+            value: function destroy() {
+                this.removeFake();
+            }
+        }, {
+            key: 'action',
+            set: function set() {
+                var action = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'copy';
+
+                this._action = action;
+
+                if (this._action !== 'copy' && this._action !== 'cut') {
+                    throw new Error('Invalid "action" value, use either "copy" or "cut"');
+                }
+            },
+            get: function get() {
+                return this._action;
+            }
+        }, {
+            key: 'target',
+            set: function set(target) {
+                if (target !== undefined) {
+                    if (target && (typeof target === 'undefined' ? 'undefined' : _typeof(target)) === 'object' && target.nodeType === 1) {
+                        if (this.action === 'copy' && target.hasAttribute('disabled')) {
+                            throw new Error('Invalid "target" attribute. Please use "readonly" instead of "disabled" attribute');
+                        }
+
+                        if (this.action === 'cut' && (target.hasAttribute('readonly') || target.hasAttribute('disabled'))) {
+                            throw new Error('Invalid "target" attribute. You can\'t cut text from elements with "readonly" or "disabled" attributes');
+                        }
+
+                        this._target = target;
+                    } else {
+                        throw new Error('Invalid "target" value, use a valid Element');
+                    }
+                }
+            },
+            get: function get() {
+                return this._target;
+            }
+        }]);
+
+        return ClipboardAction;
+    }();
+
+    module.exports = ClipboardAction;
+});
+
+/***/ }),
+/* 48 */
+/***/ (function(module, exports) {
+
+function select(element) {
+    var selectedText;
+
+    if (element.nodeName === 'SELECT') {
+        element.focus();
+
+        selectedText = element.value;
+    }
+    else if (element.nodeName === 'INPUT' || element.nodeName === 'TEXTAREA') {
+        var isReadOnly = element.hasAttribute('readonly');
+
+        if (!isReadOnly) {
+            element.setAttribute('readonly', '');
+        }
+
+        element.select();
+        element.setSelectionRange(0, element.value.length);
+
+        if (!isReadOnly) {
+            element.removeAttribute('readonly');
+        }
+
+        selectedText = element.value;
+    }
+    else {
+        if (element.hasAttribute('contenteditable')) {
+            element.focus();
+        }
+
+        var selection = window.getSelection();
+        var range = document.createRange();
+
+        range.selectNodeContents(element);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        selectedText = selection.toString();
+    }
+
+    return selectedText;
+}
+
+module.exports = select;
+
+
+/***/ }),
+/* 49 */
+/***/ (function(module, exports) {
+
+function E () {
+  // Keep this empty so it's easier to inherit from
+  // (via https://github.com/lipsmack from https://github.com/scottcorgan/tiny-emitter/issues/3)
+}
+
+E.prototype = {
+  on: function (name, callback, ctx) {
+    var e = this.e || (this.e = {});
+
+    (e[name] || (e[name] = [])).push({
+      fn: callback,
+      ctx: ctx
+    });
+
+    return this;
+  },
+
+  once: function (name, callback, ctx) {
+    var self = this;
+    function listener () {
+      self.off(name, listener);
+      callback.apply(ctx, arguments);
+    };
+
+    listener._ = callback
+    return this.on(name, listener, ctx);
+  },
+
+  emit: function (name) {
+    var data = [].slice.call(arguments, 1);
+    var evtArr = ((this.e || (this.e = {}))[name] || []).slice();
+    var i = 0;
+    var len = evtArr.length;
+
+    for (i; i < len; i++) {
+      evtArr[i].fn.apply(evtArr[i].ctx, data);
+    }
+
+    return this;
+  },
+
+  off: function (name, callback) {
+    var e = this.e || (this.e = {});
+    var evts = e[name];
+    var liveEvents = [];
+
+    if (evts && callback) {
+      for (var i = 0, len = evts.length; i < len; i++) {
+        if (evts[i].fn !== callback && evts[i].fn._ !== callback)
+          liveEvents.push(evts[i]);
+      }
+    }
+
+    // Remove event from queue to prevent memory leak
+    // Suggested by https://github.com/lazd
+    // Ref: https://github.com/scottcorgan/tiny-emitter/commit/c6ebfaa9bc973b33d110a84a307742b7cf94c953#commitcomment-5024910
+
+    (liveEvents.length)
+      ? e[name] = liveEvents
+      : delete e[name];
+
+    return this;
+  }
+};
+
+module.exports = E;
+
+
+/***/ }),
+/* 50 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var is = __webpack_require__(51);
+var delegate = __webpack_require__(52);
+
+/**
+ * Validates all params and calls the right
+ * listener function based on its target type.
+ *
+ * @param {String|HTMLElement|HTMLCollection|NodeList} target
+ * @param {String} type
+ * @param {Function} callback
+ * @return {Object}
+ */
+function listen(target, type, callback) {
+    if (!target && !type && !callback) {
+        throw new Error('Missing required arguments');
+    }
+
+    if (!is.string(type)) {
+        throw new TypeError('Second argument must be a String');
+    }
+
+    if (!is.fn(callback)) {
+        throw new TypeError('Third argument must be a Function');
+    }
+
+    if (is.node(target)) {
+        return listenNode(target, type, callback);
+    }
+    else if (is.nodeList(target)) {
+        return listenNodeList(target, type, callback);
+    }
+    else if (is.string(target)) {
+        return listenSelector(target, type, callback);
+    }
+    else {
+        throw new TypeError('First argument must be a String, HTMLElement, HTMLCollection, or NodeList');
+    }
+}
+
+/**
+ * Adds an event listener to a HTML element
+ * and returns a remove listener function.
+ *
+ * @param {HTMLElement} node
+ * @param {String} type
+ * @param {Function} callback
+ * @return {Object}
+ */
+function listenNode(node, type, callback) {
+    node.addEventListener(type, callback);
+
+    return {
+        destroy: function() {
+            node.removeEventListener(type, callback);
+        }
+    }
+}
+
+/**
+ * Add an event listener to a list of HTML elements
+ * and returns a remove listener function.
+ *
+ * @param {NodeList|HTMLCollection} nodeList
+ * @param {String} type
+ * @param {Function} callback
+ * @return {Object}
+ */
+function listenNodeList(nodeList, type, callback) {
+    Array.prototype.forEach.call(nodeList, function(node) {
+        node.addEventListener(type, callback);
+    });
+
+    return {
+        destroy: function() {
+            Array.prototype.forEach.call(nodeList, function(node) {
+                node.removeEventListener(type, callback);
+            });
+        }
+    }
+}
+
+/**
+ * Add an event listener to a selector
+ * and returns a remove listener function.
+ *
+ * @param {String} selector
+ * @param {String} type
+ * @param {Function} callback
+ * @return {Object}
+ */
+function listenSelector(selector, type, callback) {
+    return delegate(document.body, selector, type, callback);
+}
+
+module.exports = listen;
+
+
+/***/ }),
+/* 51 */
+/***/ (function(module, exports) {
+
+/**
+ * Check if argument is a HTML element.
+ *
+ * @param {Object} value
+ * @return {Boolean}
+ */
+exports.node = function(value) {
+    return value !== undefined
+        && value instanceof HTMLElement
+        && value.nodeType === 1;
+};
+
+/**
+ * Check if argument is a list of HTML elements.
+ *
+ * @param {Object} value
+ * @return {Boolean}
+ */
+exports.nodeList = function(value) {
+    var type = Object.prototype.toString.call(value);
+
+    return value !== undefined
+        && (type === '[object NodeList]' || type === '[object HTMLCollection]')
+        && ('length' in value)
+        && (value.length === 0 || exports.node(value[0]));
+};
+
+/**
+ * Check if argument is a string.
+ *
+ * @param {Object} value
+ * @return {Boolean}
+ */
+exports.string = function(value) {
+    return typeof value === 'string'
+        || value instanceof String;
+};
+
+/**
+ * Check if argument is a function.
+ *
+ * @param {Object} value
+ * @return {Boolean}
+ */
+exports.fn = function(value) {
+    var type = Object.prototype.toString.call(value);
+
+    return type === '[object Function]';
+};
+
+
+/***/ }),
+/* 52 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var closest = __webpack_require__(53);
+
+/**
+ * Delegates event to a selector.
+ *
+ * @param {Element} element
+ * @param {String} selector
+ * @param {String} type
+ * @param {Function} callback
+ * @param {Boolean} useCapture
+ * @return {Object}
+ */
+function _delegate(element, selector, type, callback, useCapture) {
+    var listenerFn = listener.apply(this, arguments);
+
+    element.addEventListener(type, listenerFn, useCapture);
+
+    return {
+        destroy: function() {
+            element.removeEventListener(type, listenerFn, useCapture);
+        }
+    }
+}
+
+/**
+ * Delegates event to a selector.
+ *
+ * @param {Element|String|Array} [elements]
+ * @param {String} selector
+ * @param {String} type
+ * @param {Function} callback
+ * @param {Boolean} useCapture
+ * @return {Object}
+ */
+function delegate(elements, selector, type, callback, useCapture) {
+    // Handle the regular Element usage
+    if (typeof elements.addEventListener === 'function') {
+        return _delegate.apply(null, arguments);
+    }
+
+    // Handle Element-less usage, it defaults to global delegation
+    if (typeof type === 'function') {
+        // Use `document` as the first parameter, then apply arguments
+        // This is a short way to .unshift `arguments` without running into deoptimizations
+        return _delegate.bind(null, document).apply(null, arguments);
+    }
+
+    // Handle Selector-based usage
+    if (typeof elements === 'string') {
+        elements = document.querySelectorAll(elements);
+    }
+
+    // Handle Array-like based usage
+    return Array.prototype.map.call(elements, function (element) {
+        return _delegate(element, selector, type, callback, useCapture);
+    });
+}
+
+/**
+ * Finds closest match and invokes callback.
+ *
+ * @param {Element} element
+ * @param {String} selector
+ * @param {String} type
+ * @param {Function} callback
+ * @return {Function}
+ */
+function listener(element, selector, type, callback) {
+    return function(e) {
+        e.delegateTarget = closest(e.target, selector);
+
+        if (e.delegateTarget) {
+            callback.call(element, e);
+        }
+    }
+}
+
+module.exports = delegate;
+
+
+/***/ }),
+/* 53 */
+/***/ (function(module, exports) {
+
+var DOCUMENT_NODE_TYPE = 9;
+
+/**
+ * A polyfill for Element.matches()
+ */
+if (typeof Element !== 'undefined' && !Element.prototype.matches) {
+    var proto = Element.prototype;
+
+    proto.matches = proto.matchesSelector ||
+                    proto.mozMatchesSelector ||
+                    proto.msMatchesSelector ||
+                    proto.oMatchesSelector ||
+                    proto.webkitMatchesSelector;
+}
+
+/**
+ * Finds the closest parent that matches a selector.
+ *
+ * @param {Element} element
+ * @param {String} selector
+ * @return {Function}
+ */
+function closest (element, selector) {
+    while (element && element.nodeType !== DOCUMENT_NODE_TYPE) {
+        if (typeof element.matches === 'function' &&
+            element.matches(selector)) {
+          return element;
+        }
+        element = element.parentNode;
+    }
+}
+
+module.exports = closest;
+
+
+/***/ }),
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -30391,10 +36642,10 @@ Vue$3.compile = compileToFunctions;
 
 module.exports = Vue$3;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4), __webpack_require__(38).setImmediate))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5), __webpack_require__(55).setImmediate))
 
 /***/ }),
-/* 38 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var apply = Function.prototype.apply;
@@ -30447,13 +36698,13 @@ exports._unrefActive = exports.active = function(item) {
 };
 
 // setimmediate attaches itself to the global object
-__webpack_require__(39);
+__webpack_require__(56);
 exports.setImmediate = setImmediate;
 exports.clearImmediate = clearImmediate;
 
 
 /***/ }),
-/* 39 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -30643,10 +36894,10 @@ exports.clearImmediate = clearImmediate;
     attachTo.clearImmediate = clearImmediate;
 }(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4), __webpack_require__(7)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5), __webpack_require__(8)))
 
 /***/ }),
-/* 40 */
+/* 57 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -30758,11 +37009,11 @@ var Helper = function () {
 /* harmony default export */ __webpack_exports__["a"] = (Helper);
 
 /***/ }),
-/* 41 */
+/* 58 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Errors__ = __webpack_require__(42);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Errors__ = __webpack_require__(59);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -30929,7 +37180,7 @@ var Form = function () {
 /* harmony default export */ __webpack_exports__["a"] = (Form);
 
 /***/ }),
-/* 42 */
+/* 59 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31023,7 +37274,7 @@ var Errors = function () {
 /* harmony default export */ __webpack_exports__["a"] = (Errors);
 
 /***/ }),
-/* 43 */
+/* 60 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31080,7 +37331,141 @@ var Post = function () {
 /* harmony default export */ __webpack_exports__["a"] = (Post);
 
 /***/ }),
-/* 44 */
+/* 61 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var PostAdmin = function () {
+	function PostAdmin(data) {
+		_classCallCheck(this, PostAdmin);
+
+		for (var property in data) {
+			this[property] = data[property];
+		}
+	}
+
+	_createClass(PostAdmin, null, [{
+		key: 'source',
+		value: function source() {
+			return '/admin/posts';
+		}
+	}, {
+		key: 'createUrl',
+		value: function createUrl() {
+			return this.source() + '/create';
+		}
+	}, {
+		key: 'storeUrl',
+		value: function storeUrl() {
+			return this.source();
+		}
+	}, {
+		key: 'editUrl',
+		value: function editUrl(id) {
+			return this.source() + '/' + id + '/edit';
+		}
+	}, {
+		key: 'updateUrl',
+		value: function updateUrl(id) {
+			return this.source() + ('/' + id);
+		}
+	}, {
+		key: 'deleteUrl',
+		value: function deleteUrl(id) {
+			return this.source() + '/delete/' + id;
+		}
+	}, {
+		key: 'index',
+		value: function index(params) {
+			var url = this.source();
+			url = Helper.buildQuery(url, params);
+
+			return new Promise(function (resolve, reject) {
+				axios.get(url).then(function (response) {
+					resolve(response.data);
+				}).catch(function (error) {
+					reject(error);
+				});
+			});
+		}
+	}, {
+		key: 'create',
+		value: function create() {
+			var url = this.createUrl();
+
+			return new Promise(function (resolve, reject) {
+				axios.get(url).then(function (response) {
+					resolve(response.data);
+				}).catch(function (error) {
+					reject(error);
+				});
+			});
+		}
+	}, {
+		key: 'store',
+		value: function store(form) {
+			var url = this.storeUrl();
+			var method = 'post';
+			return new Promise(function (resolve, reject) {
+				form.submit(method, url).then(function (data) {
+					resolve(data);
+				}).catch(function (error) {
+					reject(error);
+				});
+			});
+		}
+	}, {
+		key: 'edit',
+		value: function edit(id) {
+			var url = this.editUrl(id);
+
+			return new Promise(function (resolve, reject) {
+				axios.get(url).then(function (response) {
+					resolve(response.data);
+				}).catch(function (error) {
+					reject(error);
+				});
+			});
+		}
+	}, {
+		key: 'update',
+		value: function update(id, form) {
+			var url = this.updateUrl(id);
+			var method = 'put';
+			return new Promise(function (resolve, reject) {
+				form.submit(method, url).then(function (data) {
+					resolve(data);
+				}).catch(function (error) {
+					reject(error);
+				});
+			});
+		}
+	}, {
+		key: 'remove',
+		value: function remove(id) {
+			var url = this.deleteUrl(id);
+
+			return new Promise(function (resolve, reject) {
+				axios.delete(url).then(function (response) {
+					resolve(response.data);
+				}).catch(function (error) {
+					reject(error);
+				});
+			});
+		}
+	}]);
+
+	return PostAdmin;
+}();
+
+/* harmony default export */ __webpack_exports__["a"] = (PostAdmin);
+
+/***/ }),
+/* 62 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -31146,19 +37531,19 @@ var Attachment = function () {
 /* harmony default export */ __webpack_exports__["a"] = (Attachment);
 
 /***/ }),
-/* 45 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(46)
+  __webpack_require__(64)
 }
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(49)
+var __vue_script__ = __webpack_require__(67)
 /* template */
-var __vue_template__ = __webpack_require__(56)
+var __vue_template__ = __webpack_require__(72)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -31197,13 +37582,13 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 46 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(47);
+var content = __webpack_require__(65);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
@@ -31223,7 +37608,7 @@ if(false) {
 }
 
 /***/ }),
-/* 47 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(2)(undefined);
@@ -31237,7 +37622,7 @@ exports.push([module.i, "\n.date-input-group[data-v-a2621190]{\r\n\t display: fl
 
 
 /***/ }),
-/* 48 */
+/* 66 */
 /***/ (function(module, exports) {
 
 /**
@@ -31270,14 +37655,14 @@ module.exports = function listToStyles (parentId, list) {
 
 
 /***/ }),
-/* 49 */
+/* 67 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_vue_flatpickr_component__ = __webpack_require__(50);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_vue_flatpickr_component__ = __webpack_require__(68);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_vue_flatpickr_component___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_vue_flatpickr_component__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_flatpickr_dist_flatpickr_css__ = __webpack_require__(52);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_flatpickr_dist_flatpickr_css__ = __webpack_require__(70);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_flatpickr_dist_flatpickr_css___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_flatpickr_dist_flatpickr_css__);
 //
 //
@@ -31351,12 +37736,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 50 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(true)
-		module.exports = factory(__webpack_require__(51));
+		module.exports = factory(__webpack_require__(69));
 	else if(typeof define === 'function' && define.amd)
 		define("VueFlatpickr", ["flatpickr"], factory);
 	else if(typeof exports === 'object')
@@ -31745,7 +38130,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_2__;
 });
 
 /***/ }),
-/* 51 */
+/* 69 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* flatpickr v4.1.4, @license MIT */
@@ -33894,13 +40279,13 @@ return flatpickr$1;
 
 
 /***/ }),
-/* 52 */
+/* 70 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(53);
+var content = __webpack_require__(71);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -33908,7 +40293,7 @@ var transform;
 var options = {}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(54)(content, options);
+var update = __webpack_require__(4)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -33925,7 +40310,7 @@ if(false) {
 }
 
 /***/ }),
-/* 53 */
+/* 71 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(2)(undefined);
@@ -33939,461 +40324,7 @@ exports.push([module.i, ".flatpickr-calendar {\n  background: transparent;\n  ov
 
 
 /***/ }),
-/* 54 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/*
-	MIT License http://www.opensource.org/licenses/mit-license.php
-	Author Tobias Koppers @sokra
-*/
-
-var stylesInDom = {};
-
-var	memoize = function (fn) {
-	var memo;
-
-	return function () {
-		if (typeof memo === "undefined") memo = fn.apply(this, arguments);
-		return memo;
-	};
-};
-
-var isOldIE = memoize(function () {
-	// Test for IE <= 9 as proposed by Browserhacks
-	// @see http://browserhacks.com/#hack-e71d8692f65334173fee715c222cb805
-	// Tests for existence of standard globals is to allow style-loader
-	// to operate correctly into non-standard environments
-	// @see https://github.com/webpack-contrib/style-loader/issues/177
-	return window && document && document.all && !window.atob;
-});
-
-var getElement = (function (fn) {
-	var memo = {};
-
-	return function(selector) {
-		if (typeof memo[selector] === "undefined") {
-			memo[selector] = fn.call(this, selector);
-		}
-
-		return memo[selector]
-	};
-})(function (target) {
-	return document.querySelector(target)
-});
-
-var singleton = null;
-var	singletonCounter = 0;
-var	stylesInsertedAtTop = [];
-
-var	fixUrls = __webpack_require__(55);
-
-module.exports = function(list, options) {
-	if (typeof DEBUG !== "undefined" && DEBUG) {
-		if (typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
-	}
-
-	options = options || {};
-
-	options.attrs = typeof options.attrs === "object" ? options.attrs : {};
-
-	// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
-	// tags it will allow on a page
-	if (!options.singleton) options.singleton = isOldIE();
-
-	// By default, add <style> tags to the <head> element
-	if (!options.insertInto) options.insertInto = "head";
-
-	// By default, add <style> tags to the bottom of the target
-	if (!options.insertAt) options.insertAt = "bottom";
-
-	var styles = listToStyles(list, options);
-
-	addStylesToDom(styles, options);
-
-	return function update (newList) {
-		var mayRemove = [];
-
-		for (var i = 0; i < styles.length; i++) {
-			var item = styles[i];
-			var domStyle = stylesInDom[item.id];
-
-			domStyle.refs--;
-			mayRemove.push(domStyle);
-		}
-
-		if(newList) {
-			var newStyles = listToStyles(newList, options);
-			addStylesToDom(newStyles, options);
-		}
-
-		for (var i = 0; i < mayRemove.length; i++) {
-			var domStyle = mayRemove[i];
-
-			if(domStyle.refs === 0) {
-				for (var j = 0; j < domStyle.parts.length; j++) domStyle.parts[j]();
-
-				delete stylesInDom[domStyle.id];
-			}
-		}
-	};
-};
-
-function addStylesToDom (styles, options) {
-	for (var i = 0; i < styles.length; i++) {
-		var item = styles[i];
-		var domStyle = stylesInDom[item.id];
-
-		if(domStyle) {
-			domStyle.refs++;
-
-			for(var j = 0; j < domStyle.parts.length; j++) {
-				domStyle.parts[j](item.parts[j]);
-			}
-
-			for(; j < item.parts.length; j++) {
-				domStyle.parts.push(addStyle(item.parts[j], options));
-			}
-		} else {
-			var parts = [];
-
-			for(var j = 0; j < item.parts.length; j++) {
-				parts.push(addStyle(item.parts[j], options));
-			}
-
-			stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
-		}
-	}
-}
-
-function listToStyles (list, options) {
-	var styles = [];
-	var newStyles = {};
-
-	for (var i = 0; i < list.length; i++) {
-		var item = list[i];
-		var id = options.base ? item[0] + options.base : item[0];
-		var css = item[1];
-		var media = item[2];
-		var sourceMap = item[3];
-		var part = {css: css, media: media, sourceMap: sourceMap};
-
-		if(!newStyles[id]) styles.push(newStyles[id] = {id: id, parts: [part]});
-		else newStyles[id].parts.push(part);
-	}
-
-	return styles;
-}
-
-function insertStyleElement (options, style) {
-	var target = getElement(options.insertInto)
-
-	if (!target) {
-		throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");
-	}
-
-	var lastStyleElementInsertedAtTop = stylesInsertedAtTop[stylesInsertedAtTop.length - 1];
-
-	if (options.insertAt === "top") {
-		if (!lastStyleElementInsertedAtTop) {
-			target.insertBefore(style, target.firstChild);
-		} else if (lastStyleElementInsertedAtTop.nextSibling) {
-			target.insertBefore(style, lastStyleElementInsertedAtTop.nextSibling);
-		} else {
-			target.appendChild(style);
-		}
-		stylesInsertedAtTop.push(style);
-	} else if (options.insertAt === "bottom") {
-		target.appendChild(style);
-	} else {
-		throw new Error("Invalid value for parameter 'insertAt'. Must be 'top' or 'bottom'.");
-	}
-}
-
-function removeStyleElement (style) {
-	if (style.parentNode === null) return false;
-	style.parentNode.removeChild(style);
-
-	var idx = stylesInsertedAtTop.indexOf(style);
-	if(idx >= 0) {
-		stylesInsertedAtTop.splice(idx, 1);
-	}
-}
-
-function createStyleElement (options) {
-	var style = document.createElement("style");
-
-	options.attrs.type = "text/css";
-
-	addAttrs(style, options.attrs);
-	insertStyleElement(options, style);
-
-	return style;
-}
-
-function createLinkElement (options) {
-	var link = document.createElement("link");
-
-	options.attrs.type = "text/css";
-	options.attrs.rel = "stylesheet";
-
-	addAttrs(link, options.attrs);
-	insertStyleElement(options, link);
-
-	return link;
-}
-
-function addAttrs (el, attrs) {
-	Object.keys(attrs).forEach(function (key) {
-		el.setAttribute(key, attrs[key]);
-	});
-}
-
-function addStyle (obj, options) {
-	var style, update, remove, result;
-
-	// If a transform function was defined, run it on the css
-	if (options.transform && obj.css) {
-	    result = options.transform(obj.css);
-
-	    if (result) {
-	    	// If transform returns a value, use that instead of the original css.
-	    	// This allows running runtime transformations on the css.
-	    	obj.css = result;
-	    } else {
-	    	// If the transform function returns a falsy value, don't add this css.
-	    	// This allows conditional loading of css
-	    	return function() {
-	    		// noop
-	    	};
-	    }
-	}
-
-	if (options.singleton) {
-		var styleIndex = singletonCounter++;
-
-		style = singleton || (singleton = createStyleElement(options));
-
-		update = applyToSingletonTag.bind(null, style, styleIndex, false);
-		remove = applyToSingletonTag.bind(null, style, styleIndex, true);
-
-	} else if (
-		obj.sourceMap &&
-		typeof URL === "function" &&
-		typeof URL.createObjectURL === "function" &&
-		typeof URL.revokeObjectURL === "function" &&
-		typeof Blob === "function" &&
-		typeof btoa === "function"
-	) {
-		style = createLinkElement(options);
-		update = updateLink.bind(null, style, options);
-		remove = function () {
-			removeStyleElement(style);
-
-			if(style.href) URL.revokeObjectURL(style.href);
-		};
-	} else {
-		style = createStyleElement(options);
-		update = applyToTag.bind(null, style);
-		remove = function () {
-			removeStyleElement(style);
-		};
-	}
-
-	update(obj);
-
-	return function updateStyle (newObj) {
-		if (newObj) {
-			if (
-				newObj.css === obj.css &&
-				newObj.media === obj.media &&
-				newObj.sourceMap === obj.sourceMap
-			) {
-				return;
-			}
-
-			update(obj = newObj);
-		} else {
-			remove();
-		}
-	};
-}
-
-var replaceText = (function () {
-	var textStore = [];
-
-	return function (index, replacement) {
-		textStore[index] = replacement;
-
-		return textStore.filter(Boolean).join('\n');
-	};
-})();
-
-function applyToSingletonTag (style, index, remove, obj) {
-	var css = remove ? "" : obj.css;
-
-	if (style.styleSheet) {
-		style.styleSheet.cssText = replaceText(index, css);
-	} else {
-		var cssNode = document.createTextNode(css);
-		var childNodes = style.childNodes;
-
-		if (childNodes[index]) style.removeChild(childNodes[index]);
-
-		if (childNodes.length) {
-			style.insertBefore(cssNode, childNodes[index]);
-		} else {
-			style.appendChild(cssNode);
-		}
-	}
-}
-
-function applyToTag (style, obj) {
-	var css = obj.css;
-	var media = obj.media;
-
-	if(media) {
-		style.setAttribute("media", media)
-	}
-
-	if(style.styleSheet) {
-		style.styleSheet.cssText = css;
-	} else {
-		while(style.firstChild) {
-			style.removeChild(style.firstChild);
-		}
-
-		style.appendChild(document.createTextNode(css));
-	}
-}
-
-function updateLink (link, options, obj) {
-	var css = obj.css;
-	var sourceMap = obj.sourceMap;
-
-	/*
-		If convertToAbsoluteUrls isn't defined, but sourcemaps are enabled
-		and there is no publicPath defined then lets turn convertToAbsoluteUrls
-		on by default.  Otherwise default to the convertToAbsoluteUrls option
-		directly
-	*/
-	var autoFixUrls = options.convertToAbsoluteUrls === undefined && sourceMap;
-
-	if (options.convertToAbsoluteUrls || autoFixUrls) {
-		css = fixUrls(css);
-	}
-
-	if (sourceMap) {
-		// http://stackoverflow.com/a/26603875
-		css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
-	}
-
-	var blob = new Blob([css], { type: "text/css" });
-
-	var oldSrc = link.href;
-
-	link.href = URL.createObjectURL(blob);
-
-	if(oldSrc) URL.revokeObjectURL(oldSrc);
-}
-
-
-/***/ }),
-/* 55 */
-/***/ (function(module, exports) {
-
-
-/**
- * When source maps are enabled, `style-loader` uses a link element with a data-uri to
- * embed the css on the page. This breaks all relative urls because now they are relative to a
- * bundle instead of the current page.
- *
- * One solution is to only use full urls, but that may be impossible.
- *
- * Instead, this function "fixes" the relative urls to be absolute according to the current page location.
- *
- * A rudimentary test suite is located at `test/fixUrls.js` and can be run via the `npm test` command.
- *
- */
-
-module.exports = function (css) {
-  // get current location
-  var location = typeof window !== "undefined" && window.location;
-
-  if (!location) {
-    throw new Error("fixUrls requires window.location");
-  }
-
-	// blank or null?
-	if (!css || typeof css !== "string") {
-	  return css;
-  }
-
-  var baseUrl = location.protocol + "//" + location.host;
-  var currentDir = baseUrl + location.pathname.replace(/\/[^\/]*$/, "/");
-
-	// convert each url(...)
-	/*
-	This regular expression is just a way to recursively match brackets within
-	a string.
-
-	 /url\s*\(  = Match on the word "url" with any whitespace after it and then a parens
-	   (  = Start a capturing group
-	     (?:  = Start a non-capturing group
-	         [^)(]  = Match anything that isn't a parentheses
-	         |  = OR
-	         \(  = Match a start parentheses
-	             (?:  = Start another non-capturing groups
-	                 [^)(]+  = Match anything that isn't a parentheses
-	                 |  = OR
-	                 \(  = Match a start parentheses
-	                     [^)(]*  = Match anything that isn't a parentheses
-	                 \)  = Match a end parentheses
-	             )  = End Group
-              *\) = Match anything and then a close parens
-          )  = Close non-capturing group
-          *  = Match anything
-       )  = Close capturing group
-	 \)  = Match a close parens
-
-	 /gi  = Get all matches, not the first.  Be case insensitive.
-	 */
-	var fixedCss = css.replace(/url\s*\(((?:[^)(]|\((?:[^)(]+|\([^)(]*\))*\))*)\)/gi, function(fullMatch, origUrl) {
-		// strip quotes (if they exist)
-		var unquotedOrigUrl = origUrl
-			.trim()
-			.replace(/^"(.*)"$/, function(o, $1){ return $1; })
-			.replace(/^'(.*)'$/, function(o, $1){ return $1; });
-
-		// already a full url? no change
-		if (/^(#|data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(unquotedOrigUrl)) {
-		  return fullMatch;
-		}
-
-		// convert the url to a full url
-		var newUrl;
-
-		if (unquotedOrigUrl.indexOf("//") === 0) {
-		  	//TODO: should we add protocol?
-			newUrl = unquotedOrigUrl;
-		} else if (unquotedOrigUrl.indexOf("/") === 0) {
-			// path should be relative to the base url
-			newUrl = baseUrl + unquotedOrigUrl; // already starts with '/'
-		} else {
-			// path should be relative to current directory
-			newUrl = currentDir + unquotedOrigUrl.replace(/^\.\//, ""); // Strip leading './'
-		}
-
-		// send back the fixed url(...)
-		return "url(" + JSON.stringify(newUrl) + ")";
-	});
-
-	// send back the fixed css
-	return fixedCss;
-};
-
-
-/***/ }),
-/* 56 */
+/* 72 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -34455,19 +40386,19 @@ if (false) {
 }
 
 /***/ }),
-/* 57 */
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(58)
+  __webpack_require__(74)
 }
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(60)
+var __vue_script__ = __webpack_require__(76)
 /* template */
-var __vue_template__ = __webpack_require__(66)
+var __vue_template__ = __webpack_require__(82)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -34506,13 +40437,13 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 58 */
+/* 74 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(59);
+var content = __webpack_require__(75);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
@@ -34532,7 +40463,7 @@ if(false) {
 }
 
 /***/ }),
-/* 59 */
+/* 75 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(2)(undefined);
@@ -34546,12 +40477,12 @@ exports.push([module.i, "\n.paging-controll[data-v-5a63f9c5]{\r\n  margin-top: 1
 
 
 /***/ }),
-/* 60 */
+/* 76 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__packages_components_pager__ = __webpack_require__(61);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__packages_components_pager__ = __webpack_require__(77);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__packages_components_pager___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__packages_components_pager__);
 //
 //
@@ -34616,19 +40547,19 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 61 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(62)
+  __webpack_require__(78)
 }
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(64)
+var __vue_script__ = __webpack_require__(80)
 /* template */
-var __vue_template__ = __webpack_require__(65)
+var __vue_template__ = __webpack_require__(81)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -34667,13 +40598,13 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 62 */
+/* 78 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(63);
+var content = __webpack_require__(79);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
@@ -34693,7 +40624,7 @@ if(false) {
 }
 
 /***/ }),
-/* 63 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(2)(undefined);
@@ -34707,7 +40638,7 @@ exports.push([module.i, "\n.pager-wrapper {\n    margin-top: 15px;\n    text-ali
 
 
 /***/ }),
-/* 64 */
+/* 80 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -34862,7 +40793,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 65 */
+/* 81 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -35081,7 +41012,7 @@ if (false) {
 }
 
 /***/ }),
-/* 66 */
+/* 82 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -35176,19 +41107,19 @@ if (false) {
 }
 
 /***/ }),
-/* 67 */
+/* 83 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(68)
+  __webpack_require__(84)
 }
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(70)
+var __vue_script__ = __webpack_require__(86)
 /* template */
-var __vue_template__ = __webpack_require__(71)
+var __vue_template__ = __webpack_require__(87)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -35227,13 +41158,13 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 68 */
+/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(69);
+var content = __webpack_require__(85);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
@@ -35253,7 +41184,7 @@ if(false) {
 }
 
 /***/ }),
-/* 69 */
+/* 85 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(2)(undefined);
@@ -35267,7 +41198,7 @@ exports.push([module.i, "\n.fade-transition {\n    transition: opacity .3s ease;
 
 
 /***/ }),
-/* 70 */
+/* 86 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -35338,7 +41269,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 71 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -35395,19 +41326,19 @@ if (false) {
 }
 
 /***/ }),
-/* 72 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(73)
+  __webpack_require__(89)
 }
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(75)
+var __vue_script__ = __webpack_require__(91)
 /* template */
-var __vue_template__ = __webpack_require__(76)
+var __vue_template__ = __webpack_require__(92)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -35446,13 +41377,13 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 73 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(74);
+var content = __webpack_require__(90);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
@@ -35472,7 +41403,7 @@ if(false) {
 }
 
 /***/ }),
-/* 74 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(2)(undefined);
@@ -35486,7 +41417,7 @@ exports.push([module.i, "\n.modal {\n    transition: all 0.3s ease;\n}\n.modal.i
 
 
 /***/ }),
-/* 75 */
+/* 91 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -35633,7 +41564,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 76 */
+/* 92 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -35746,15 +41677,15 @@ if (false) {
 }
 
 /***/ }),
-/* 77 */
+/* 93 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(78)
+var __vue_script__ = __webpack_require__(94)
 /* template */
-var __vue_template__ = __webpack_require__(79)
+var __vue_template__ = __webpack_require__(95)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -35793,7 +41724,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 78 */
+/* 94 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -35842,7 +41773,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 79 */
+/* 95 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -35919,19 +41850,19 @@ if (false) {
 }
 
 /***/ }),
-/* 80 */
+/* 96 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(81)
+  __webpack_require__(97)
 }
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(83)
+var __vue_script__ = __webpack_require__(99)
 /* template */
-var __vue_template__ = __webpack_require__(84)
+var __vue_template__ = __webpack_require__(100)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -35970,13 +41901,13 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 81 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(82);
+var content = __webpack_require__(98);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
@@ -35996,7 +41927,7 @@ if(false) {
 }
 
 /***/ }),
-/* 82 */
+/* 98 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(2)(undefined);
@@ -36004,13 +41935,13 @@ exports = module.exports = __webpack_require__(2)(undefined);
 
 
 // module
-exports.push([module.i, "\n.dropup,\r\n.dropdown {\r\n  position: relative;\n}\n.dropdown-toggle::after {\r\n  display: inline-block;\r\n  width: 0;\r\n  height: 0;\r\n  margin-left: 0.3em;\r\n  vertical-align: middle;\r\n  content: \"\";\r\n  border-top: 0.3em solid;\r\n  border-right: 0.3em solid transparent;\r\n  border-left: 0.3em solid transparent;\n}\n.dropdown-toggle:focus {\r\n  outline: 0;\n}\n.dropup .dropdown-toggle::after {\r\n  border-top: 0;\r\n  border-bottom: 0.3em solid;\n}\n.dropdown-menu {\r\n  position: absolute;\r\n  top: 100%;\r\n  left: 0;\r\n  z-index: 1000;\r\n  display: none;\r\n  float: left;\r\n  min-width: 10rem;\r\n  padding: 0.5rem 0;\r\n  margin: 0.125rem 0 0;\r\n  font-size: 1rem;\r\n  color: #292b2c;\r\n  text-align: left;\r\n  list-style: none;\r\n  background-color: #fff;\r\n  -webkit-background-clip: padding-box;\r\n          background-clip: padding-box;\r\n  border: 1px solid rgba(0, 0, 0, 0.15);\r\n  border-radius: 0.25rem;\n}\n.dropdown-divider {\r\n  height: 1px;\r\n  margin: 0.5rem 0;\r\n  overflow: hidden;\r\n  background-color: #eceeef;\n}\n.dropdown-item {\r\n  display: block;\r\n  width: 100%;\r\n  padding: 3px 1.5rem;\r\n  clear: both;\r\n  font-weight: normal;\r\n  color: #292b2c;\r\n  text-align: inherit;\r\n  white-space: nowrap;\r\n  background: none;\r\n  border: 0;\r\n  font-size: 1.5em;\n}\n.dropdown-item:focus, .dropdown-item:hover {\r\n  color: #1d1e1f;\r\n  text-decoration: none;\r\n  background-color: #f7f7f9;\n}\n.dropdown-item.active, .dropdown-item:active {\r\n  color: #fff;\r\n  text-decoration: none;\r\n  background-color: #0275d8;\n}\n.dropdown-item.disabled, .dropdown-item:disabled {\r\n  color: #636c72;\r\n  cursor: not-allowed;\r\n  background-color: transparent;\n}\n.show > .dropdown-menu {\r\n  display: block;\n}\n.show > a {\r\n  outline: 0;\n}\n.dropdown-menu-right {\r\n  right: 0;\r\n  left: auto;\n}\n.dropdown-menu-left {\r\n  right: auto;\r\n  left: 0;\n}\n.dropdown-header {\r\n  display: block;\r\n  padding: 0.5rem 1.5rem;\r\n  margin-bottom: 0;\r\n  font-size: 0.875rem;\r\n  color: #636c72;\r\n  white-space: nowrap;\n}\n.dropdown-backdrop {\r\n  position: fixed;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  z-index: 990;\n}\n.dropup .dropdown-menu {\r\n  top: auto;\r\n  bottom: 100%;\r\n  margin-bottom: 0.125rem;\n}\r\n", ""]);
+exports.push([module.i, "\n.dropup,\r\n.dropdown {\r\n  position: relative;\n}\n.dropdown-toggle::after {\r\n  display: inline-block;\r\n  width: 0;\r\n  height: 0;\r\n  margin-left: 0.3em;\r\n  vertical-align: middle;\r\n  content: \"\";\r\n  border-top: 0.3em solid;\r\n  border-right: 0.3em solid transparent;\r\n  border-left: 0.3em solid transparent;\n}\n.dropdown-toggle:focus {\r\n  outline: 0;\n}\n.dropup .dropdown-toggle::after {\r\n  border-top: 0;\r\n  border-bottom: 0.3em solid;\n}\n.dropdown-menu {\r\n  position: absolute;\r\n  top: 100%;\r\n  left: 0;\r\n  z-index: 1000;\r\n  display: none;\r\n  float: left;\r\n  min-width: 10rem;\r\n  padding: 0.5rem 0;\r\n  margin: 0.125rem 0 0;\r\n  font-size: 1rem;\r\n  color: #292b2c;\r\n  text-align: left;\r\n  list-style: none;\r\n  background-color: #fff;\r\n  -webkit-background-clip: padding-box;\r\n          background-clip: padding-box;\r\n  border: 1px solid rgba(0, 0, 0, 0.15);\r\n  border-radius: 0.25rem;\n}\n.dropdown-divider {\r\n  height: 1px;\r\n  margin: 0.5rem 0;\r\n  overflow: hidden;\r\n  background-color: #eceeef;\n}\n.dropdown-item {\r\n  display: block;\r\n  width: 100%;\r\n  padding: 3px 1.5rem;\r\n  clear: both;\r\n  font-weight: normal;\r\n  color: #292b2c;\r\n  text-align: inherit;\r\n  white-space: nowrap;\r\n  background: none;\r\n  border: 0;\n}\n.dropdown-item:focus, .dropdown-item:hover {\r\n  color: #1d1e1f;\r\n  text-decoration: none;\r\n  background-color: #f7f7f9;\n}\n.dropdown-item.active, .dropdown-item:active {\r\n  color: #fff;\r\n  text-decoration: none;\r\n  background-color: #0275d8;\n}\n.dropdown-item.disabled, .dropdown-item:disabled {\r\n  color: #636c72;\r\n  cursor: not-allowed;\r\n  background-color: transparent;\n}\n.show > .dropdown-menu {\r\n  display: block;\n}\n.show > a {\r\n  outline: 0;\n}\n.dropdown-menu-right {\r\n  right: 0;\r\n  left: auto;\n}\n.dropdown-menu-left {\r\n  right: auto;\r\n  left: 0;\n}\n.dropdown-header {\r\n  display: block;\r\n  padding: 0.5rem 1.5rem;\r\n  margin-bottom: 0;\r\n  font-size: 0.875rem;\r\n  color: #636c72;\r\n  white-space: nowrap;\n}\n.dropdown-backdrop {\r\n  position: fixed;\r\n  top: 0;\r\n  right: 0;\r\n  bottom: 0;\r\n  left: 0;\r\n  z-index: 990;\n}\n.dropup .dropdown-menu {\r\n  top: auto;\r\n  bottom: 100%;\r\n  margin-bottom: 0.125rem;\n}\r\n", ""]);
 
 // exports
 
 
 /***/ }),
-/* 83 */
+/* 99 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -36067,7 +41998,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 84 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -36125,15 +42056,15 @@ if (false) {
 }
 
 /***/ }),
-/* 85 */
+/* 101 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(86)
+var __vue_script__ = __webpack_require__(102)
 /* template */
-var __vue_template__ = __webpack_require__(87)
+var __vue_template__ = __webpack_require__(103)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -36172,7 +42103,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 86 */
+/* 102 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -36280,7 +42211,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 });
 
 /***/ }),
-/* 87 */
+/* 103 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -36303,15 +42234,15 @@ if (false) {
 }
 
 /***/ }),
-/* 88 */
+/* 104 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(89)
+var __vue_script__ = __webpack_require__(105)
 /* template */
-var __vue_template__ = __webpack_require__(90)
+var __vue_template__ = __webpack_require__(106)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -36350,7 +42281,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 89 */
+/* 105 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -36381,30 +42312,51 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
    name: 'Navbar',
+   props: {
+      categories: {
+         type: Array,
+         default: null
+      },
+      category: {
+         type: Number,
+         default: 0
+      }
+   },
    data: function data() {
       return {
          keyword: ''
       };
    },
-   created: function created() {
-      Bus.$on('set-keyword', this.setKeyword);
-   },
 
    methods: {
+      getClass: function getClass(item) {
+         var style = 'nav-link';
+         if (this.isActive(item)) style += ' active';
+
+         return style;
+      },
+      getLink: function getLink(item) {
+         return '/posts?category=' + item.value;
+      },
+      isActive: function isActive(item) {
+         return parseInt(item.value) == this.category;
+      },
       setKeyword: function setKeyword(keyword) {
          this.keyword = keyword;
       },
       onSubmit: function onSubmit() {
-         Bus.$emit('search', this.keyword);
+         this.$emit('search', this.keyword);
       }
    }
 });
 
 /***/ }),
-/* 90 */
+/* 106 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -36428,7 +42380,21 @@ var render = function() {
       "div",
       { staticClass: "navbar-collapse collapse", attrs: { id: "menu-items" } },
       [
-        _c("ul", { staticClass: "navbar-nav mr-auto" }),
+        _c(
+          "ul",
+          { staticClass: "navbar-nav mr-auto" },
+          _vm._l(_vm.categories, function(item, index) {
+            return _c(
+              "a",
+              {
+                key: index,
+                class: _vm.getClass(item),
+                attrs: { href: _vm.getLink(item) }
+              },
+              [_vm._v(_vm._s(item.text))]
+            )
+          })
+        ),
         _vm._v(" "),
         _c("div", { staticClass: "form-inline my-2 my-lg-0" }, [
           _c(
@@ -36519,19 +42485,19 @@ if (false) {
 }
 
 /***/ }),
-/* 91 */
+/* 107 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(120)
+  __webpack_require__(108)
 }
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(92)
+var __vue_script__ = __webpack_require__(110)
 /* template */
-var __vue_template__ = __webpack_require__(96)
+var __vue_template__ = __webpack_require__(117)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -36570,23 +42536,55 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 92 */
+/* 108 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(109);
+if(typeof content === 'string') content = [[module.i, content, '']];
+if(content.locals) module.exports = content.locals;
+// add the styles to the DOM
+var update = __webpack_require__(3)("0e062e88", content, false);
+// Hot Module Replacement
+if(false) {
+ // When the styles change, update the <style> tags
+ if(!content.locals) {
+   module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-cce8f11e\",\"scoped\":false,\"hasInlineConfig\":true}!../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0&bustCache!./post-index.vue", function() {
+     var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-cce8f11e\",\"scoped\":false,\"hasInlineConfig\":true}!../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0&bustCache!./post-index.vue");
+     if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+     update(newContent);
+   });
+ }
+ // When the module is disposed, remove the <style> tags
+ module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 109 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(2)(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "\n.pagination {\r\n  display: inline-block;\r\n  padding-left: 0;\r\n  margin: 20px 0;\r\n  border-radius: 4px;\n}\n.pagination > li {\r\n  display: inline;\n}\n.pagination > li > a,\r\n.pagination > li > span {\r\n  position: relative;\r\n  float: left;\r\n  padding: 6px 12px;\r\n  margin-left: -1px;\r\n  line-height: 1.428571429;\r\n  text-decoration: none;\r\n  background-color: #ffffff;\r\n  border: 1px solid #dddddd;\n}\n.pagination > li:first-child > a,\r\n.pagination > li:first-child > span {\r\n  margin-left: 0;\r\n  border-bottom-left-radius: 4px;\r\n  border-top-left-radius: 4px;\n}\n.pagination > li:last-child > a,\r\n.pagination > li:last-child > span {\r\n  border-top-right-radius: 4px;\r\n  border-bottom-right-radius: 4px;\n}\n.pagination > li > a:hover,\r\n.pagination > li > span:hover,\r\n.pagination > li > a:focus,\r\n.pagination > li > span:focus {\r\n  background-color: #eeeeee;\n}\n.pagination > .active > a,\r\n.pagination > .active > span,\r\n.pagination > .active > a:hover,\r\n.pagination > .active > span:hover,\r\n.pagination > .active > a:focus,\r\n.pagination > .active > span:focus {\r\n  z-index: 2;\r\n  color: #ffffff;\r\n  cursor: default;\r\n  background-color: #428bca;\r\n  border-color: #428bca;\n}\n.pagination > .disabled > span,\r\n.pagination > .disabled > a,\r\n.pagination > .disabled > a:hover,\r\n.pagination > .disabled > a:focus {\r\n  color: #999999;\r\n  cursor: not-allowed;\r\n  background-color: #ffffff;\r\n  border-color: #dddddd;\n}\n.pagination-lg > li > a,\r\n.pagination-lg > li > span {\r\n  padding: 10px 16px;\r\n  font-size: 18px;\n}\n.pagination-lg > li:first-child > a,\r\n.pagination-lg > li:first-child > span {\r\n  border-bottom-left-radius: 6px;\r\n  border-top-left-radius: 6px;\n}\n.pagination-lg > li:last-child > a,\r\n.pagination-lg > li:last-child > span {\r\n  border-top-right-radius: 6px;\r\n  border-bottom-right-radius: 6px;\n}\n.pagination-sm > li > a,\r\n.pagination-sm > li > span {\r\n  padding: 5px 10px;\r\n  font-size: 12px;\n}\n.pagination-sm > li:first-child > a,\r\n.pagination-sm > li:first-child > span {\r\n  border-bottom-left-radius: 3px;\r\n  border-top-left-radius: 3px;\n}\n.pagination-sm > li:last-child > a,\r\n.pagination-sm > li:last-child > span {\r\n  border-top-right-radius: 3px;\r\n  border-bottom-right-radius: 3px;\n}\n.pager {\r\n  padding-left: 0;\r\n  margin: 20px 0;\r\n  text-align: center;\r\n  list-style: none;\n}\n.pager:before,\r\n.pager:after {\r\n  display: table;\r\n  content: \" \";\n}\n.pager:after {\r\n  clear: both;\n}\n.pager:before,\r\n.pager:after {\r\n  display: table;\r\n  content: \" \";\n}\n.pager:after {\r\n  clear: both;\n}\n.pager li {\r\n  display: inline;\n}\n.pager li > a,\r\n.pager li > span {\r\n  display: inline-block;\r\n  padding: 5px 14px;\r\n  background-color: #ffffff;\r\n  border: 1px solid #dddddd;\r\n  border-radius: 15px;\n}\n.pager li > a:hover,\r\n.pager li > a:focus {\r\n  text-decoration: none;\r\n  background-color: #eeeeee;\n}\n.pager .next > a,\r\n.pager .next > span {\r\n  float: right;\n}\n.pager .previous > a,\r\n.pager .previous > span {\r\n  float: left;\n}\n.pager .disabled > a,\r\n.pager .disabled > a:hover,\r\n.pager .disabled > a:focus,\r\n.pager .disabled > span {\r\n  color: #999999;\r\n  cursor: not-allowed;\r\n  background-color: #ffffff;\n}\r\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 110 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_post_item__ = __webpack_require__(93);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_post_item__ = __webpack_require__(111);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_post_item___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__components_post_item__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__components_archieves__ = __webpack_require__(117);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__components_archieves__ = __webpack_require__(114);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__components_archieves___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1__components_archieves__);
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-//
-//
-//
-//
-//
-//
 //
 //
 //
@@ -36649,21 +42647,13 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
       Archieves: __WEBPACK_IMPORTED_MODULE_1__components_archieves___default.a
    },
    props: {
-      init_model: {
+      model: {
          type: Object,
          default: null
       },
-      categories: {
-         type: Array,
+      params: {
+         type: Object,
          default: null
-      },
-      init_category: {
-         type: Number,
-         default: 0
-      },
-      init_keyword: {
-         type: String,
-         default: ''
       },
       archive_items: {
          type: Array,
@@ -36671,20 +42661,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
       }
    },
    data: function data() {
-      return {
-         model: null,
-
-         params: {
-            category: 0,
-            keyword: '',
-            year: 0,
-            page: 1
-
-         },
-
-         category: null
-
-      };
+      return {};
    },
 
    computed: {
@@ -36696,99 +42673,48 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
    beforeMount: function beforeMount() {
       this.init();
    },
-   created: function created() {
-      Bus.$on('search', this.onSearch);
-   },
 
    methods: {
-      init: function init() {
-         var _this = this;
-
-         if (this.init_model) {
-            this.model = _extends({}, this.init_model);
-            this.params.page = this.init_model.pageNumber;
-            this.params.pageSize = this.init_model.pageSize;
-         }
-
-         if (this.categories) {
-            if (this.init_category) {
-               var category = this.categories.find(function (item) {
-                  return item.value == _this.init_category;
-               });
-               this.setCategory(category);
-            } else {
-               this.setCategory(this.categories[0]);
-            }
-         }
-
-         this.setKeyword(this.init_keyword);
-         Bus.$emit('set-keyword', this.init_keyword);
-
-         var archive_items = this.archive_items;
-         if (!archive_items) return;
-         if (archive_items.length) {
-            this.params.year = parseInt(archive_items[0].text);
-         } else {
-            this.params.year = 0;
-         }
-      },
-      setKeyword: function setKeyword(keyword) {
-         this.params.keyword = keyword;
-      },
-      setCategory: function setCategory(category) {
-         this.category = category;
-         this.params.category = category.value;
-      },
+      init: function init() {},
       onArchiveSelected: function onArchiveSelected(item) {
-         this.params.year = parseInt(item.text);
-         this.fetchData();
+         this.$emit('year-changed', parseInt(item.text));
       },
       onPreviousPage: function onPreviousPage() {
-         this.params.page -= 1;
-         this.fetchData();
+         var page = parseInt(this.params.page) - 1;
+         this.$emit('page-changed', page);
       },
       onNextPage: function onNextPage() {
-         this.params.page += 1;
-         this.fetchData();
-      },
-      onSearch: function onSearch(keyword) {
-         var params = {
-            category: this.params.category,
-            keyword: keyword
-         };
-         var url = Helper.buildQuery('/posts', params);
-         document.location = url;
+         var page = parseInt(this.params.page) + 1;
+         this.$emit('page-changed', page);
       },
       fetchData: function fetchData() {
-         var _this2 = this;
+         var _this = this;
 
          var getData = Post.index(this.params);
 
          getData.then(function (model) {
-
-            _this2.model = _extends({}, model);
-
-            $("html, body").animate({ scrollTop: 0 }, 1000);
+            _this.$emit('posts-fetched', model);
          }).catch(function (error) {
             Helper.BusEmitError(error);
          });
       },
       onDetails: function onDetails(id) {
+
          this.$emit('details', id);
       }
    }
 });
 
 /***/ }),
-/* 93 */
+/* 111 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(94)
+var __vue_script__ = __webpack_require__(112)
 /* template */
-var __vue_template__ = __webpack_require__(95)
+var __vue_template__ = __webpack_require__(113)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -36827,7 +42753,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 94 */
+/* 112 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -36885,7 +42811,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 95 */
+/* 113 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -36895,7 +42821,29 @@ var render = function() {
   return _vm.post
     ? _c("article", [
         _c("div", { staticClass: "line-item hf-item-odd clearfix" }, [
-          _vm._m(0),
+          _c("div", { staticClass: "content-image" }, [
+            _c(
+              "a",
+              {
+                staticClass: "image-link article-link",
+                attrs: { href: "#" },
+                on: {
+                  click: function($event) {
+                    $event.preventDefault()
+                    _vm.onDetails($event)
+                  }
+                }
+              },
+              [
+                _c("img", {
+                  staticClass: "img-thumbnail summary-img",
+                  attrs: { src: _vm.post.cover.previewPath }
+                }),
+                _vm._v(" "),
+                _c("span", { staticClass: "overlay article-overlay" })
+              ]
+            )
+          ]),
           _vm._v(" "),
           _c("div", { staticClass: "hf-info" }, [
             _c("h2", { staticClass: "post-title" }, [
@@ -36934,30 +42882,7 @@ var render = function() {
       ])
     : _vm._e()
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "content-image" }, [
-      _c(
-        "a",
-        { staticClass: "image-link article-link", attrs: { href: "#" } },
-        [
-          _c("img", {
-            staticClass: "img-thumbnail summary-img",
-            attrs: {
-              src:
-                "http://203.64.34.2/imgs/zooming/561/437/20171214/9cdaa286-719d-4951-ad15-5daa5dbf871a.JPG"
-            }
-          }),
-          _vm._v(" "),
-          _c("span", { staticClass: "overlay article-overlay" })
-        ]
-      )
-    ])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 module.exports = { render: render, staticRenderFns: staticRenderFns }
 if (false) {
@@ -36968,7 +42893,148 @@ if (false) {
 }
 
 /***/ }),
-/* 96 */
+/* 114 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+var normalizeComponent = __webpack_require__(0)
+/* script */
+var __vue_script__ = __webpack_require__(115)
+/* template */
+var __vue_template__ = __webpack_require__(116)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = null
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "resources\\js\\components\\archieves.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-798cfcec", Component.options)
+  } else {
+    hotAPI.reload("data-v-798cfcec", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 115 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+   name: 'Archieves',
+   props: {
+      items: {
+         type: Array,
+         default: null
+      },
+      year: {
+         type: Number,
+         default: 0
+      }
+   },
+   methods: {
+      getClass: function getClass(item) {
+         var style = 'list-group-item';
+         if (this.isActive(item)) style += ' active';
+
+         return style;
+      },
+      isActive: function isActive(item) {
+         return parseInt(item.text) == this.year;
+      },
+      onSelected: function onSelected(item) {
+
+         this.$emit('selected', item);
+      }
+   }
+});
+
+/***/ }),
+/* 116 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c(
+    "div",
+    { staticClass: "archives list-group" },
+    _vm._l(_vm.items, function(item, index) {
+      return _c(
+        "a",
+        {
+          key: index,
+          class: _vm.getClass(item),
+          attrs: { href: "#" },
+          on: {
+            click: function($event) {
+              $event.preventDefault()
+              _vm.onSelected(item)
+            }
+          }
+        },
+        [
+          _vm._v("\n      " + _vm._s(item.text) + "   "),
+          _c("span", { staticClass: "badge badge-pill badge-success" }, [
+            _vm._v(_vm._s(item.count))
+          ])
+        ]
+      )
+    })
+  )
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-798cfcec", module.exports)
+  }
+}
+
+/***/ }),
+/* 117 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -37062,7 +43128,7 @@ var render = function() {
                     _c(
                       "span",
                       { staticClass: "badge badge-pill badge-success" },
-                      [_vm._v("9")]
+                      [_vm._v(_vm._s(_vm.model.totalItems))]
                     ),
                     _vm._v(" "),
                     _vm._m(0)
@@ -37100,15 +43166,267 @@ if (false) {
 }
 
 /***/ }),
-/* 97 */
+/* 118 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(98)
+var __vue_script__ = __webpack_require__(119)
 /* template */
-var __vue_template__ = __webpack_require__(113)
+var __vue_template__ = __webpack_require__(120)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = null
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "resources\\js\\views\\post-details.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-4afc19be", Component.options)
+  } else {
+    hotAPI.reload("data-v-4afc19be", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 119 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+   name: 'PostDetailsView',
+   props: {
+      model: {
+         type: Object,
+         default: null
+      }
+   },
+   data: function data() {
+      return {};
+   },
+   mounted: function mounted() {
+
+      var clipboard = new Clipboard('.btn-copy');
+
+      clipboard.on('success', function (e) {
+         Helper.BusEmitOK('連結已複製');
+         e.clearSelection();
+      });
+   },
+
+   methods: {
+      fetchData: function fetchData(id) {
+         var _this = this;
+
+         var getData = Post.details(id);
+
+         getData.then(function (model) {
+
+            _this.$emit('details-fetched', model);
+         }).catch(function (error) {
+            Helper.BusEmitError(error);
+         });
+      },
+      back: function back() {
+         this.$emit('back');
+      }
+   }
+});
+
+/***/ }),
+/* 120 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _vm.model
+    ? _c("div", { staticClass: "row" }, [
+        _c("div", { staticClass: "col-sm-8 blog-main" }, [
+          _c("div", { staticClass: "blog-post" }, [
+            _c(
+              "h5",
+              {
+                staticClass: "blog-post-title",
+                staticStyle: { "font-size": "1.5em" }
+              },
+              [_vm._v(_vm._s(_vm.model.post.title))]
+            ),
+            _vm._v(" "),
+            _c("span", { staticClass: "blog-post-meta" }, [
+              _vm._v(
+                "\n               " +
+                  _vm._s(_vm.model.post.author) +
+                  "   \n               "
+              ),
+              _c("br"),
+              _vm._v(" "),
+              _c(
+                "button",
+                {
+                  staticClass: "btn btn-light btn-sm btn-copy",
+                  attrs: {
+                    "data-clipboard-text": _vm.model.post.url,
+                    "data-toggle": "tooltip",
+                    title: "複製連結",
+                    "data-placement": "top"
+                  }
+                },
+                [
+                  _c("i", {
+                    staticClass: "fa fa-clipboard",
+                    attrs: { "aria-hidden": "true" }
+                  })
+                ]
+              )
+            ]),
+            _vm._v(" "),
+            _c("hr", { staticStyle: { "margin-top": "0" } }),
+            _vm._v(" "),
+            _c("p", { domProps: { innerHTML: _vm._s(_vm.model.post.content) } })
+          ])
+        ]),
+        _vm._v(" "),
+        _c("div", { staticClass: "col-sm-1" }),
+        _vm._v(" "),
+        _c("div", { staticClass: "col-sm-3" }, [
+          _c(
+            "div",
+            { staticClass: "sidebar-module" },
+            _vm._l(_vm.model.post.medias, function(item, index) {
+              return _c(
+                "a",
+                {
+                  key: index,
+                  attrs: {
+                    "data-fancybox": "gallery",
+                    "data-caption": item.title,
+                    href: item.previewPath
+                  }
+                },
+                [
+                  _c("img", {
+                    staticStyle: { width: "210px", "padding-top": "5px" },
+                    attrs: { alt: item.title, src: item.path }
+                  })
+                ]
+              )
+            })
+          )
+        ]),
+        _vm._v(" "),
+        _c("nav", { staticClass: "blog-pagination" }, [
+          _c(
+            "a",
+            {
+              staticClass: "btn btn-outline-primary",
+              attrs: { href: "#" },
+              on: {
+                click: function($event) {
+                  $event.preventDefault()
+                  _vm.back($event)
+                }
+              }
+            },
+            [_vm._v("\n            返回\n        ")]
+          )
+        ])
+      ])
+    : _vm._e()
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-4afc19be", module.exports)
+  }
+}
+
+/***/ }),
+/* 121 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+var normalizeComponent = __webpack_require__(0)
+/* script */
+var __vue_script__ = __webpack_require__(122)
+/* template */
+var __vue_template__ = __webpack_require__(137)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -37147,16 +43465,16 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 98 */
+/* 122 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_searcher__ = __webpack_require__(99);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_searcher__ = __webpack_require__(123);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_searcher___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__components_searcher__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__components_post_table__ = __webpack_require__(102);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__components_post_table__ = __webpack_require__(126);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__components_post_table___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1__components_post_table__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__components_post_edit__ = __webpack_require__(12);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__components_post_edit__ = __webpack_require__(13);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__components_post_edit___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2__components_post_edit__);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -37342,15 +43660,15 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 });
 
 /***/ }),
-/* 99 */
+/* 123 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(100)
+var __vue_script__ = __webpack_require__(124)
 /* template */
-var __vue_template__ = __webpack_require__(101)
+var __vue_template__ = __webpack_require__(125)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -37389,7 +43707,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 100 */
+/* 124 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -37422,7 +43740,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 101 */
+/* 125 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -37495,15 +43813,15 @@ if (false) {
 }
 
 /***/ }),
-/* 102 */
+/* 126 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(103)
+var __vue_script__ = __webpack_require__(127)
 /* template */
-var __vue_template__ = __webpack_require__(104)
+var __vue_template__ = __webpack_require__(128)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -37542,7 +43860,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 103 */
+/* 127 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -37612,7 +43930,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 104 */
+/* 128 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -37731,12 +44049,12 @@ if (false) {
 }
 
 /***/ }),
-/* 105 */
+/* 129 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__media_edit__ = __webpack_require__(106);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__media_edit__ = __webpack_require__(130);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__media_edit___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__media_edit__);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -37994,15 +44312,15 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 });
 
 /***/ }),
-/* 106 */
+/* 130 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(107)
+var __vue_script__ = __webpack_require__(131)
 /* template */
-var __vue_template__ = __webpack_require__(111)
+var __vue_template__ = __webpack_require__(135)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -38041,12 +44359,12 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 107 */
+/* 131 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__file_upload__ = __webpack_require__(108);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__file_upload__ = __webpack_require__(132);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__file_upload___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__file_upload__);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -38358,15 +44676,15 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 });
 
 /***/ }),
-/* 108 */
+/* 132 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(109)
+var __vue_script__ = __webpack_require__(133)
 /* template */
-var __vue_template__ = __webpack_require__(110)
+var __vue_template__ = __webpack_require__(134)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -38405,7 +44723,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 109 */
+/* 133 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -38547,7 +44865,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 110 */
+/* 134 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -38575,7 +44893,7 @@ if (false) {
 }
 
 /***/ }),
-/* 111 */
+/* 135 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -38840,7 +45158,7 @@ if (false) {
 }
 
 /***/ }),
-/* 112 */
+/* 136 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -39222,7 +45540,7 @@ if (false) {
 }
 
 /***/ }),
-/* 113 */
+/* 137 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -39389,15 +45707,15 @@ if (false) {
 }
 
 /***/ }),
-/* 114 */
+/* 138 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 var normalizeComponent = __webpack_require__(0)
 /* script */
-var __vue_script__ = __webpack_require__(115)
+var __vue_script__ = __webpack_require__(139)
 /* template */
-var __vue_template__ = __webpack_require__(116)
+var __vue_template__ = __webpack_require__(140)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -39436,12 +45754,12 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 115 */
+/* 139 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_post_edit__ = __webpack_require__(12);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_post_edit__ = __webpack_require__(13);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_post_edit___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__components_post_edit__);
 //
 //
@@ -39463,7 +45781,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 116 */
+/* 140 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -39479,543 +45797,6 @@ if (false) {
   module.hot.accept()
   if (module.hot.data) {
     require("vue-hot-reload-api")      .rerender("data-v-0c1d171e", module.exports)
-  }
-}
-
-/***/ }),
-/* 117 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var disposed = false
-var normalizeComponent = __webpack_require__(0)
-/* script */
-var __vue_script__ = __webpack_require__(118)
-/* template */
-var __vue_template__ = __webpack_require__(119)
-/* template functional */
-var __vue_template_functional__ = false
-/* styles */
-var __vue_styles__ = null
-/* scopeId */
-var __vue_scopeId__ = null
-/* moduleIdentifier (server only) */
-var __vue_module_identifier__ = null
-var Component = normalizeComponent(
-  __vue_script__,
-  __vue_template__,
-  __vue_template_functional__,
-  __vue_styles__,
-  __vue_scopeId__,
-  __vue_module_identifier__
-)
-Component.options.__file = "resources\\js\\components\\archieves.vue"
-
-/* hot reload */
-if (false) {(function () {
-  var hotAPI = require("vue-hot-reload-api")
-  hotAPI.install(require("vue"), false)
-  if (!hotAPI.compatible) return
-  module.hot.accept()
-  if (!module.hot.data) {
-    hotAPI.createRecord("data-v-798cfcec", Component.options)
-  } else {
-    hotAPI.reload("data-v-798cfcec", Component.options)
-  }
-  module.hot.dispose(function (data) {
-    disposed = true
-  })
-})()}
-
-module.exports = Component.exports
-
-
-/***/ }),
-/* 118 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-
-
-/* harmony default export */ __webpack_exports__["default"] = ({
-   name: 'Archieves',
-   props: {
-      items: {
-         type: Array,
-         default: null
-      },
-      year: {
-         type: Number,
-         default: 0
-      }
-   },
-   methods: {
-      getClass: function getClass(item) {
-         var style = 'list-group-item';
-         if (this.isActive(item)) style += ' active';
-
-         return style;
-      },
-      isActive: function isActive(item) {
-         return parseInt(item.text) == this.year;
-      },
-      onSelected: function onSelected(item) {
-
-         this.$emit('selected', item);
-      }
-   }
-});
-
-/***/ }),
-/* 119 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var render = function() {
-  var _vm = this
-  var _h = _vm.$createElement
-  var _c = _vm._self._c || _h
-  return _c(
-    "div",
-    { staticClass: "archives list-group" },
-    _vm._l(_vm.items, function(item, index) {
-      return _c(
-        "a",
-        {
-          key: index,
-          class: _vm.getClass(item),
-          attrs: { href: "#" },
-          on: {
-            click: function($event) {
-              $event.preventDefault()
-              _vm.onSelected(item)
-            }
-          }
-        },
-        [
-          _vm._v("\n      " + _vm._s(item.text) + "   "),
-          _c("span", { staticClass: "badge badge-pill badge-success" }, [
-            _vm._v(_vm._s(item.count))
-          ])
-        ]
-      )
-    })
-  )
-}
-var staticRenderFns = []
-render._withStripped = true
-module.exports = { render: render, staticRenderFns: staticRenderFns }
-if (false) {
-  module.hot.accept()
-  if (module.hot.data) {
-    require("vue-hot-reload-api")      .rerender("data-v-798cfcec", module.exports)
-  }
-}
-
-/***/ }),
-/* 120 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(121);
-if(typeof content === 'string') content = [[module.i, content, '']];
-if(content.locals) module.exports = content.locals;
-// add the styles to the DOM
-var update = __webpack_require__(3)("0e062e88", content, false);
-// Hot Module Replacement
-if(false) {
- // When the styles change, update the <style> tags
- if(!content.locals) {
-   module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-cce8f11e\",\"scoped\":false,\"hasInlineConfig\":true}!../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0&bustCache!./post-index.vue", function() {
-     var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-cce8f11e\",\"scoped\":false,\"hasInlineConfig\":true}!../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0&bustCache!./post-index.vue");
-     if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-     update(newContent);
-   });
- }
- // When the module is disposed, remove the <style> tags
- module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 121 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(2)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "\n.pagination {\r\n  display: inline-block;\r\n  padding-left: 0;\r\n  margin: 20px 0;\r\n  border-radius: 4px;\n}\n.pagination > li {\r\n  display: inline;\n}\n.pagination > li > a,\r\n.pagination > li > span {\r\n  position: relative;\r\n  float: left;\r\n  padding: 6px 12px;\r\n  margin-left: -1px;\r\n  line-height: 1.428571429;\r\n  text-decoration: none;\r\n  background-color: #ffffff;\r\n  border: 1px solid #dddddd;\n}\n.pagination > li:first-child > a,\r\n.pagination > li:first-child > span {\r\n  margin-left: 0;\r\n  border-bottom-left-radius: 4px;\r\n  border-top-left-radius: 4px;\n}\n.pagination > li:last-child > a,\r\n.pagination > li:last-child > span {\r\n  border-top-right-radius: 4px;\r\n  border-bottom-right-radius: 4px;\n}\n.pagination > li > a:hover,\r\n.pagination > li > span:hover,\r\n.pagination > li > a:focus,\r\n.pagination > li > span:focus {\r\n  background-color: #eeeeee;\n}\n.pagination > .active > a,\r\n.pagination > .active > span,\r\n.pagination > .active > a:hover,\r\n.pagination > .active > span:hover,\r\n.pagination > .active > a:focus,\r\n.pagination > .active > span:focus {\r\n  z-index: 2;\r\n  color: #ffffff;\r\n  cursor: default;\r\n  background-color: #428bca;\r\n  border-color: #428bca;\n}\n.pagination > .disabled > span,\r\n.pagination > .disabled > a,\r\n.pagination > .disabled > a:hover,\r\n.pagination > .disabled > a:focus {\r\n  color: #999999;\r\n  cursor: not-allowed;\r\n  background-color: #ffffff;\r\n  border-color: #dddddd;\n}\n.pagination-lg > li > a,\r\n.pagination-lg > li > span {\r\n  padding: 10px 16px;\r\n  font-size: 18px;\n}\n.pagination-lg > li:first-child > a,\r\n.pagination-lg > li:first-child > span {\r\n  border-bottom-left-radius: 6px;\r\n  border-top-left-radius: 6px;\n}\n.pagination-lg > li:last-child > a,\r\n.pagination-lg > li:last-child > span {\r\n  border-top-right-radius: 6px;\r\n  border-bottom-right-radius: 6px;\n}\n.pagination-sm > li > a,\r\n.pagination-sm > li > span {\r\n  padding: 5px 10px;\r\n  font-size: 12px;\n}\n.pagination-sm > li:first-child > a,\r\n.pagination-sm > li:first-child > span {\r\n  border-bottom-left-radius: 3px;\r\n  border-top-left-radius: 3px;\n}\n.pagination-sm > li:last-child > a,\r\n.pagination-sm > li:last-child > span {\r\n  border-top-right-radius: 3px;\r\n  border-bottom-right-radius: 3px;\n}\n.pager {\r\n  padding-left: 0;\r\n  margin: 20px 0;\r\n  text-align: center;\r\n  list-style: none;\n}\n.pager:before,\r\n.pager:after {\r\n  display: table;\r\n  content: \" \";\n}\n.pager:after {\r\n  clear: both;\n}\n.pager:before,\r\n.pager:after {\r\n  display: table;\r\n  content: \" \";\n}\n.pager:after {\r\n  clear: both;\n}\n.pager li {\r\n  display: inline;\n}\n.pager li > a,\r\n.pager li > span {\r\n  display: inline-block;\r\n  padding: 5px 14px;\r\n  background-color: #ffffff;\r\n  border: 1px solid #dddddd;\r\n  border-radius: 15px;\n}\n.pager li > a:hover,\r\n.pager li > a:focus {\r\n  text-decoration: none;\r\n  background-color: #eeeeee;\n}\n.pager .next > a,\r\n.pager .next > span {\r\n  float: right;\n}\n.pager .previous > a,\r\n.pager .previous > span {\r\n  float: left;\n}\n.pager .disabled > a,\r\n.pager .disabled > a:hover,\r\n.pager .disabled > a:focus,\r\n.pager .disabled > span {\r\n  color: #999999;\r\n  cursor: not-allowed;\r\n  background-color: #ffffff;\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 122 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var PostAdmin = function () {
-	function PostAdmin(data) {
-		_classCallCheck(this, PostAdmin);
-
-		for (var property in data) {
-			this[property] = data[property];
-		}
-	}
-
-	_createClass(PostAdmin, null, [{
-		key: 'source',
-		value: function source() {
-			return '/admin/posts';
-		}
-	}, {
-		key: 'createUrl',
-		value: function createUrl() {
-			return this.source() + '/create';
-		}
-	}, {
-		key: 'storeUrl',
-		value: function storeUrl() {
-			return this.source();
-		}
-	}, {
-		key: 'editUrl',
-		value: function editUrl(id) {
-			return this.source() + '/' + id + '/edit';
-		}
-	}, {
-		key: 'updateUrl',
-		value: function updateUrl(id) {
-			return this.source() + ('/' + id);
-		}
-	}, {
-		key: 'deleteUrl',
-		value: function deleteUrl(id) {
-			return this.source() + '/delete/' + id;
-		}
-	}, {
-		key: 'index',
-		value: function index(params) {
-			var url = this.source();
-			url = Helper.buildQuery(url, params);
-
-			return new Promise(function (resolve, reject) {
-				axios.get(url).then(function (response) {
-					resolve(response.data);
-				}).catch(function (error) {
-					reject(error);
-				});
-			});
-		}
-	}, {
-		key: 'create',
-		value: function create() {
-			var url = this.createUrl();
-
-			return new Promise(function (resolve, reject) {
-				axios.get(url).then(function (response) {
-					resolve(response.data);
-				}).catch(function (error) {
-					reject(error);
-				});
-			});
-		}
-	}, {
-		key: 'store',
-		value: function store(form) {
-			var url = this.storeUrl();
-			var method = 'post';
-			return new Promise(function (resolve, reject) {
-				form.submit(method, url).then(function (data) {
-					resolve(data);
-				}).catch(function (error) {
-					reject(error);
-				});
-			});
-		}
-	}, {
-		key: 'edit',
-		value: function edit(id) {
-			var url = this.editUrl(id);
-
-			return new Promise(function (resolve, reject) {
-				axios.get(url).then(function (response) {
-					resolve(response.data);
-				}).catch(function (error) {
-					reject(error);
-				});
-			});
-		}
-	}, {
-		key: 'update',
-		value: function update(id, form) {
-			var url = this.updateUrl(id);
-			var method = 'put';
-			return new Promise(function (resolve, reject) {
-				form.submit(method, url).then(function (data) {
-					resolve(data);
-				}).catch(function (error) {
-					reject(error);
-				});
-			});
-		}
-	}, {
-		key: 'remove',
-		value: function remove(id) {
-			var url = this.deleteUrl(id);
-
-			return new Promise(function (resolve, reject) {
-				axios.delete(url).then(function (response) {
-					resolve(response.data);
-				}).catch(function (error) {
-					reject(error);
-				});
-			});
-		}
-	}]);
-
-	return PostAdmin;
-}();
-
-/* harmony default export */ __webpack_exports__["a"] = (PostAdmin);
-
-/***/ }),
-/* 123 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var disposed = false
-var normalizeComponent = __webpack_require__(0)
-/* script */
-var __vue_script__ = __webpack_require__(124)
-/* template */
-var __vue_template__ = __webpack_require__(125)
-/* template functional */
-var __vue_template_functional__ = false
-/* styles */
-var __vue_styles__ = null
-/* scopeId */
-var __vue_scopeId__ = null
-/* moduleIdentifier (server only) */
-var __vue_module_identifier__ = null
-var Component = normalizeComponent(
-  __vue_script__,
-  __vue_template__,
-  __vue_template_functional__,
-  __vue_styles__,
-  __vue_scopeId__,
-  __vue_module_identifier__
-)
-Component.options.__file = "resources\\js\\views\\post-details.vue"
-
-/* hot reload */
-if (false) {(function () {
-  var hotAPI = require("vue-hot-reload-api")
-  hotAPI.install(require("vue"), false)
-  if (!hotAPI.compatible) return
-  module.hot.accept()
-  if (!module.hot.data) {
-    hotAPI.createRecord("data-v-4afc19be", Component.options)
-  } else {
-    hotAPI.reload("data-v-4afc19be", Component.options)
-  }
-  module.hot.dispose(function (data) {
-    disposed = true
-  })
-})()}
-
-module.exports = Component.exports
-
-
-/***/ }),
-/* 124 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-
-/* harmony default export */ __webpack_exports__["default"] = ({
-   name: 'PostDetailsView',
-   props: {
-      id: {
-         type: Number,
-         default: 0
-      }
-   },
-   data: function data() {
-      return {
-         model: null
-      };
-   },
-   beforeMount: function beforeMount() {
-      this.fetchData();
-   },
-
-   methods: {
-      fetchData: function fetchData() {
-         var _this = this;
-
-         var getData = Post.details(this.id);
-
-         getData.then(function (model) {
-
-            _this.model = _extends({}, model);
-         }).catch(function (error) {
-            Helper.BusEmitError(error);
-         });
-      },
-      back: function back() {
-         this.$emit('back');
-      }
-   }
-});
-
-/***/ }),
-/* 125 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var render = function() {
-  var _vm = this
-  var _h = _vm.$createElement
-  var _c = _vm._self._c || _h
-  return _vm.model
-    ? _c("div", { staticClass: "row" }, [
-        _c("div", { staticClass: "col-sm-8 blog-main" }, [
-          _c("div", { staticClass: "blog-post" }, [
-            _c(
-              "h5",
-              {
-                staticClass: "blog-post-title",
-                staticStyle: { "font-size": "1.5em" }
-              },
-              [_vm._v(_vm._s(_vm.model.post.title))]
-            ),
-            _vm._v(" "),
-            _c("span", { staticClass: "blog-post-meta" }, [
-              _vm._v(
-                "\n            " +
-                  _vm._s(_vm.model.post.author) +
-                  "   \n            "
-              ),
-              _c("br"),
-              _vm._v(" "),
-              _vm._m(0)
-            ]),
-            _vm._v(" "),
-            _c("hr", { staticStyle: { "margin-top": "0" } }),
-            _vm._v(" "),
-            _c("p", { domProps: { innerHTML: _vm._s(_vm.model.post.content) } })
-          ])
-        ]),
-        _vm._v(" "),
-        _c("div", { staticClass: "col-sm-1" }),
-        _vm._v(" "),
-        _c("div", { staticClass: "col-sm-3" }),
-        _vm._v(" "),
-        _c("nav", { staticClass: "blog-pagination" }, [
-          _c(
-            "a",
-            {
-              staticClass: "btn btn-outline-primary",
-              attrs: { href: "#" },
-              on: {
-                click: function($event) {
-                  $event.preventDefault()
-                  _vm.back($event)
-                }
-              }
-            },
-            [_vm._v("\n         返回\n     ")]
-          )
-        ])
-      ])
-    : _vm._e()
-}
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c(
-      "button",
-      {
-        staticClass: "btn btn-light btn-sm btn-copy",
-        attrs: {
-          id: "copy-url",
-          "data-clipboard-text": "",
-          "data-toggle": "tooltip",
-          title: "複製連結",
-          "data-placement": "top"
-        }
-      },
-      [
-        _c("i", {
-          staticClass: "fa fa-clipboard",
-          attrs: { "aria-hidden": "true" }
-        })
-      ]
-    )
-  }
-]
-render._withStripped = true
-module.exports = { render: render, staticRenderFns: staticRenderFns }
-if (false) {
-  module.hot.accept()
-  if (module.hot.data) {
-    require("vue-hot-reload-api")      .rerender("data-v-4afc19be", module.exports)
   }
 }
 

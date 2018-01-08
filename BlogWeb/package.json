@@ -21,6 +21,7 @@
         "vue": "^2.5.7"
     },
     "dependencies": {
+        "clipboard": "^1.7.1",
         "codemirror": "^5.33.0",
         "flatpickr": "^4.1.4",
         "summernote": "^0.8.9",

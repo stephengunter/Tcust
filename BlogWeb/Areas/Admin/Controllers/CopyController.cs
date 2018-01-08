@@ -128,9 +128,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		}
 
-		string DAIRY_ID = "7f266b34-c03e-41ae-84a1-1e27dccc7039"; //校園日誌
-		string HONOR_ID = "4af854f1-d569-4394-9a89-3ac1383734c0"; //榮譽榜
-
+		
 
 		private readonly IPostService postService;
 
@@ -145,17 +143,17 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		private string GetOleFilePath(string filePath)
 		{
-			string path = String.Format("uploads/{0}", filePath);
+			string path = String.Format("Uploads/{0}", filePath);
 			return Path.Combine(Settings.Value.HistoryPath, path);
 		}
 
-		private void CopyFile(string filePath)
+		private string CopyFile(string filePath)
 		{
 			string oleFilePath = GetOleFilePath(filePath);
 			if (!System.IO.File.Exists(oleFilePath)) throw new Exception("File Not Exist: " + oleFilePath);
 
 			string folderName = filePath.Split("/")[0];
-			string fileName = filePath.Split("/")[1];
+			string fileName = filePath.Split("/")[1].ToLower();
 			//檢查檔案路徑
 			string folderPath = Path.Combine(this.UploadFilesPath, folderName);
 			if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
@@ -163,6 +161,8 @@ namespace BlogWeb.Areas.Admin.Controllers
 			string savePath= Path.Combine(folderPath, fileName);
 
 			System.IO.File.Copy(oleFilePath, savePath);
+
+			return String.Format("{0}/{1}" , folderName, fileName);
 
 
 		}
@@ -241,10 +241,10 @@ namespace BlogWeb.Areas.Admin.Controllers
 				var mediaViewModels = mediaViewModelList.Where(m => m.contentId == model.id);
 				foreach (var item in mediaViewModels)
 				{
-					CopyFile(item.path);
+					item.path = CopyFile(item.path);
 					if (!String.IsNullOrEmpty(item.previewPath))
 					{
-						CopyFile(item.previewPath);
+						item.previewPath = CopyFile(item.previewPath);
 					}
 					var media = item.MapToEntity();
 					post.Attachments.Add(media);

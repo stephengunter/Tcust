@@ -30,7 +30,7 @@
   
             <div v-if="params.keyword">
 					關鍵字：{{ params.keyword }}  &nbsp;  
-					<span class="badge badge-pill badge-success">9</span>
+					<span class="badge badge-pill badge-success">{{ model.totalItems  }}</span>
 					<a href="/">
 						<i class="close fa fa-times"></i>
 					</a>
@@ -39,12 +39,6 @@
             <archieves :items="archive_items" :year="params.year"
               @selected="onArchiveSelected" >
             </archieves>
-
-            
-
-
-           
-     
 
 
          </div>   
@@ -66,21 +60,13 @@
          Archieves
       },
       props: {
-         init_model: {
+         model: {
             type: Object,
             default: null
-         },
-         categories:{
-				type:Array,
-				default:null
 			},
-			init_category:{
-				type:Number,
-				default:0
-			},
-			init_keyword:{
-				type:String,
-				default:''
+			params:{
+				type: Object,
+            default: null
 			},
          archive_items: {
             type: Array,
@@ -89,19 +75,7 @@
       },
       data(){
          return {
-				model:null,
-            
 				
-				params:{
-					category:0,
-					keyword:'',
-               year:0,
-					page:1,
-					
-				},
-				
-				category:null,
-
            
          }
       },
@@ -114,78 +88,29 @@
       beforeMount(){
           this.init();
       },
-      created() {
-         Bus.$on('search',this.onSearch);
-      },
       methods:{
          init(){
-            if(this.init_model){
-               this.model={...this.init_model };
-               this.params.page=this.init_model.pageNumber;
-               this.params.pageSize=this.init_model.pageSize;
-            }
-
-            if(this.categories){
-					if(this.init_category){
-						let category=this.categories.find((item)=>{
-							return item.value==this.init_category;
-						})
-						this.setCategory(category);
-					}else{
-						this.setCategory(this.categories[0]);
-					}
-               
-				}	
-				
-				
-				this.setKeyword(this.init_keyword);
-				Bus.$emit('set-keyword', this.init_keyword);
-         
-
-            let archive_items=this.archive_items;
-            if(!archive_items) return;
-            if(archive_items.length){
-               this.params.year=parseInt(archive_items[0].text);
-            }else{
-               this.params.year=0;
-            }
+            
            
 			},
-			setKeyword(keyword){
-				this.params.keyword=keyword;
-			},
-         setCategory(category){
-				this.category=category;
-				this.params.category=category.value;
-         },
          onArchiveSelected(item){
-            this.params.year=parseInt(item.text);
-            this.fetchData();
+				this.$emit('year-changed',parseInt(item.text));
          },
          onPreviousPage(){
-            this.params.page-=1;
-            this.fetchData();
+				let page=parseInt(this.params.page) - 1;
+				this.$emit('page-changed',page);
+           
          },
          onNextPage(){
-            this.params.page+=1;
-            this.fetchData();
+            let page=parseInt(this.params.page) + 1;
+				this.$emit('page-changed',page);
 			},
-			onSearch(keyword){
-				let params={
-					category:this.params.category,
-					keyword:keyword
-				};
-				let url=Helper.buildQuery('/posts',params);
-				document.location = url;
-			},
+			
          fetchData(){
             let getData = Post.index(this.params);
 
             getData.then(model => {
-
-               this.model={ ...model };
-
-               $("html, body").animate({ scrollTop: 0 }, 1000);
+					this.$emit('posts-fetched',model);
 
             })
             .catch(error => {
@@ -194,6 +119,7 @@
             })
          },
          onDetails(id){
+			
             this.$emit('details',id);
             
          }

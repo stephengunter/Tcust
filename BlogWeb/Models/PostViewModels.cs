@@ -75,7 +75,7 @@ namespace BlogWeb.Models
 
 		public int categoryId { get; set; }
 
-
+		public string url { get; set; }
 
 		public MediaViewModel cover { get; set; }
 

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Blog.DAL;
 using Blog.Services;
 using Tcust.DAL;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace WebApi
 {
@@ -81,23 +82,27 @@ namespace WebApi
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
         {
+			services.AddAuthentication(options =>
+			{
+				options.DefaultAuthenticateScheme =
+										   JwtBearerDefaults.AuthenticationScheme;
+				options.DefaultChallengeScheme =
+										   JwtBearerDefaults.AuthenticationScheme;
+			}).AddJwtBearer(o =>
+			{
+				o.Authority = "http://localhost:50000";
+				o.Audience = "apiApp";
+				o.RequireHttpsMetadata = false;
+			});
+
+
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
 			services.AddScoped(typeof(ITcustRepository<>), typeof(TcustRepository<>));
 
 			services.AddScoped<IPostService, PostService>();
 			services.AddScoped<ITopPostService, TopPostService>();
 
-			//services.AddScoped<ICatalogService, CachedCatalogService>();
-			//services.AddScoped<IBasketService, BasketService>();
-			//services.AddScoped<IBasketViewModelService, BasketViewModelService>();
-			//services.AddScoped<IOrderService, OrderService>();
-			//services.AddScoped<IOrderRepository, OrderRepository>();
-			//services.AddScoped<CatalogService>();
-			//services.Configure<CatalogSettings>(Configuration);
-			//services.AddSingleton<IUriComposer>(new UriComposer(Configuration.Get<CatalogSettings>()));
-
-			//services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
-			//services.AddTransient<IEmailSender, EmailSender>();
+			
 
 
 			services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
@@ -113,6 +118,8 @@ namespace WebApi
             {
                 app.UseDeveloperExceptionPage();
             }
+
+			app.UseAuthentication();
 
 			app.UseCors(builder =>
 				builder.WithOrigins("http://localhost:6330"));

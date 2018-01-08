@@ -17,7 +17,7 @@ namespace Blog.Services
 		void Delete(int id, string updatedBy);
 		Post GetById(int id);
 
-		Task<IEnumerable<Post>> FetchPosts(int category = 0, string keyword = "");
+		Task<IEnumerable<Post>> FetchPosts(Category category = null, string keyword = "");
 
 
 
@@ -35,7 +35,7 @@ namespace Blog.Services
 
 		//Task<IEnumerable<Post>> GetByYearMonthAsync(int year, int month);
 
-		Task<IEnumerable<Category>> GetCategoriesAsync();
+		Task<IEnumerable<Category>> GetCategoriesAsync(bool excludeDefault = false);
 		Task<Category> GetCategoryByIdAsync(int id, bool returnDefault = false);
 		IList<int> GetCategoryIds(int postId);
 
@@ -69,7 +69,7 @@ namespace Blog.Services
 
 		}
 
-		public async Task<IEnumerable<Post>> FetchPosts(int category = 0, string keyword = "")
+		public async Task<IEnumerable<Post>> FetchPosts(Category category = null, string keyword = "")
 		{
 			Task<IEnumerable<Post>> getPostsTask;
 			if (String.IsNullOrEmpty(keyword))
@@ -83,14 +83,15 @@ namespace Blog.Services
 
 			var posts = await getPostsTask;
 
-			bool returnDefaultCategory = true;
-			var selectedCategory = await GetCategoryByIdAsync(category, returnDefaultCategory);
+			if (category!=null)
+			{
+				var idsInCategory = postsCategoriesRepository.GetPostIds(category.Id);
+				return posts.Where(p => idsInCategory.Contains(p.Id));
 
-			var idsInCategory = postsCategoriesRepository.GetPostIds(selectedCategory.Id);
+			}
 
-			
+			return posts;
 
-			return posts.Where(p => idsInCategory.Contains(p.Id));
 
 
 		}
@@ -180,10 +181,14 @@ namespace Blog.Services
 
 		}
 
-		public async Task<IEnumerable<Category>> GetCategoriesAsync()
+		public async Task<IEnumerable<Category>> GetCategoriesAsync(bool excludeDefault=false)
 		{
 			var filter = new CategoryFilterSpecification();
 			var categories= await categoryRepository.ListAsync(filter);
+
+			if (excludeDefault) categories = categories.Where(c => c.Code != "diary").ToList();
+
+
 			return categories.Where(c=>c.Active).OrderByDescending(c=>c.Order);
 		}
 		public async Task<Category> GetCategoryByIdAsync(int id, bool returnDefault=false)

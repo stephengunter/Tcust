@@ -10,7 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Blog.DAL;
 using Blog.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
+
+using IdentityServer4.AccessTokenValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace BlogWeb
 {
@@ -44,7 +49,11 @@ namespace BlogWeb
 				}
 			});
 
-			
+			services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+
+
+
+
 
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
 			services.AddScoped(typeof(IPostsCategoriesRepository), typeof(PostsCategoriesRepository));
@@ -63,7 +72,9 @@ namespace BlogWeb
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            if (env.IsDevelopment())
+			JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+			if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
                 app.UseBrowserLink();
@@ -73,7 +84,9 @@ namespace BlogWeb
                 app.UseExceptionHandler("/Home/Error");
             }
 
-            app.UseStaticFiles();
+		    app.UseAuthentication();
+
+			app.UseStaticFiles();
 
 			app.UseMvc(routes =>
 			{

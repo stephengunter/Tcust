@@ -18,7 +18,7 @@ using BlogWeb.Helpers;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-
+	
 	public class PostsController: BaseAdminController
 	{
 		private readonly IPostService postService;
@@ -56,8 +56,11 @@ namespace BlogWeb.Areas.Admin.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Index(int category=0 ,string keyword="" ,int page = 1, int pageSize=10 )
 		{
-			
-			var posts = await postService.FetchPosts(category, keyword);
+			Category selectedCategory = null;
+			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
+			if (selectedCategory == null) category = 0;
+
+			var posts = await postService.FetchPosts(selectedCategory, keyword);
 
 			posts = posts.OrderByDescending(p=>p.Date).ThenByDescending(p=>p.LastUpdated);
 

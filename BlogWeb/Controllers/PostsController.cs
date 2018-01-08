@@ -35,8 +35,12 @@ namespace BlogWeb.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Index(int category = 0,int year=0 , string keyword = "", int page = 1, int pageSize = 10)
 		{
-			
-			var posts = await postService.FetchPosts(category, keyword);
+			Category selectedCategory = null;
+			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
+			if (selectedCategory == null) category = 0;
+
+
+			var posts = await postService.FetchPosts(selectedCategory, keyword);
 
 			if (!Request.IsAjaxRequest())
 			{
@@ -44,6 +48,8 @@ namespace BlogWeb.Controllers
 				ViewData["archives"] = this.ToJsonString(archives);
 			}
 
+			int total = 0;
+			if (!String.IsNullOrEmpty(keyword)) total = posts.Count();
 
 
 			year = await postService.CheckYearAsync(year, posts);
@@ -70,7 +76,12 @@ namespace BlogWeb.Controllers
 				return new ObjectResult(pageList);
 			}
 
-			var categories = await postService.GetCategoriesAsync();
+			if (!String.IsNullOrEmpty(keyword)) pageList.TotalItems= total;
+
+
+			bool excludeDefault = true;
+			var categories = await postService.GetCategoriesAsync(excludeDefault);
+			
 
 			var options = categories.Select(c => new { value = c.Id, text = c.Name });
 
@@ -91,7 +102,7 @@ namespace BlogWeb.Controllers
 
 		
 		[HttpGet("[controller]/{id}")]
-		public IActionResult Details(int id)
+		public async Task<IActionResult> Details(int id)
 		{
 			var post = postService.GetById(id);
 			if (post == null) return NotFound();
@@ -104,7 +115,27 @@ namespace BlogWeb.Controllers
 
 			model.post.categoryId = postService.GetCategoryIds(id).FirstOrDefault();
 
-			return new ObjectResult(model);
+			if (Request.IsAjaxRequest())
+			{
+				return new ObjectResult(model);
+			}
+
+			ViewData["id"] = id;
+			ViewData["model"] = this.ToJsonString(model);
+
+
+			bool excludeDefault = true;
+			var categories = await postService.GetCategoriesAsync(excludeDefault);
+
+			var options = categories.Select(c => new { value = c.Id, text = c.Name });
+			
+
+			ViewData["category"] = postService.GetCategoryIds(id).FirstOrDefault();
+			
+
+			ViewData["categories"] = this.ToJsonString(options);
+
+			return View("Index");
 		}
 
 

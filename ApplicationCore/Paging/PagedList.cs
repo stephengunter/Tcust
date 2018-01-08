@@ -11,7 +11,7 @@ namespace ApplicationCore.Paging
 		List<T> List { get; set; }
 		List<V> ViewList { get; set; }
 
-		int TotalItems { get; }
+		int TotalItems { get; set; }
 		int PageNumber { get; }
 		int PageSize { get; }
 		
@@ -54,7 +54,7 @@ namespace ApplicationCore.Paging
 		public List<T> List { get; set; }
 		public List<V> ViewList { get; set; }
 
-		public int TotalItems { get; }
+		public int TotalItems { get; set; }
 		public int PageNumber { get; }
 		public int PageSize { get; }
 		public int TotalPages { get; }

@@ -22,7 +22,7 @@ Vue.component('post-admin', require('./views/post-admin'));
 
 Vue.component('test', require('./views/test'));
 new Vue({
-    el: '#header',
+    el: '#footer',
     data() {
         return {
             

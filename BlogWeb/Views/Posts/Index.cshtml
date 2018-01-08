@@ -1,65 +1,170 @@
-﻿
+﻿<div class="blog-masthead">
 
-<post-index ref="postIndex" v-show="!selected"  :init_keyword="keyword" :init_category="category"
-	:init_model="model" :categories="categories" :archive_items="archives"
-	v-on:details="onDetails">		
-			
-		    
-</post-index>
+	<div class="container">
+		<navbar ref="navBar"  :categories="categories" :category="params.category" v-on:search="onSearch"></navbar>
+	</div>
+</div>
 
-<post-details :id="selected" v-if="selected" v-on:back="onBack">
 
+<div class="container">
+	<post-index ref="postIndex" v-show="!selected" :params="params" 
+				:model="model" :categories="categories" :archive_items="archives"
+				v-on:year-changed="onYearChanged" v-on:page-changed="onPageChanged"
+				v-on:details="onDetails" v-on:posts-fetched="onPostsDetched">
+
+
+	</post-index>
+
+	<post-details  ref="postDetails" :model="detailsModel" v-show="selected" 
+				  v-on:back="onBack"  v-on:details-fetched="onDetailsFetched">
+	</post-details>
 	
 
-</post-details>
+	<hr />
+
+</div>
 
 
-@section scripts{ 
-	<script>
+	@section scripts{
+		<script>
 		new Vue({
-			el: '#main',
+			el: '#app',
 			data() {
 				return {
 					selected: 0,
 
-					model: {},
+					model: null,
 					archives: [],
 					categories: [],
 
-					keyword: '',
-					category:0,
+					
+					
+
+					params: {
+						category: 0,
+						keyword: '',
+						year: 0,
+						page: 1,
+
+					},
+
+					detailsModel: null
 				}
 			},
 			beforeMount() {
 
-				this.keyword ='@Html.Raw(ViewData["keyword"])';
-				this.category =@ViewData["category"];
-
-				this.archives =@Html.Raw(ViewData["archives"]);
-
-				this.model =@Html.Raw(ViewData["list"]);
-
-				let categoryList =@Html.Raw(ViewData["categories"]);
+				let categoryList = @Html.Raw(ViewData["categories"]);
 				this.categories = categoryList;
 
+				this.params.category = @ViewData["category"];
+
+				 @if (ViewData["id"] == null)
+				 {
+					 <text>
+					this.params.keyword = '@Html.Raw(ViewData["keyword"])';
+
+
+					this.archives = @Html.Raw(ViewData["archives"]);
+
+					this.model = @Html.Raw(ViewData["list"]);
+
+
+
+					</text>
+
+				 }
+				 else
+				 {
+					  <text>
+					this.selected = @ViewData["id"];
+					this.detailsModel = @Html.Raw(ViewData["model"]);
+					  </text>
+				 }
+
+
+				this.init();
 
 
 			},
+			mounted() {
+				this.$refs.navBar.setKeyword(this.params.keyword);
+			},
 			methods: {
-				onDetails(id) { 
-					this.selected = id;
-				},
-				onBack() { 
-					this.selected = 0;
-					this.$refs.postIndex.fetchData();
+				init() {
+					
 
+					if (this.selected) {
+
+					}
+					else {
+						this.params.page = this.model.pageNumber;
+						this.params.pageSize = this.model.pageSize;
+
+						let archive_items = this.archives;
+							if(!archive_items) return;
+							if(archive_items.length){
+							this.params.year=parseInt(archive_items[0].text);
+						}else{
+							this.params.year=0;
+						}
+
+					}
+
+				},
+				fetchPosts() {
+					this.$refs.postIndex.fetchData();
+				},
+				onPostsDetched(model) {
+
+					this.model = { ...model };
+
+					$("html, body").animate({ scrollTop: 0 }, 1000);
+				},
+				onYearChanged(year) {
+					this.params.year = year;
+					this.fetchPosts();
+				},
+				onSearch(keyword) {
+					let params = {
+						keyword: keyword
+					};
+					let url = Helper.buildQuery('/posts', params);
+					document.location = url;
+				},
+				onPageChanged(page) {
+					this.params.page = page;
+					this.fetchPosts();
+				},
+				onDetails(id) {
+					this.selected = id;
+					this.$refs.postDetails.fetchData(id);
+				},
+				onBack() {
+					if (this.model) {
+
+						this.selected = 0;
+						this.detailsModel = null;
+						this.fetchPosts();
+
+					} else { 
+						document.location = '/';
+					}
+
+					
+
+				},
+				onDetailsFetched(model) {
+					this.detailsModel = { ...model };
 				}
 			}
 
 		});
-	</script>
 
-}
+
+
+		</script>
+
+	}
 
 
 
