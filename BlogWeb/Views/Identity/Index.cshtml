@@ -2,10 +2,22 @@
 	ViewData["Title"] = "Identity";
 }
 
-@ViewData["tokenResult"]
+@*@ViewData["tokenResult"]
 
 
 <hr />	
 
-@ViewData["apiResult"]
+@ViewData["apiResult"]*@
+
+
+
+<dl>
+	@foreach (var claim in User.Claims)
+	{
+		<dt>@claim.Type</dt>
+		<dd>@claim.Value</dd>
+	}
+</dl>
+
+
 

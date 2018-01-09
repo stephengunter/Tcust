@@ -7,8 +7,8 @@ using System.Security.Claims;
 
 namespace IdentityApp
 {
-    public class Config
-    {
+	public class Config
+	{
 		public static IEnumerable<ApiResource> GetApiResources()
 		{
 			return new List<ApiResource>
@@ -63,31 +63,45 @@ namespace IdentityApp
 		{
 			return new List<Client>
 			{
+
 				new Client
 				{
-					ClientId="clientApp",
+					ClientId = "clientApp",
+					AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
 
-					AllowedGrantTypes=GrantTypes.ClientCredentials,
-
-					ClientSecrets={ new Secret("secret".Sha256()) },
-
-					AllowedScopes= { "apiApp" }
+					ClientSecrets =
+					{
+						new Secret("secret".Sha256())
+					},
+					AllowedScopes = { "apiApp" }
 				},
+
 				new Client
 				{
-					ClientId="mvc",
-					ClientName="MVC Client",
-					AllowedGrantTypes=GrantTypes.Implicit,
+					ClientId = "mvc",
+					ClientName = "MVC Client",
+					AllowedGrantTypes = GrantTypes.HybridAndClientCredentials,
 
-					RedirectUris={ "http://localhost:50002/signin-oidc" },
-					PostLogoutRedirectUris={ "http://localhost:50002/signout-callback-oidc" },
+					ClientSecrets =
+					{
+						new Secret("secret".Sha256())
+					},
+					
+					// where to redirect to after login
+					RedirectUris = { "http://localhost:50002/signin-oidc" },
 
-					AllowedScopes= {
+					// where to redirect to after logout
+					PostLogoutRedirectUris = { "http://localhost:50002/signout-callback-oidc" },
 
+					
+
+					AllowedScopes =
+					{
 						IdentityServerConstants.StandardScopes.OpenId,
 						IdentityServerConstants.StandardScopes.Profile,
-
-					}
+						"apiApp"
+					},
+					AllowOfflineAccess = true
 				}
 			};
 		}

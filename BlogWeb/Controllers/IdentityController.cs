@@ -10,22 +10,22 @@ namespace BlogWeb.Controllers
 {
     public class IdentityController : Controller
     {
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
 		{
+			return Content("yes");
+			//var discovery = await DiscoveryClient.GetAsync("http://localhost:50000");
+			//var tokenClient = new TokenClient(discovery.TokenEndpoint, "clientApp", "secret");
 
-			var discovery = await DiscoveryClient.GetAsync("http://localhost:50000");
-			var tokenClient = new TokenClient(discovery.TokenEndpoint, "clientApp", "secret");
+			//var tokenResponse = await tokenClient.RequestClientCredentialsAsync("apiApp");
 
-			var tokenResponse = await tokenClient.RequestClientCredentialsAsync("apiApp");
+			//ViewData["tokenResult"] = tokenResponse.IsError ? tokenResponse.Error : tokenResponse.Json.ToString();
 
-			ViewData["tokenResult"] = tokenResponse.IsError ? tokenResponse.Error : tokenResponse.Json.ToString();
+			//var client = new HttpClient();
+			//client.SetBearerToken(tokenResponse.AccessToken);
 
-			var client = new HttpClient();
-			client.SetBearerToken(tokenResponse.AccessToken);
+			//var apiResponse = await client.GetAsync("http://localhost:50001/api/identity");
 
-			var apiResponse = await client.GetAsync("http://localhost:50001/api/identity");
-
-			ViewData["apiResult"] = apiResponse.IsSuccessStatusCode ? await apiResponse.Content.ReadAsStringAsync() : apiResponse.StatusCode.ToString();
+			//ViewData["apiResult"] = apiResponse.IsSuccessStatusCode ? await apiResponse.Content.ReadAsStringAsync() : apiResponse.StatusCode.ToString();
 
 
 

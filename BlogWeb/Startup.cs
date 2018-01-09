@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 
 namespace BlogWeb
 {
@@ -28,9 +29,72 @@ namespace BlogWeb
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
-        {
+		// This method gets called by the runtime. Use this method to add services to the container.
+		//public void ConfigureServices(IServiceCollection services)
+		//{
+		//	services.AddOptions();
+
+		//	services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
+
+
+		//	services.AddDbContext<BlogContext>(c =>
+		//	{
+		//		try
+		//		{
+
+		//			c.UseSqlServer(Configuration.GetConnectionString("BlogConnection"));
+		//		}
+		//		catch (System.Exception ex)
+		//		{
+		//			var message = ex.Message;
+		//		}
+		//	});
+
+
+		//	services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
+		//	services.AddScoped(typeof(IPostsCategoriesRepository), typeof(PostsCategoriesRepository));
+
+		//	services.AddScoped<IPostService, PostService>();
+		//	services.AddScoped<IAttachmentService, AttachmentService>();
+		//	services.AddScoped<ITopPostService, TopPostService>();
+
+
+
+		//	services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+
+		//}
+
+		public void ConfigureServices(IServiceCollection services)
+		{
+			services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+			JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+			services.AddAuthentication(options =>
+			{
+				options.DefaultScheme = "Cookies";
+				options.DefaultChallengeScheme = "oidc";
+			})
+				.AddCookie("Cookies")
+				.AddOpenIdConnect("oidc", options =>
+				{
+					options.SignInScheme = "Cookies";
+
+					options.Authority = "http://localhost:50000";
+					options.RequireHttpsMetadata = false;
+
+					options.ClientId = "mvc";
+					options.ClientSecret = "secret";
+					options.ResponseType = "code id_token";
+
+					options.SaveTokens = true;
+					options.GetClaimsFromUserInfoEndpoint = true;
+
+					options.Scope.Add("apiApp");
+					options.Scope.Add("offline_access");
+				});
+
 			services.AddOptions();
 
 			services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
@@ -49,11 +113,6 @@ namespace BlogWeb
 				}
 			});
 
-			services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
-
-
-
-
 
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
 			services.AddScoped(typeof(IPostsCategoriesRepository), typeof(PostsCategoriesRepository));
@@ -61,11 +120,7 @@ namespace BlogWeb
 			services.AddScoped<IPostService, PostService>();
 			services.AddScoped<IAttachmentService, AttachmentService>();
 			services.AddScoped<ITopPostService, TopPostService>();
-
-
-
-			services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
-
+			
 
 		}
 
@@ -73,6 +128,8 @@ namespace BlogWeb
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
 			JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+			
 
 			if (env.IsDevelopment())
             {
@@ -84,7 +141,9 @@ namespace BlogWeb
                 app.UseExceptionHandler("/Home/Error");
             }
 
-		    app.UseAuthentication();
+			
+
+			app.UseAuthentication();
 
 			app.UseStaticFiles();
 
