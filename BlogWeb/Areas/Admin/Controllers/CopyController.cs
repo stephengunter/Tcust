@@ -14,11 +14,12 @@ using BlogWeb.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 using CsvHelper;
+using Microsoft.AspNetCore.Authorization;
+using System.Data;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	 
-
+	[Authorize(Policy = "DEV_ONLY")]
 	public class CopyController : BaseAdminController
 	{
 		class PostViewModel
@@ -141,6 +142,11 @@ namespace BlogWeb.Areas.Admin.Controllers
 			
 		}
 
+		public IActionResult test()
+		{
+			return Content("test");
+		}
+
 		private string GetOleFilePath(string filePath)
 		{
 			string path = String.Format("Uploads/{0}", filePath);
@@ -167,14 +173,14 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		}
 
-		public IActionResult test()
-		{
-			string filePath = "20180106/919bfc43-945f-4f71-b2c9-f8543d868bc5.jpg";
-			CopyFile(filePath);
+		//public IActionResult test()
+		//{
+		//	string filePath = "20180106/919bfc43-945f-4f71-b2c9-f8543d868bc5.jpg";
+		//	CopyFile(filePath);
 
 
-			return Content("done");
-		}
+		//	return Content("done");
+		//}
 
 		IEnumerable<MediaViewModel> GetMediaViewModelsFromFile(string name, string type)
 		{

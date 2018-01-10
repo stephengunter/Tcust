@@ -7,17 +7,23 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Blog.DAL;
 
 namespace BlogWeb
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
-            BuildWebHost(args).Run();
-        }
+		public static void Main(string[] args)
+		{
+			var host = BuildWebHost(args);
 
-        public static IWebHost BuildWebHost(string[] args) =>
+			BlogContextSeed.EnsureSeedData(host.Services);
+
+			host.Run();
+		}
+
+		public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .Build();

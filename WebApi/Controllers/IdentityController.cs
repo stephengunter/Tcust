@@ -8,10 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace WebApi.Controllers
 {
-	public class Product
-	{
-		public string name { get; set; }
-	}
+	
 
 	[Route("api/[controller]")]
 	[Authorize]
@@ -20,11 +17,7 @@ namespace WebApi.Controllers
 		[HttpGet]
 		public IActionResult Get()
 		{
-			var products = new List<Product> {
-				new Product{  name="test"}
-			};
-			return new JsonResult(products);
-			//return new JsonResult(from c in User.Claims select new { c.Type, c.Value });
+			return new JsonResult(from c in User.Claims select new { c.Type, c.Value });
 		}
     }
 }

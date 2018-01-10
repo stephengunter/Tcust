@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace BlogWeb.Areas.Admin.Controllers
 {
 	[Area("Admin")]
-	//[Authorize]
+	[Authorize]
 	public abstract class BaseAdminController : BlogWeb.Controllers.BaseController
 	{
 		public BaseAdminController(IHostingEnvironment environment, IOptions<AppSettings> settings) :base(environment, settings)
@@ -22,8 +22,18 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		protected string CurrentUserId
 		{
-			get { return Guid.NewGuid().ToString(); }
+			get
+			{
+
+				var entity = User.Claims.Where(c => c.Type == "sub").FirstOrDefault();
+				if (entity == null) return "";
+
+				return entity.Value;
+
+			}
 		}
+
+		
 
 	}
 }

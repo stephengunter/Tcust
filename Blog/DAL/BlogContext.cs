@@ -20,8 +20,10 @@ namespace Blog.DAL
 		public DbSet<Blog.Models.Category> Categories { get; set; }
 		public DbSet<Blog.Models.Post> Posts { get; set; }
 		public DbSet<Blog.Models.UploadFile> UploadFiles { get; set; }
-
 		public DbSet<Blog.Models.PostCategory> PostsCategories { get; set; }
+
+		public DbSet<Blog.Models.Permission> Permissions { get; set; }
+		public DbSet<Blog.Models.UserPermission> UserPermissions { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{

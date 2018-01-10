@@ -35,7 +35,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		public IActionResult Test(int postId, int categoryId)
 		{
-
+			var user = User.Identity.Name;
 			//bool returnDefaultCategory = true;
 			//var selectedCategory = await postService.GetCategoryByIdAsync(0, returnDefaultCategory);
 
@@ -48,7 +48,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			//	postService.Update(post);
 			//}
 
-			return View();
+			return Content(user);
 			
 		}
 

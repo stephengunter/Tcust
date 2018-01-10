@@ -26,38 +26,7 @@ namespace IdentityApp
 			};
 		}
 
-		public static List<TestUser> GetUsers()
-		{
-			return new List<TestUser>
-			{
-
-				new TestUser
-				{
-					 SubjectId="1",
-					 Username="alice",
-					 Password="password",
-
-					 Claims=new List<Claim>
-					 {
-						  new Claim("name","Alice"),
-						  new Claim("website","http://alice.com")
-					 }
-				},
-
-				new TestUser
-				{
-					 SubjectId="2",
-					 Username="bob",
-					 Password="password",
-
-					 Claims=new List<Claim>
-					 {
-						  new Claim("name","Bob"),
-						  new Claim("website","http://bob.com")
-					 }
-				}
-			};
-		}
+		
 
 		public static IEnumerable<Client> GetClients()
 		{
@@ -82,10 +51,19 @@ namespace IdentityApp
 					ClientName = "MVC Client",
 					AllowedGrantTypes = GrantTypes.HybridAndClientCredentials,
 
+					RequireConsent = false,
+					AllowOfflineAccess = true,
+					AlwaysSendClientClaims=true,
+					AlwaysIncludeUserClaimsInIdToken=true,
+
+					
+
 					ClientSecrets =
 					{
 						new Secret("secret".Sha256())
 					},
+
+					
 					
 					// where to redirect to after login
 					RedirectUris = { "http://localhost:50002/signin-oidc" },
@@ -101,8 +79,31 @@ namespace IdentityApp
 						IdentityServerConstants.StandardScopes.Profile,
 						"apiApp"
 					},
-					AllowOfflineAccess = true
+					
+
+				},
+				// JavaScript Client
+				new Client
+				{
+					ClientId = "js",
+					ClientName = "JavaScript Client",
+					AllowedGrantTypes = GrantTypes.Implicit,
+					AllowAccessTokensViaBrowser = true,
+
+					RedirectUris =           { "http://localhost:50003/callback.html" },
+					PostLogoutRedirectUris = { "http://localhost:50003/index.html" },
+					AllowedCorsOrigins =     { "http://localhost:50003" },
+
+					AllowedScopes =
+					{
+						IdentityServerConstants.StandardScopes.OpenId,
+						IdentityServerConstants.StandardScopes.Profile,
+						"apiApp"
+					}
 				}
+
+
+
 			};
 		}
 

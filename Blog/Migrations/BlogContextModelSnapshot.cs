@@ -38,6 +38,20 @@ namespace Blog.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("Blog.Models.Permission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Name");
+
+                    b.Property<string>("Title");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Permissions");
+                });
+
             modelBuilder.Entity("Blog.Models.Post", b =>
                 {
                     b.Property<int>("Id")
@@ -131,6 +145,28 @@ namespace Blog.Migrations
                     b.ToTable("UploadFiles");
                 });
 
+            modelBuilder.Entity("Blog.Models.UserPermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("CreatedAt");
+
+                    b.Property<DateTime>("LastUpdated");
+
+                    b.Property<int>("PermissionId");
+
+                    b.Property<string>("UpdatedBy");
+
+                    b.Property<string>("UserId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.ToTable("UserPermissions");
+                });
+
             modelBuilder.Entity("Blog.Models.PostCategory", b =>
                 {
                     b.HasOne("Blog.Models.Category", "Category")
@@ -149,6 +185,14 @@ namespace Blog.Migrations
                     b.HasOne("Blog.Models.Post", "Post")
                         .WithMany("Attachments")
                         .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Blog.Models.UserPermission", b =>
+                {
+                    b.HasOne("Blog.Models.Permission", "Permission")
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
