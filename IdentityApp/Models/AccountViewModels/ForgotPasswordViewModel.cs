@@ -8,8 +8,8 @@ namespace IdentityApp.Models.AccountViewModels
 {
     public class ForgotPasswordViewModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage ="請輸入Email")]
+        [EmailAddress(ErrorMessage = "Email格式錯誤")]
         public string Email { get; set; }
     }
 }

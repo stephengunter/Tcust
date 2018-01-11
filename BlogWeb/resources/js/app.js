@@ -15,8 +15,9 @@ Vue.component('post-index', require('./views/post-index'));
 Vue.component('post-details', require('./views/post-details'));
 
 
-
+//Admin
 Vue.component('post-admin', require('./views/post-admin'));
+Vue.component('manage', require('./views/manage'));
 
 
 

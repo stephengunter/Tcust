@@ -8,20 +8,20 @@ namespace IdentityApp.Models.ManageViewModels
 {
     public class ChangePasswordViewModel
     {
-        [Required]
-        [DataType(DataType.Password)]
-        [Display(Name = "Current password")]
+        [Required(ErrorMessage = "請輸入舊密碼")]
+		[DataType(DataType.Password)]
+        [Display(Name = "舊密碼")]
         public string OldPassword { get; set; }
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = "請輸入新密碼")]
+        [StringLength(100, ErrorMessage = "密碼長度最少8位", MinimumLength = 8)]
         [DataType(DataType.Password)]
-        [Display(Name = "New password")]
+        [Display(Name = "新密碼")]
         public string NewPassword { get; set; }
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm new password")]
-        [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+        [Display(Name = "確認新密碼")]
+        [Compare("NewPassword", ErrorMessage = "確認密碼與新密碼不相符")]
         public string ConfirmPassword { get; set; }
 
         public string StatusMessage { get; set; }

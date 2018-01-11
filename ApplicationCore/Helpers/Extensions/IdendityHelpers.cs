@@ -12,14 +12,22 @@ namespace ApplicationCore.Helpers
 	{
 		public static string CurrentUserId(this AuthorizationHandlerContext context)
 		{
-			var entity= context.User.Claims.Where(c => c.Type == "sub").FirstOrDefault();
+			var entity = context.User.Claims.Where(c => c.Type == "sub").FirstOrDefault();
 			if (entity == null) return "";
 
 			return entity.Value;
-			
+
 
 		}
+		public static string CurrentUserName(this AuthorizationHandlerContext context)
+		{
+			var entity = context.User.Claims.Where(c => c.Type == "name").FirstOrDefault();
+			if (entity == null) return "";
 
+			return entity.Value;
+
+
+		}
 		public static bool CurrentUserIsDev(this AuthorizationHandlerContext context)
 		{
 			return context.User.IsInRole("Dev");

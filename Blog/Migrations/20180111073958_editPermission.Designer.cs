@@ -11,63 +11,15 @@ using System;
 namespace Blog.Migrations
 {
     [DbContext(typeof(BlogContext))]
-    partial class BlogContextModelSnapshot : ModelSnapshot
+    [Migration("20180111073958_editPermission")]
+    partial class editPermission
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "2.0.1-rtm-125")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-            modelBuilder.Entity("ApplicationCore.Entities.AppUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<bool>("Active");
-
-                    b.Property<DateTime>("CreatedAt");
-
-                    b.Property<DateTime>("LastUpdated");
-
-                    b.Property<string>("Name");
-
-                    b.Property<string>("PS");
-
-                    b.Property<string>("UpdatedBy");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AppUsers");
-                });
-
-            modelBuilder.Entity("ApplicationCore.Entities.Permission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("Name");
-
-                    b.Property<string>("Title");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Permissions");
-                });
-
-            modelBuilder.Entity("ApplicationCore.Entities.UserPermission", b =>
-                {
-                    b.Property<int>("AppUserId");
-
-                    b.Property<int>("PermissionId");
-
-                    b.HasKey("AppUserId", "PermissionId");
-
-                    b.HasIndex("PermissionId");
-
-                    b.ToTable("UserPermissions");
-                });
 
             modelBuilder.Entity("Blog.Models.Category", b =>
                 {
@@ -85,6 +37,20 @@ namespace Blog.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("Blog.Models.Permission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Name");
+
+                    b.Property<string>("Title");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Permissions");
                 });
 
             modelBuilder.Entity("Blog.Models.Post", b =>
@@ -180,17 +146,28 @@ namespace Blog.Migrations
                     b.ToTable("UploadFiles");
                 });
 
-            modelBuilder.Entity("ApplicationCore.Entities.UserPermission", b =>
+            modelBuilder.Entity("Blog.Models.UserPermission", b =>
                 {
-                    b.HasOne("ApplicationCore.Entities.AppUser", "AppUser")
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("AppUserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
 
-                    b.HasOne("ApplicationCore.Entities.Permission", "Permission")
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                    b.Property<DateTime>("CreatedAt");
+
+                    b.Property<DateTime>("LastUpdated");
+
+                    b.Property<string>("PS");
+
+                    b.Property<int>("PermissionId");
+
+                    b.Property<string>("UpdatedBy");
+
+                    b.Property<string>("UserName");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.ToTable("UserPermissions");
                 });
 
             modelBuilder.Entity("Blog.Models.PostCategory", b =>
@@ -211,6 +188,14 @@ namespace Blog.Migrations
                     b.HasOne("Blog.Models.Post", "Post")
                         .WithMany("Attachments")
                         .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Blog.Models.UserPermission", b =>
+                {
+                    b.HasOne("Blog.Models.Permission", "Permission")
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618

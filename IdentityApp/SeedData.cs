@@ -36,6 +36,11 @@ namespace IdentityApp
 
 				await SeedRoles(roleManager);
 				await SeedUsers(userManager);
+
+
+				var userContext= scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+				SeedProfiles(userContext);
+
 			}
 
 			Console.WriteLine("Done seeding database.");
@@ -115,36 +120,70 @@ namespace IdentityApp
 
 		private static async Task SeedUsers(UserManager<ApplicationUser> userManager)
 		{
-			string email = "traders.com.tw@gmail.com";
-			
+			string email = "traders.com.tw@gmail.com";			
 			string role = "Dev";
+			string password = "abcd1234";
 
-			var user =await userManager.FindByEmailAsync(email);
+			await CreateUserIfNotExist(userManager, email, role, password);
+
+			
+
+			email = "secac11@tcust.edu.tw";
+			role = "Staff";
+			password = "secac11@tcust.edu.tw";
+
+			await CreateUserIfNotExist(userManager, email, role, password);
+
+		}
+
+
+		private static async Task CreateUserIfNotExist(UserManager<ApplicationUser> userManager, string email, string role, string password)
+		{
+			var user = await userManager.FindByEmailAsync(email);
 			if (user == null)
 			{
-				var devUser = new ApplicationUser
+				var newUser = new ApplicationUser
 				{
 					UserName = email,
 					Email = email,
 
 				};
 
-				string password = "abcd1234";
-				await userManager.CreateAsync(devUser, password);
+				await userManager.CreateAsync(newUser, password);
 
-
-				await userManager.AddToRoleAsync(devUser, role);
+				await userManager.AddToRoleAsync(newUser, role);
 
 			}
 			else
 			{
-				bool hasRole= await userManager.IsInRoleAsync(user, role);
+				bool hasRole = await userManager.IsInRoleAsync(user, role);
 				if (!hasRole) await userManager.AddToRoleAsync(user, role);
 			}
-
-			
-
-			
 		}
+
+
+		private static void SeedProfiles(ApplicationDbContext context)
+		{
+			string email = "traders.com.tw@gmail.com";
+			var user = context.Users.Where(u => u.Email == email).Include("Profile").FirstOrDefault();
+			if (user.Profile == null)
+			{
+				user.Profile = new Profile
+				{
+					CreatedAt = DateTime.Now,
+					DOB = new DateTime(1979, 3, 12),
+					Fullname = "鍾吉偉",
+					Gender = true,
+					LastUpdated = DateTime.Now,
+					SID = "F124597024",
+
+				};
+
+				context.SaveChanges();
+			}
+
+		}
+
+
 	}
 }

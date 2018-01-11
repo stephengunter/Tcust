@@ -23,15 +23,18 @@ namespace BlogWeb.Areas.Admin.Controllers
 	public class ManageController : BaseAdminController
 	{
 		private readonly IPermissionService permissionService;
+
 		public ManageController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService) : base(environment, settings)
 		{
 			this.permissionService = permissionService;
 		}
 
-		public IActionResult Index()
+		public async Task<IActionResult> Index(int pageSize = 10)
         {
-			
-			return Content("Manage");
+			//var userPermissions = await permissionService.GetAllUserWithPermission();
+
+
+			return View();
         }
     }
 }

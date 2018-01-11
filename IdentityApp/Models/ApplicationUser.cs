@@ -6,8 +6,19 @@ using Microsoft.AspNetCore.Identity;
 
 namespace IdentityApp.Models
 {
-    // Add profile data for application users by adding properties to the ApplicationUser class
     public class ApplicationUser : IdentityUser
     {
-    }
+		public Profile Profile { get; set; }
+
+		public DateTime CreatedAt { get; set; }
+		public DateTime LastUpdated { get; set; }
+		public string UpdatedBy { get; set; }
+
+
+		public void SetUpdated(string updatedBy)
+		{
+			this.UpdatedBy = updatedBy;
+			this.LastUpdated = DateTime.Now;
+		}
+	}
 }

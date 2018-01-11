@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Blog.Models;
+using ApplicationCore.Entities;
 
 namespace Blog.DAL
 {
@@ -109,6 +110,41 @@ namespace Blog.DAL
 				context.Permissions.Add(permission);
 				context.SaveChanges();
 			}
+		}
+
+		static void SeedAppUsers(BlogContext context)
+		{
+			string name = "secac11@tcust.edu.tw";
+			string[] permissionNames= { "EDIT_POSTS", "MANAGE_USERS"};
+
+			
+			CreateAppUser(context , name, permissionNames);
+		}
+
+		static void CreateAppUser(BlogContext context, string name, string[] permissionNames)
+		{
+			var exist = context.AppUsers.Where(u => u.Name == name).FirstOrDefault();
+			if (exist == null)
+			{
+				context.AppUsers.Add(new AppUser {
+					Active =true ,
+					CreatedAt=DateTime.Now,
+					LastUpdated=DateTime.Now,
+					Name= name,
+
+				});
+				context.SaveChanges();
+
+				
+			}
+
+			AddUserPermissions(context, name, permissionNames);
+
+		}
+
+		static void AddUserPermissions(BlogContext context, string userName, string[] permissionNames)
+		{
+
 		}
 
 

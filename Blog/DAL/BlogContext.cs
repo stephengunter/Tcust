@@ -17,20 +17,22 @@ namespace Blog.DAL
 			
 		}
 
-		public DbSet<Blog.Models.Category> Categories { get; set; }
-		public DbSet<Blog.Models.Post> Posts { get; set; }
-		public DbSet<Blog.Models.UploadFile> UploadFiles { get; set; }
-		public DbSet<Blog.Models.PostCategory> PostsCategories { get; set; }
+		public DbSet<Category> Categories { get; set; }
+		public DbSet<Post> Posts { get; set; }
+		public DbSet<UploadFile> UploadFiles { get; set; }
+		public DbSet<PostCategory> PostsCategories { get; set; }
 
-		public DbSet<Blog.Models.Permission> Permissions { get; set; }
-		public DbSet<Blog.Models.UserPermission> UserPermissions { get; set; }
+		public DbSet<ApplicationCore.Entities.Permission> Permissions { get; set; }
+		public DbSet<ApplicationCore.Entities.AppUser> AppUsers { get; set; }
+		public DbSet<ApplicationCore.Entities.UserPermission> UserPermissions { get; set; }
+		
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 
 			modelBuilder.Entity<PostCategory>(ConfigurePostCategory);
 
-		
+			modelBuilder.Entity<ApplicationCore.Entities.UserPermission>(ConfigureUserPermission);
 
 		}
 
@@ -47,6 +49,24 @@ namespace Blog.DAL
 			builder.HasOne(pc => pc.Category)
 				.WithMany("PostCategories")
 				.HasForeignKey(pc => pc.CategoryId);
+			
+
+		}
+
+		private void ConfigureUserPermission(EntityTypeBuilder<ApplicationCore.Entities.UserPermission> builder)
+		{
+
+			builder.HasKey(up => new { up.AppUserId, up.PermissionId });
+
+			builder.HasOne(up => up.AppUser)
+				.WithMany("UserPermissions")
+				.HasForeignKey(up => up.AppUserId);
+
+
+			builder.HasOne(up => up.Permission)
+				.WithMany("UserPermissions")
+				.HasForeignKey(up => up.PermissionId);
+
 
 		}
 

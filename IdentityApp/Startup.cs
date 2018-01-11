@@ -82,6 +82,11 @@ namespace IdentityApp
 				});
 
 
+			services.AddOptions();
+
+			services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
+
+
 
 
 		}
@@ -106,7 +111,7 @@ namespace IdentityApp
 
 			app.UseStaticFiles();
 
-			
+		
 
 			app.UseMvc(routes =>
             {

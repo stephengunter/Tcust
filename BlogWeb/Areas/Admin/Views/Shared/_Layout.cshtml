@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+
+<!DOCTYPE html>
 <html>
 <head>
 	<meta charset="utf-8" />
@@ -25,10 +28,20 @@
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					<a href="/admin/posts" class="navbar-brand" style="font-size:1.8em">校園日誌管理</a>
+					@*<a href="/admin/posts" class="navbar-brand" style="font-size:1.8em">校園日誌管理</a>*@
 				</div>
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
+						<li id="linkPosts" style="font-size:1.8em">
+							<a href="/admin/posts">校園日誌管理</a>
+						</li>
+
+						@if ((await AuthorizationService.AuthorizeAsync(User, "MANAGE_USERS")).Succeeded)
+						{
+							<li id="linkManage" style="font-size:1.2em">
+								<a href="/admin/manage">使用者管理</a>
+							</li>
+						}
 						
 					</ul>
 				</div>
@@ -62,6 +75,19 @@
 	<script type="text/javascript" src="~/js/app.js"></script>
 
 	@RenderSection("Scripts", required: false)
+
+	<script>
+		$(document).ready(function () {
+			var selector = '.nav li';
+
+			$(selector).on('click', function () {
+				
+				$(selector).removeClass('active');
+				$(this).addClass('active');
+			});
+		});
+		
+	</script>
 
 	
 </body>

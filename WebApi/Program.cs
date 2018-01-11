@@ -33,7 +33,7 @@ namespace WebApi
 				var services = scope.ServiceProvider;
 
 				var blogContext = services.GetRequiredService<BlogContext>();
-				BlogContextSeed.Seed(blogContext);
+				//BlogContextSeed.Seed(blogContext);
 			}
 
 

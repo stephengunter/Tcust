@@ -154,7 +154,7 @@ namespace IdentityApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View(model);
+				return View(model);
             }
 
             var user = await _userManager.GetUserAsync(User);
@@ -172,7 +172,7 @@ namespace IdentityApp.Controllers
 
             await _signInManager.SignInAsync(user, isPersistent: false);
             _logger.LogInformation("User changed their password successfully.");
-            StatusMessage = "Your password has been changed.";
+            StatusMessage = "密碼變更成功.";
 
             return RedirectToAction(nameof(ChangePassword));
         }
@@ -470,7 +470,15 @@ namespace IdentityApp.Controllers
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+				if (error.Code == "PasswordRequiresDigit")
+				{
+					ModelState.AddModelError(string.Empty, "密碼必須有至少一個數字");
+				}
+				else
+				{
+					ModelState.AddModelError(string.Empty, error.Description);
+				}
+               
             }
         }
 

@@ -17,6 +17,9 @@ using IdentityServer4.Quickstart.UI;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
+using IdentityApp.Data;
 
 namespace IdentityApp.Controllers
 {
@@ -32,7 +35,10 @@ namespace IdentityApp.Controllers
         private readonly IIdentityServerInteractionService _interaction;
         private readonly AccountService _account;
 
-        public AccountController(
+		private readonly IHostingEnvironment _env;
+		private readonly IOptions<AppSettings> settings;
+
+		public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IEmailSender emailSender,
@@ -40,8 +46,11 @@ namespace IdentityApp.Controllers
             IIdentityServerInteractionService interaction,
             IClientStore clientStore,
             IHttpContextAccessor httpContextAccessor,
-            IAuthenticationSchemeProvider schemeProvider
-        )
+            IAuthenticationSchemeProvider schemeProvider,
+			IHostingEnvironment environment,
+			IOptions<AppSettings> settings
+
+		)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -50,7 +59,11 @@ namespace IdentityApp.Controllers
 
             _interaction = interaction;
             _account = new AccountService(interaction, httpContextAccessor, schemeProvider, clientStore);
-        }
+
+			_env = environment;
+			this.settings = settings;
+
+		}
 
         [TempData]
         public string ErrorMessage { get; set; }
@@ -59,6 +72,8 @@ namespace IdentityApp.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login(string returnUrl = null)
         {
+
+			if (User.Identity.IsAuthenticated) return Redirect("/Manage/Index");
 			//var user =await _userManager.FindByEmailAsync("traders.com.tw@gmail.com");
 			//await _userManager.DeleteAsync(user);
 
@@ -82,9 +97,10 @@ namespace IdentityApp.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             if (ModelState.IsValid)
             {
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+				bool rememberMe = false;
+				// This doesn't count login failures towards account lockout
+				// To enable password failures to trigger account lockout, set lockoutOnFailure: true
+				var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, rememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
@@ -101,7 +117,7 @@ namespace IdentityApp.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "登入失敗.");
                     return View(model);
                 }
             }
@@ -418,7 +434,7 @@ namespace IdentityApp.Controllers
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(model.Email);
-                if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                if (user == null)
                 {
                     // Don't reveal that the user does not exist or is not confirmed
                     return RedirectToAction(nameof(ForgotPasswordConfirmation));
@@ -428,8 +444,11 @@ namespace IdentityApp.Controllers
                 // visit https://go.microsoft.com/fwlink/?LinkID=532713
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var callbackUrl = Url.ResetPasswordCallbackLink(user.Id, code, Request.Scheme);
-                await _emailSender.SendEmailAsync(model.Email, "Reset Password",
-                   $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
+
+				string msgBody = GetForgotPasswordMailBody(user.UserName, callbackUrl);
+				string subject = "忘記密碼確認信";
+
+				await _emailSender.SendEmailAsync(model.Email, subject, msgBody);
                 return RedirectToAction(nameof(ForgotPasswordConfirmation));
             }
 
@@ -437,7 +456,26 @@ namespace IdentityApp.Controllers
             return View(model);
         }
 
-        [HttpGet]
+		private string GetForgotPasswordMailBody(string userName, string actionUrl)
+		{
+			string appName = settings.Value.Title;
+			string footer = settings.Value.Maintain;
+			var pathToFile = Path.Combine(_env.WebRootPath, "templates", "forgotPasswordEmail.html");
+			if (!System.IO.File.Exists(pathToFile)) throw new Exception("File Not Exist: " + pathToFile);
+
+			string body = "";
+			using (StreamReader reader = System.IO.File.OpenText(pathToFile))
+			{
+				body = reader.ReadToEnd();
+			}
+
+
+			string messageBody = body.Replace("APPNAME", appName).Replace("USERNAME", userName).Replace("ACTION_URL", actionUrl).Replace("FOOTER", footer);
+
+			return messageBody;
+		}
+
+		[HttpGet]
         [AllowAnonymous]
         public IActionResult ForgotPasswordConfirmation()
         {
@@ -498,11 +536,19 @@ namespace IdentityApp.Controllers
 
         private void AddErrors(IdentityResult result)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-        }
+			foreach (var error in result.Errors)
+			{
+				if (error.Code == "PasswordRequiresDigit")
+				{
+					ModelState.AddModelError(string.Empty, "密碼必須有至少一個數字");
+				}
+				else
+				{
+					ModelState.AddModelError(string.Empty, error.Description);
+				}
+
+			}
+		}
 
         private IActionResult RedirectToLocal(string returnUrl)
         {

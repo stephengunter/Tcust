@@ -21,7 +21,7 @@ namespace IdentityApp.Controllers
 
         public IActionResult Index()
         {
-            return View();
+			return Redirect("/Account/Login");
         }
 
         public IActionResult About()
@@ -31,12 +31,7 @@ namespace IdentityApp.Controllers
             return View();
         }
 
-        public IActionResult Contact()
-        {
-            ViewData["Message"] = "Your contact page.";
-
-            return View();
-        }
+        
 
         /// <summary>
         /// Shows the error page

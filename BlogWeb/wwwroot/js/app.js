@@ -1804,9 +1804,11 @@ Vue.component('navbar', __webpack_require__(104));
 Vue.component('post-index', __webpack_require__(107));
 Vue.component('post-details', __webpack_require__(118));
 
+//Admin
 Vue.component('post-admin', __webpack_require__(121));
+Vue.component('manage', __webpack_require__(138));
 
-Vue.component('test', __webpack_require__(138));
+Vue.component('test', __webpack_require__(141));
 new Vue({
     el: '#footer',
     data: function data() {
@@ -45732,6 +45734,332 @@ var Component = normalizeComponent(
   __vue_scopeId__,
   __vue_module_identifier__
 )
+Component.options.__file = "resources\\js\\views\\manage.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-344f3d1e", Component.options)
+  } else {
+    hotAPI.reload("data-v-344f3d1e", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 139 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_searcher__ = __webpack_require__(123);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__components_searcher___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__components_searcher__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__components_user_table__ = __webpack_require__(144);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__components_user_table___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1__components_user_table__);
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+
+
+// import UserEdit from '../components/user-edit';
+/* harmony default export */ __webpack_exports__["default"] = ({
+   name: 'ManageView',
+   components: {
+      Searcher: __WEBPACK_IMPORTED_MODULE_0__components_searcher___default.a,
+      'user-table': __WEBPACK_IMPORTED_MODULE_1__components_user_table___default.a
+      // 'user-edit':UserEdit
+   },
+   props: {
+      init_model: {
+         type: Object,
+         default: null
+      },
+      categories: {
+         type: Array,
+         default: null
+      }
+   },
+   data: function data() {
+      return {
+         model: null,
+
+         selected: 0,
+         create: false,
+
+         params: {
+            category: 0,
+            keyword: '',
+            page: 1,
+            pageSize: 10
+         },
+
+         category: null,
+
+         deleteConfirm: {
+            id: 0,
+            showing: false,
+            message: ''
+         }
+      };
+   },
+   beforeMount: function beforeMount() {
+      // if(this.init_model){
+      // 	this.model={...this.init_model };
+      // 	this.params.page=this.init_model.pageNumber;
+      // 	this.params.pageSize=this.init_model.pageSize;
+      // }
+
+      // if(this.categories){
+      // 	this.setCategory(this.categories[0]);
+
+      // }	
+
+   },
+
+   computed: {
+      editting: function editting() {
+         if (this.selected) return true;
+         return this.create;
+      },
+      indexMode: function indexMode() {
+         if (this.editting) return false;
+         return true;
+      }
+   },
+   methods: {
+      onIndex: function onIndex() {
+         this.fetchData();
+
+         this.selected = 0;
+         this.create = false;
+      },
+      onCreate: function onCreate() {
+         this.create = true;
+      },
+      onDetails: function onDetails(id) {
+         alert(id);
+      },
+      onEdit: function onEdit(id) {
+         this.selected = id;
+      },
+      onDelete: function onDelete(user) {
+         this.deleteConfirm.id = user.id;
+         this.deleteConfirm.message = '確定要刪除 ' + user.title + ' 嗎?';
+         this.deleteConfirm.showing = true;
+      },
+      deleteUser: function deleteUser() {
+         var _this = this;
+
+         var remove = UserAdmin.remove(this.deleteConfirm.id);
+
+         remove.then(function () {
+            _this.fetchData();
+            Helper.BusEmitOK('刪除成功');
+         }).catch(function (error) {
+            Helper.BusEmitError(error);
+         });
+
+         this.deleteConfirm.showing = false;
+      },
+      onCategorySelected: function onCategorySelected(category) {
+         this.setCategory(category);
+         this.fetchData();
+      },
+      setCategory: function setCategory(category) {
+         this.category = category;
+         this.params.category = category.value;
+      },
+      onPageChanged: function onPageChanged(page) {
+         this.params.page = page;
+         this.fetchData();
+      },
+      onSearch: function onSearch(keyword) {
+         this.params.keyword = keyword;
+         this.fetchData();
+      },
+      fetchData: function fetchData() {
+         var _this2 = this;
+
+         var getData = UserAdmin.index(this.params);
+
+         getData.then(function (model) {
+
+            _this2.model = _extends({}, model);
+         }).catch(function (error) {
+            Helper.BusEmitError(error);
+         });
+      }
+   }
+});
+
+/***/ }),
+/* 140 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c("div", [
+    _c(
+      "div",
+      {
+        directives: [
+          {
+            name: "show",
+            rawName: "v-show",
+            value: _vm.indexMode,
+            expression: "indexMode"
+          }
+        ]
+      },
+      [
+        _c("div", { staticClass: "row" }, [
+          _vm._m(0),
+          _vm._v(" "),
+          _c("div", { staticClass: "col-sm-3" }),
+          _vm._v(" "),
+          _c(
+            "div",
+            { staticClass: "col-sm-3", staticStyle: { "margin-top": "20px" } },
+            [_c("searcher", { on: { search: _vm.onSearch } })],
+            1
+          ),
+          _vm._v(" "),
+          _c(
+            "div",
+            { staticClass: "col-sm-3", staticStyle: { "margin-top": "20px" } },
+            [
+              _c(
+                "a",
+                {
+                  staticClass: "btn btn-primary pull-right title-controll",
+                  attrs: { href: "#" },
+                  on: {
+                    click: function($event) {
+                      $event.preventDefault()
+                      _vm.onCreate($event)
+                    }
+                  }
+                },
+                [
+                  _c("i", {
+                    staticClass: "fa fa-plus",
+                    attrs: { "aria-hidden": "true" }
+                  }),
+                  _vm._v("\n                  新增使用者\n               ")
+                ]
+              )
+            ]
+          )
+        ]),
+        _vm._v(" "),
+        _c("hr")
+      ]
+    )
+  ])
+}
+var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("div", { staticClass: "col-sm-3" }, [
+      _c("h2", [_vm._v("使用者管理")])
+    ])
+  }
+]
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-344f3d1e", module.exports)
+  }
+}
+
+/***/ }),
+/* 141 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+var normalizeComponent = __webpack_require__(0)
+/* script */
+var __vue_script__ = __webpack_require__(142)
+/* template */
+var __vue_template__ = __webpack_require__(143)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = null
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
 Component.options.__file = "resources\\js\\views\\test.vue"
 
 /* hot reload */
@@ -45754,7 +46082,7 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 139 */
+/* 142 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -45781,7 +46109,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 });
 
 /***/ }),
-/* 140 */
+/* 143 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -45797,6 +46125,239 @@ if (false) {
   module.hot.accept()
   if (module.hot.data) {
     require("vue-hot-reload-api")      .rerender("data-v-0c1d171e", module.exports)
+  }
+}
+
+/***/ }),
+/* 144 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+var normalizeComponent = __webpack_require__(0)
+/* script */
+var __vue_script__ = __webpack_require__(145)
+/* template */
+var __vue_template__ = __webpack_require__(146)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = null
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "resources\\js\\components\\user-table.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-59b4c664", Component.options)
+  } else {
+    hotAPI.reload("data-v-59b4c664", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 145 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+   name: 'UserTable',
+   props: {
+      model: {
+         type: Object,
+         default: null
+      }
+   },
+   methods: {
+      edit: function edit(id) {
+         this.$emit('edit', id);
+      },
+      remove: function remove(user) {
+         this.$emit('remove', user);
+      }
+   }
+});
+
+/***/ }),
+/* 146 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c(
+    "div",
+    { staticClass: "panel panel-default" },
+    [
+      _c("div", { staticClass: "panel-body" }, [
+        _c("table", { staticClass: "table table-striped" }, [
+          _vm._m(0),
+          _vm._v(" "),
+          _c(
+            "tbody",
+            _vm._l(_vm.model.viewList, function(user, index) {
+              return _c("tr", { key: index }, [
+                _c("td", [
+                  _vm._v(
+                    "\n                 " +
+                      _vm._s(index + 1) +
+                      "\n               "
+                  )
+                ]),
+                _vm._v(" "),
+                _c("td", [_vm._v(_vm._s(user.number))]),
+                _vm._v(" "),
+                _c("td", [_vm._v(_vm._s(user.title))]),
+                _vm._v(" "),
+                _c("td", [_vm._v(_vm._s(user.author))]),
+                _vm._v(" "),
+                _c("td", [_vm._v(_vm._s(user.date))]),
+                _vm._v(" "),
+                _c("td", [
+                  _c(
+                    "button",
+                    {
+                      staticClass: "btn btn-sm btn-primary",
+                      on: {
+                        click: function($event) {
+                          $event.preventDefault()
+                          _vm.edit(user.id)
+                        }
+                      }
+                    },
+                    [
+                      _c("i", {
+                        staticClass: "fa fa-pencil",
+                        attrs: { "aria-hidden": "true" }
+                      })
+                    ]
+                  ),
+                  _vm._v(" "),
+                  _c(
+                    "button",
+                    {
+                      staticClass: "btn btn-sm btn-danger",
+                      on: {
+                        click: function($event) {
+                          $event.preventDefault()
+                          _vm.remove(user)
+                        }
+                      }
+                    },
+                    [
+                      _c("i", {
+                        staticClass: "fa fa-trash-o",
+                        attrs: { "aria-hidden": "true" }
+                      })
+                    ]
+                  )
+                ])
+              ])
+            })
+          )
+        ])
+      ]),
+      _vm._v(" "),
+      _vm._t("table-footer")
+    ],
+    2
+  )
+}
+var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("thead", [
+      _c("tr", [
+        _c("th", { staticStyle: { width: "10%" } }, [_vm._v("#")]),
+        _vm._v(" "),
+        _c("th", { staticStyle: { width: "10%" } }, [_vm._v("編號")]),
+        _vm._v(" "),
+        _c("th", { staticStyle: { width: "25%" } }, [_vm._v("標題")]),
+        _vm._v(" "),
+        _c("th", { staticStyle: { width: "25%" } }, [_vm._v("作者")]),
+        _vm._v(" "),
+        _c("th", { staticStyle: { width: "10%" } }, [_vm._v("日期")]),
+        _vm._v(" "),
+        _c("th", { staticStyle: { width: "10%" } })
+      ])
+    ])
+  }
+]
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-59b4c664", module.exports)
   }
 }
 
