@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 
 namespace ApplicationCore.Interfaces
 {
-	public interface IRepository<T> where T : BaseEntity
+	public interface IRepository<T> where T : class
 	{
 
 		DbSet<T> DbSet { get; }

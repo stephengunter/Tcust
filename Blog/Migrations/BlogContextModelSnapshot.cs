@@ -25,7 +25,7 @@ namespace Blog.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<bool>("Active");
+                    b.Property<bool>("Activce");
 
                     b.Property<DateTime>("CreatedAt");
 
@@ -35,38 +35,37 @@ namespace Blog.Migrations
 
                     b.Property<string>("PS");
 
+                    b.Property<int>("PermissionId");
+
+                    b.Property<bool>("Removed");
+
                     b.Property<string>("UpdatedBy");
+
+                    b.Property<string>("UserId");
 
                     b.HasKey("Id");
 
                     b.ToTable("AppUsers");
                 });
 
-            modelBuilder.Entity("ApplicationCore.Entities.Permission", b =>
+            modelBuilder.Entity("ApplicationCore.Entities.Permisson", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<int?>("AppUserId");
+
                     b.Property<string>("Name");
+
+                    b.Property<bool>("Removed");
 
                     b.Property<string>("Title");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Permissions");
-                });
+                    b.HasIndex("AppUserId");
 
-            modelBuilder.Entity("ApplicationCore.Entities.UserPermission", b =>
-                {
-                    b.Property<int>("AppUserId");
-
-                    b.Property<int>("PermissionId");
-
-                    b.HasKey("AppUserId", "PermissionId");
-
-                    b.HasIndex("PermissionId");
-
-                    b.ToTable("UserPermissions");
+                    b.ToTable("Permissons");
                 });
 
             modelBuilder.Entity("Blog.Models.Category", b =>
@@ -180,17 +179,11 @@ namespace Blog.Migrations
                     b.ToTable("UploadFiles");
                 });
 
-            modelBuilder.Entity("ApplicationCore.Entities.UserPermission", b =>
+            modelBuilder.Entity("ApplicationCore.Entities.Permisson", b =>
                 {
-                    b.HasOne("ApplicationCore.Entities.AppUser", "AppUser")
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("AppUserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("ApplicationCore.Entities.Permission", "Permission")
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                    b.HasOne("ApplicationCore.Entities.AppUser")
+                        .WithMany("Permissions")
+                        .HasForeignKey("AppUserId");
                 });
 
             modelBuilder.Entity("Blog.Models.PostCategory", b =>

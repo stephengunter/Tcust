@@ -113,7 +113,9 @@ namespace BlogWeb.Controllers
 				post = viewService.MapPostViewModel(post, allMedias)
 			};
 
-			model.post.categoryId = postService.GetCategoryIds(id).FirstOrDefault();
+			var categoryIds = await postService.GetCategoryIdsAsync(id);
+
+			model.post.categoryId = categoryIds.FirstOrDefault();
 
 			if (Request.IsAjaxRequest())
 			{
@@ -128,10 +130,10 @@ namespace BlogWeb.Controllers
 			var categories = await postService.GetCategoriesAsync(excludeDefault);
 
 			var options = categories.Select(c => new { value = c.Id, text = c.Name });
-			
 
-			ViewData["category"] = postService.GetCategoryIds(id).FirstOrDefault();
+
 			
+			ViewData["category"] = model.post.categoryId;
 
 			ViewData["categories"] = this.ToJsonString(options);
 

@@ -19,7 +19,7 @@ using System.Data;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	[Authorize(Policy = "DEV_ONLY")]
+	//[Authorize(Policy = "DEV_ONLY")]
 	public class CopyController : BaseAdminController
 	{
 		class PostViewModel
@@ -256,7 +256,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 					post.Attachments.Add(media);
 				}
 
-				post = postService.Create(post);
+				post = await postService.CreateAsync(post);
 
 			}
 

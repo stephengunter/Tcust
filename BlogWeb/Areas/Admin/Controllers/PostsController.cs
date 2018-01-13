@@ -131,7 +131,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 			
 
-			post = postService.Create(post);
+			post = await postService.CreateAsync(post);
 
 
 			return new ObjectResult(post);
@@ -140,7 +140,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 		}
 
 		[HttpGet("[area]/[controller]/{id}/edit")]
-		public IActionResult Edit(int id)
+		public async Task<IActionResult> Edit(int id)
 		{
 			var post = postService.GetById(id);
 			if (post == null) return NotFound();
@@ -151,13 +151,15 @@ namespace BlogWeb.Areas.Admin.Controllers
 				post = viewService.MapPostViewModel(post, allMedias)
 			};
 
-			model.post.categoryId = postService.GetCategoryIds(id).FirstOrDefault();
+			var categoryIds =await postService.GetCategoryIdsAsync(id);
+
+			model.post.categoryId = categoryIds.FirstOrDefault();
 
 			return new ObjectResult(model);
 		}
 
 		[HttpPut("[area]/[controller]/{id}")]
-		public IActionResult Update(int id , [FromBody] PostEditForm model)
+		public async Task<IActionResult> Update(int id , [FromBody] PostEditForm model)
 		{
 			if (!ModelState.IsValid)
 			{
@@ -185,7 +187,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			
 
 
-			postService.Update(post, categoryIds);
+			await postService.UpdateAsync(post, categoryIds);
 
 
 			return new ObjectResult(post);
@@ -197,9 +199,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 
 		[HttpDelete]
-		public IActionResult Delete(int id)
+		public async Task<IActionResult> Delete(int id)
 		{
-			postService.Delete(id, CurrentUserId);
+			await postService.DeleteAsync(id, CurrentUserId);
 
 			return new NoContentResult();
 			

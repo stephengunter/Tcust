@@ -47,8 +47,8 @@ namespace IdentityApp
 
 				new Client
 				{
-					ClientId = "mvc",
-					ClientName = "MVC Client",
+					ClientId = "blog-mvc",
+					ClientName = "Blog MVC",
 					AllowedGrantTypes = GrantTypes.HybridAndClientCredentials,
 
 					RequireConsent = false,

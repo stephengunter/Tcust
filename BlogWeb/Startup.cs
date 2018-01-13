@@ -18,7 +18,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
-using BlogWeb.Authorization;
+
 using ApplicationCore.Helpers;
 
 namespace BlogWeb
@@ -82,14 +82,14 @@ namespace BlogWeb
 				options.AddPolicy("DEV_ONLY", policy =>
 				  policy.RequireRole("Dev"));
 
-				options.AddPolicy("EDIT_POSTS", policy =>
-					policy.Requirements.Add(new HasPermissionRequirement("EDIT_POSTS")));
+				//options.AddPolicy("EDIT_POSTS", policy =>
+				//	policy.Requirements.Add(new HasPermissionRequirement("EDIT_POSTS")));
 
-				options.AddPolicy("MANAGE_USERS", policy =>
-					policy.Requirements.Add(new HasPermissionRequirement("MANAGE_USERS")));
+				//options.AddPolicy("MANAGE_USERS", policy =>
+				//	policy.Requirements.Add(new HasPermissionRequirement("MANAGE_USERS")));
 			});
 
-			services.AddScoped<IAuthorizationHandler, HasPermissionHandler>();
+			//services.AddScoped<IAuthorizationHandler, HasPermissionHandler>();
 
 			services.AddAuthentication(options =>
 			{
@@ -105,7 +105,7 @@ namespace BlogWeb
 				options.Authority = "http://localhost:50000";
 				options.RequireHttpsMetadata = false;
 
-				options.ClientId = "mvc";
+				options.ClientId = "blog-mvc";
 				options.ClientSecret = "secret";
 				options.ResponseType = "code id_token";
 
@@ -153,7 +153,7 @@ namespace BlogWeb
 			services.AddScoped<IPostService, PostService>();
 			services.AddScoped<IAttachmentService, AttachmentService>();
 			services.AddScoped<ITopPostService, TopPostService>();
-			services.AddScoped<IPermissionService, PermissionService>();
+			//services.AddScoped<IPermissionService, PermissionService>();
 
 
 

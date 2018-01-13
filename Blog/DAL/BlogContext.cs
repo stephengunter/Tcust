@@ -1,6 +1,7 @@
 ﻿using Blog.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using ApplicationCore.Entities;
 
 namespace Blog.DAL
 {
@@ -22,17 +23,13 @@ namespace Blog.DAL
 		public DbSet<UploadFile> UploadFiles { get; set; }
 		public DbSet<PostCategory> PostsCategories { get; set; }
 
-		public DbSet<ApplicationCore.Entities.Permission> Permissions { get; set; }
-		public DbSet<ApplicationCore.Entities.AppUser> AppUsers { get; set; }
-		public DbSet<ApplicationCore.Entities.UserPermission> UserPermissions { get; set; }
-		
+		public DbSet<AppUser> AppUsers { get; set; }
+		public DbSet<Permisson> Permissons { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 
 			modelBuilder.Entity<PostCategory>(ConfigurePostCategory);
-
-			modelBuilder.Entity<ApplicationCore.Entities.UserPermission>(ConfigureUserPermission);
 
 		}
 
@@ -53,22 +50,7 @@ namespace Blog.DAL
 
 		}
 
-		private void ConfigureUserPermission(EntityTypeBuilder<ApplicationCore.Entities.UserPermission> builder)
-		{
-
-			builder.HasKey(up => new { up.AppUserId, up.PermissionId });
-
-			builder.HasOne(up => up.AppUser)
-				.WithMany("UserPermissions")
-				.HasForeignKey(up => up.AppUserId);
-
-
-			builder.HasOne(up => up.Permission)
-				.WithMany("UserPermissions")
-				.HasForeignKey(up => up.PermissionId);
-
-
-		}
+		
 
 
 

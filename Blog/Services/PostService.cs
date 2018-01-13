@@ -12,9 +12,10 @@ namespace Blog.Services
 {
 	public interface IPostService
 	{
-		Post Create(Post post);
-		void Update(Post post, List<int> categoryIds);
-		void Delete(int id, string updatedBy);
+		Task<Post> CreateAsync(Post post);
+		Task UpdateAsync(Post post, List<int> categoryIds);
+		Task DeleteAsync(int id, string updatedBy);
+
 		Post GetById(int id);
 
 		Task<IEnumerable<Post>> FetchPosts(Category category = null, string keyword = "");
@@ -37,10 +38,11 @@ namespace Blog.Services
 
 		Task<IEnumerable<Category>> GetCategoriesAsync(bool excludeDefault = false);
 		Task<Category> GetCategoryByIdAsync(int id, bool returnDefault = false);
-		IList<int> GetCategoryIds(int postId);
+		Task<IList<int>> GetCategoryIdsAsync(int postId);
 
 
-		
+
+
 	}
 
 	public class PostService : IPostService
@@ -48,12 +50,13 @@ namespace Blog.Services
 		private readonly IBlogRepository<Post> postRepository;
 		private readonly IBlogRepository<Category> categoryRepository;
 		private readonly IBlogRepository<UploadFile> uploadFileRepository;
+		private readonly IBlogRepository<PostCategory> postsCategoriesRepository;
 
-		private readonly IPostsCategoriesRepository postsCategoriesRepository;
+		//private readonly IPostsCategoriesRepository postsCategoriesRepository;
 
 
 		public PostService(IBlogRepository<Post> postRepository, IBlogRepository<Category> categoryRepository
-			, IBlogRepository<UploadFile> uploadFileRepository , IPostsCategoriesRepository postsCategoriesRepository)
+			, IBlogRepository<UploadFile> uploadFileRepository , IBlogRepository<PostCategory> postsCategoriesRepository)
 		{
 			this.postRepository = postRepository;
 			this.categoryRepository = categoryRepository;
@@ -85,7 +88,7 @@ namespace Blog.Services
 
 			if (category!=null)
 			{
-				var idsInCategory = postsCategoriesRepository.GetPostIds(category.Id);
+				var idsInCategory = await GetPostIdsInCategory(category); 
 				return posts.Where(p => idsInCategory.Contains(p.Id));
 
 			}
@@ -156,28 +159,27 @@ namespace Blog.Services
 			return uploadFileRepository.List(filter);
 		}
 
-		public Post Create(Post post)
+		public async Task<Post> CreateAsync(Post post)
 		{
-			postRepository.Add(post);
-			
-			return post;
+			return await postRepository.AddAsync(post);			
+		
 		}
 
-		public void Update(Post post, List<int> categoryIds)
+		public async Task UpdateAsync(Post post, List<int> categoryIds)
 		{
-			postRepository.Update(post);
+			await postRepository.UpdateAsync(post);
 
-			postsCategoriesRepository.SyncPostCategories(post.Id, categoryIds);
+			await SyncPostCategories(post, categoryIds);
 
 		}
 
-		public void Delete(int id, string updatedBy)
+		public async Task DeleteAsync(int id, string updatedBy)
 		{
 			var post = postRepository.GetById(id);
 			post.Removed = true;
 			post.SetUpdated(updatedBy);
 
-			postRepository.Update(post);
+			await postRepository.UpdateAsync(post);
 
 		}
 
@@ -202,11 +204,62 @@ namespace Blog.Services
 			return categories.FirstOrDefault();
 		}
 
-		public IList<int> GetCategoryIds(int postId)
+		public async Task<IList<int>> GetCategoryIdsAsync(int postId)
 		{
-			return postsCategoriesRepository.GetCategoryIds(postId);
+			var post = await GetByIdAsync(postId);
+			
+			return await GetCategoryIdsInPost(post);
+		}
+
+
+		private async Task SyncPostCategories(Post post, IList<int> categoryIds)
+		{
+			
+			var current = await GetCategoryIdsInPost(post);
+
+			var needRemoveIds = current.Where(i => !categoryIds.Contains(i));
+			if (!needRemoveIds.IsNullOrEmpty())
+			{
+				var spec = new PostCategoryFilterSpecification(post, needRemoveIds.ToList());
+				var removeItems = await postsCategoriesRepository.ListAsync(spec);
+
+				postsCategoriesRepository.DeleteRange(removeItems);
+			}
+
+			var needToAdd = categoryIds.Where(i => !current.Contains(i));
+			if (!needToAdd.IsNullOrEmpty())
+			{
+				foreach (var newCategoryId in needToAdd)
+				{
+				   await postsCategoriesRepository.AddAsync(new PostCategory { PostId = post.Id, CategoryId = newCategoryId });
+				
+				}
+			}
+
+		}
+
+
+		private async Task<IList<int>> GetPostIdsInCategory(Category category)
+		{
+			var filter = new PostCategoryFilterSpecification(category);
+
+			var postCategories = await postsCategoriesRepository.ListAsync(filter);
+
+			return postCategories.Select(pc => pc.PostId).ToList();
+		
+
+		}
+
+		private async Task<IList<int>> GetCategoryIdsInPost(Post post)
+		{
+			var filter = new PostCategoryFilterSpecification(post);
+
+			var postCategories = await postsCategoriesRepository.ListAsync(filter);
+
+			return postCategories.Select(pc => pc.CategoryId).ToList();
 		}
 
 		
+
 	}
 }

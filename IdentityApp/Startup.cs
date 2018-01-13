@@ -11,6 +11,8 @@ using System.Reflection;
 using IdentityServer4.EntityFramework.DbContexts;
 using System.Linq;
 using IdentityServer4.EntityFramework.Mappers;
+using IdentityApp.Areas.Admin.Data;
+using IdentityApp.Areas.Admin.Services;
 
 namespace IdentityApp
 {
@@ -35,13 +37,16 @@ namespace IdentityApp
 			{
 				options.User.RequireUniqueEmail = true;
 				// Password settings
-				options.Password.RequireDigit = true;
-				options.Password.RequiredLength = 8;
+				options.Password.RequireDigit = false;
+				options.Password.RequiredLength = 6;
 				options.Password.RequireNonAlphanumeric = false;
 				options.Password.RequireUppercase = false;
 				options.Password.RequireLowercase = false;
 
 				
+
+
+
 			})
 			.AddEntityFrameworkStores<ApplicationDbContext>()
 			.AddDefaultTokenProviders();
@@ -51,11 +56,14 @@ namespace IdentityApp
 			// Add application services.
 			services.AddTransient<IEmailSender, EmailSender>();
 
-			services.AddMvc();
-
-
-
 			
+
+			services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+
+
+
+
 			var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
 			
@@ -87,7 +95,9 @@ namespace IdentityApp
 			services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 
 
+			services.AddScoped(typeof(IIdentityConfigRepository<>), typeof(IdentityConfigRepository<>));
 
+			services.AddScoped<IIdentityConfigService, IdentityConfigService>();
 
 		}
 
@@ -110,16 +120,19 @@ namespace IdentityApp
 			app.UseIdentityServer();
 
 			app.UseStaticFiles();
-
-		
+			
 
 			app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
-            });
-        }
+			{
+				routes.MapRoute(
+					name: "areaRoute",
+					template: "{area:exists}/{controller=Clients}/{action=Index}/{id?}");
+
+				routes.MapRoute(
+					name: "default",
+					template: "{controller=Home}/{action=Index}/{id?}");
+			});
+		}
 
 		
 	}

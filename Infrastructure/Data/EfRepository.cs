@@ -13,7 +13,7 @@ namespace Infrastructure.Data
 	/// https://blogs.msdn.microsoft.com/pfxteam/2012/04/13/should-i-expose-synchronous-wrappers-for-asynchronous-methods/
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	public abstract class EfRepository<T> : IRepository<T>, IAsyncRepository<T> where T : BaseEntity
+	public abstract class EfRepository<T> : IRepository<T>, IAsyncRepository<T> where T : class
 	{
 		protected readonly DbContext _dbContext;
 		protected readonly DbSet<T> _dbSet;

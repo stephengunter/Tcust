@@ -19,17 +19,17 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	[Authorize(Policy = "MANAGE_USERS")]
+	//[Authorize(Policy = "MANAGE_USERS")]
 	public class ManageController : BaseAdminController
 	{
-		private readonly IPermissionService permissionService;
+		
 
-		public ManageController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService) : base(environment, settings)
+		public ManageController(IHostingEnvironment environment, IOptions<AppSettings> settings) : base(environment, settings)
 		{
-			this.permissionService = permissionService;
+			
 		}
 
-		public async Task<IActionResult> Index(int pageSize = 10)
+		public IActionResult Index(int pageSize = 10)
         {
 			//var userPermissions = await permissionService.GetAllUserWithPermission();
 

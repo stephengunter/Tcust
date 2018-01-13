@@ -1,0 +1,86 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<title>慈濟科大身分驗證系統</title>
+
+	<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+	<link rel="stylesheet" href="~/css/site.css" />
+	<link rel="stylesheet" href="~/lib/fontawesome/css/font-awesome.min.css" />
+	
+	
+</head>
+<body>
+	<div>
+		<nav class="navbar navbar-inverse navbar-fixed-top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a href="/admin" class="navbar-brand" style="font-size:1.8em">身分驗證系統管理</a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li id="linkPosts" style="font-size:1.8em">
+							<a href="/admin/clients">Clients</a>
+						</li>
+
+						
+						
+					</ul>
+				</div>
+			</div>
+		</nav>
+		
+	</div>
+	<div id="main" class="container body-content">
+		@RenderBody()
+		
+	</div>
+	<hr />
+	<footer id="footer" class="container">
+		<p>&copy; 2017 - 慈濟科大電算中心</p>
+		<alert v-show="showAlert" :show="showAlert" :type="alertSetting.type"
+			   width="400px" placement="top-right" :duration=alertSetting.duration
+			   v-on:closed="closeAlert">
+			<i :class="alertSetting.class" aria-hidden="true"></i>
+			<strong v-text="alertSetting.title"></strong>
+			<p v-text="alertSetting.text"></p>
+		</alert>
+	</footer>
+
+	<script src="~/lib/jquery/dist/jquery.min.js"></script>
+	<script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+	
+
+	<script type="text/javascript" src="~/js/app.js"></script>
+	
+	
+
+	@RenderSection("Scripts", required: false)
+
+	<script>
+		$(document).ready(function () {
+			var selector = '.nav li';
+
+			$(selector).on('click', function () {
+				
+				$(selector).removeClass('active');
+				$(this).addClass('active');
+			});
+		});
+		
+	</script>
+
+	
+</body>
+</html >

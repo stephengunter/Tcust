@@ -26,6 +26,8 @@ namespace IdentityApp
 				var context = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
 				
 				context.Database.Migrate();
+
+
 				SeedIdentityServer(context);
 
 
@@ -36,10 +38,7 @@ namespace IdentityApp
 
 				await SeedRoles(roleManager);
 				await SeedUsers(userManager);
-
-
-				var userContext= scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-				SeedProfiles(userContext);
+			
 
 			}
 
@@ -122,7 +121,7 @@ namespace IdentityApp
 		{
 			string email = "traders.com.tw@gmail.com";			
 			string role = "Dev";
-			string password = "abcd1234";
+			string password = "secret";
 
 			await CreateUserIfNotExist(userManager, email, role, password);
 
@@ -147,11 +146,30 @@ namespace IdentityApp
 					UserName = email,
 					Email = email,
 
+					CreatedAt = DateTime.Now,
+					LastUpdated = DateTime.Now,
+					SecurityStamp = Guid.NewGuid().ToString(),
+					UpdatedBy = email,
+
+					Profile = new Profile
+					{
+
+						CreatedAt = DateTime.Now,
+						DOB = new DateTime(1979,1,1),
+						LastUpdated= DateTime.Now,
+						Gender=true,
+						  
+					}
+
 				};
 
-				await userManager.CreateAsync(newUser, password);
 
+				var result = await userManager.CreateAsync(newUser, password);
+
+				
 				await userManager.AddToRoleAsync(newUser, role);
+
+				
 
 			}
 			else
@@ -162,27 +180,7 @@ namespace IdentityApp
 		}
 
 
-		private static void SeedProfiles(ApplicationDbContext context)
-		{
-			string email = "traders.com.tw@gmail.com";
-			var user = context.Users.Where(u => u.Email == email).Include("Profile").FirstOrDefault();
-			if (user.Profile == null)
-			{
-				user.Profile = new Profile
-				{
-					CreatedAt = DateTime.Now,
-					DOB = new DateTime(1979, 3, 12),
-					Fullname = "鍾吉偉",
-					Gender = true,
-					LastUpdated = DateTime.Now,
-					SID = "F124597024",
-
-				};
-
-				context.SaveChanges();
-			}
-
-		}
+		
 
 
 	}

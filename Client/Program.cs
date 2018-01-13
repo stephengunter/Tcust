@@ -16,7 +16,7 @@ namespace Client
 
 		private static async Task SendMailAsync()
 		{
-			var apiKey = "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";
+			var apiKey = "";
 			var client = new SendGridClient(apiKey);
 			var from = new EmailAddress("test@example.com", "Example User");
 			var subject = "Sending with SendGrid is Fun";
