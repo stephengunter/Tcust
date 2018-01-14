@@ -11,9 +11,10 @@ using System;
 namespace Blog.Migrations
 {
     [DbContext(typeof(BlogContext))]
-    partial class BlogContextModelSnapshot : ModelSnapshot
+    [Migration("20180113091408_editPermission8")]
+    partial class editPermission8
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,7 +26,7 @@ namespace Blog.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<bool>("Active");
+                    b.Property<bool>("Activce");
 
                     b.Property<DateTime>("CreatedAt");
 
@@ -34,6 +35,8 @@ namespace Blog.Migrations
                     b.Property<string>("Name");
 
                     b.Property<string>("PS");
+
+                    b.Property<int>("PermissionId");
 
                     b.Property<bool>("Removed");
 

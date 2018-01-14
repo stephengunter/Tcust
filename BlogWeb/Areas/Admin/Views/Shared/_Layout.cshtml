@@ -36,12 +36,12 @@
 							<a href="/admin/posts">校園日誌管理</a>
 						</li>
 
-						@*@if ((await AuthorizationService.AuthorizeAsync(User, "MANAGE_USERS")).Succeeded)
+						@if ((await AuthorizationService.AuthorizeAsync(User, "MANAGE_USERS")).Succeeded)
 						{
 							<li id="linkManage" style="font-size:1.2em">
 								<a href="/admin/manage">使用者管理</a>
 							</li>
-						}*@
+						}
 						
 					</ul>
 				</div>

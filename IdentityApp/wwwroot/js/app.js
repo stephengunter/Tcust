@@ -33445,6 +33445,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
    name: 'ClientTable',
@@ -33488,7 +33489,9 @@ var render = function() {
                 _vm._v(" "),
                 _c("td", [_vm._v(_vm._s(client.clientId))]),
                 _vm._v(" "),
-                _c("td", [_vm._v(_vm._s(client.uri))]),
+                _c("td", [_vm._v(_vm._s(client.redirectUri))]),
+                _vm._v(" "),
+                _c("td", [_vm._v(_vm._s(client.postLogoutRedirectUri))]),
                 _vm._v(" "),
                 _c("td"),
                 _vm._v(" "),
@@ -33507,25 +33510,6 @@ var render = function() {
                     [
                       _c("i", {
                         staticClass: "fa fa-pencil",
-                        attrs: { "aria-hidden": "true" }
-                      })
-                    ]
-                  ),
-                  _vm._v(" "),
-                  _c(
-                    "button",
-                    {
-                      staticClass: "btn btn-sm btn-danger",
-                      on: {
-                        click: function($event) {
-                          $event.preventDefault()
-                          _vm.remove(client)
-                        }
-                      }
-                    },
-                    [
-                      _c("i", {
-                        staticClass: "fa fa-trash-o",
                         attrs: { "aria-hidden": "true" }
                       })
                     ]
@@ -33551,11 +33535,13 @@ var staticRenderFns = [
       _c("tr", [
         _c("th", { staticStyle: { width: "15%" } }, [_vm._v("名稱")]),
         _vm._v(" "),
-        _c("th", { staticStyle: { width: "25%" } }, [_vm._v("ClientId")]),
+        _c("th", { staticStyle: { width: "15%" } }, [_vm._v("ClientId")]),
         _vm._v(" "),
-        _c("th", { staticStyle: { width: "25%" } }, [_vm._v("Uri")]),
+        _c("th", { staticStyle: { width: "20%" } }, [_vm._v("RedirectUri")]),
         _vm._v(" "),
-        _c("th", { staticStyle: { width: "10%" } }, [_vm._v("日期")]),
+        _c("th", { staticStyle: { width: "25%" } }, [
+          _vm._v("PostRedirectUri")
+        ]),
         _vm._v(" "),
         _c("th", { staticStyle: { width: "10%" } })
       ])
@@ -33626,6 +33612,15 @@ module.exports = Component.exports
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -33997,7 +33992,7 @@ var render = function() {
             _vm._v(" "),
             _c("div", { staticClass: "form-group" }, [
               _c("label", { staticClass: "col-md-2 control-label" }, [
-                _vm._v("Uri")
+                _vm._v("RedirectUri")
               ]),
               _vm._v(" "),
               _c("div", { staticClass: "col-md-10" }, [
@@ -34006,28 +34001,79 @@ var render = function() {
                     {
                       name: "model",
                       rawName: "v-model",
-                      value: _vm.form.client.uri,
-                      expression: "form.client.uri"
+                      value: _vm.form.client.redirectUri,
+                      expression: "form.client.redirectUri"
                     }
                   ],
                   staticClass: "form-control",
-                  attrs: { name: "client.uri" },
-                  domProps: { value: _vm.form.client.uri },
+                  attrs: { name: "client.redirectUri" },
+                  domProps: { value: _vm.form.client.redirectUri },
                   on: {
                     input: function($event) {
                       if ($event.target.composing) {
                         return
                       }
-                      _vm.$set(_vm.form.client, "uri", $event.target.value)
+                      _vm.$set(
+                        _vm.form.client,
+                        "redirectUri",
+                        $event.target.value
+                      )
                     }
                   }
                 }),
                 _vm._v(" "),
-                _vm.form.errors.has("client.uri")
+                _vm.form.errors.has("client.redirectUri")
                   ? _c("small", {
                       staticClass: "text-danger",
                       domProps: {
-                        textContent: _vm._s(_vm.form.errors.get("client.uri"))
+                        textContent: _vm._s(
+                          _vm.form.errors.get("client.redirectUri")
+                        )
+                      }
+                    })
+                  : _vm._e()
+              ])
+            ]),
+            _vm._v(" "),
+            _c("div", { staticClass: "form-group" }, [
+              _c("label", { staticClass: "col-md-2 control-label" }, [
+                _vm._v("PostRedirectUri")
+              ]),
+              _vm._v(" "),
+              _c("div", { staticClass: "col-md-10" }, [
+                _c("input", {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.form.client.postLogoutRedirectUri,
+                      expression: "form.client.postLogoutRedirectUri"
+                    }
+                  ],
+                  staticClass: "form-control",
+                  attrs: { name: "client.postLogoutRedirectUri" },
+                  domProps: { value: _vm.form.client.postLogoutRedirectUri },
+                  on: {
+                    input: function($event) {
+                      if ($event.target.composing) {
+                        return
+                      }
+                      _vm.$set(
+                        _vm.form.client,
+                        "postLogoutRedirectUri",
+                        $event.target.value
+                      )
+                    }
+                  }
+                }),
+                _vm._v(" "),
+                _vm.form.errors.has("client.postLogoutRedirectUri")
+                  ? _c("small", {
+                      staticClass: "text-danger",
+                      domProps: {
+                        textContent: _vm._s(
+                          _vm.form.errors.get("client.postLogoutRedirectUri")
+                        )
                       }
                     })
                   : _vm._e()

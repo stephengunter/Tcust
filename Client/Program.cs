@@ -12,20 +12,20 @@ namespace Client
     {
 		//public static void Main(string[] args) => MainAsync().GetAwaiter().GetResult();
 
-		public static void Main(string[] args) => SendMailAsync().Wait();
+		public static void Main(string[] args) => MainAsync().Wait();
 
-		private static async Task SendMailAsync()
-		{
-			var apiKey = "";
-			var client = new SendGridClient(apiKey);
-			var from = new EmailAddress("test@example.com", "Example User");
-			var subject = "Sending with SendGrid is Fun";
-			var to = new EmailAddress("traders.com.tw@gmail.com", "Example User");
-			var plainTextContent = "and easy to do anywhere, even with C#";
-			var htmlContent = "<strong>and easy to do anywhere, even with C#</strong>";
-			var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
-			var response = await client.SendEmailAsync(msg);
-		}
+		//private static async Task SendMailAsync()
+		//{
+		//	var apiKey = "";
+		//	var client = new SendGridClient(apiKey);
+		//	var from = new EmailAddress("test@example.com", "Example User");
+		//	var subject = "Sending with SendGrid is Fun";
+		//	var to = new EmailAddress("traders.com.tw@gmail.com", "Example User");
+		//	var plainTextContent = "and easy to do anywhere, even with C#";
+		//	var htmlContent = "<strong>and easy to do anywhere, even with C#</strong>";
+		//	var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
+		//	var response = await client.SendEmailAsync(msg);
+		//}
 
 		private static async Task MainAsync()
 		{
@@ -39,7 +39,7 @@ namespace Client
 
 			// request token
 			var tokenClient = new TokenClient(disco.TokenEndpoint, "clientApp", "secret");
-			var tokenResponse = await tokenClient.RequestResourceOwnerPasswordAsync("alice", "password", "apiApp");
+			var tokenResponse = await tokenClient.RequestResourceOwnerPasswordAsync("traders.com.tw@gmail.com", "secret", "apiApp");
 
 			if (tokenResponse.IsError)
 			{

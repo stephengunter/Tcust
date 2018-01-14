@@ -18,8 +18,11 @@ namespace IdentityApp.Areas.Admin.Models
 		
 		public string uri { get; set; }
 
-		
-		public string adminName { get; set; }
+		public string redirectUri { get; set; }
+
+
+		public string postLogoutRedirectUri { get; set; }
+
 
 
 		public Client MapToEntity()

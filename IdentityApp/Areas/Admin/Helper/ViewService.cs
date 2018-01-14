@@ -1,13 +1,13 @@
-﻿using IdentityServer4.Models;
-using IdentityServer4;
-using IdentityServer4.EntityFramework.Mappers;
-using IdentityApp.Areas.Admin.Models;
+﻿using IdentityApp.Areas.Admin.Models;
+using IdentityServer4.EntityFramework.Entities;
+using System.Linq;
+using ApplicationCore.Helpers;
 
 namespace IdentityApp.Areas.Admin.Helper
 {
     public class ViewService
     {
-		public ClientViewModel MapClientViewModel(IdentityServer4.EntityFramework.Entities.Client client)
+		public ClientViewModel MapClientViewModel(Client client)
 		{
 			var model = new ClientViewModel();
 			model.id = client.Id;
@@ -15,6 +15,18 @@ namespace IdentityApp.Areas.Admin.Helper
 			model.title = client.ClientName;
 			model.clientId = client.ClientId;
 			model.uri = client.ClientUri;
+
+			if (!client.RedirectUris.IsNullOrEmpty())
+			{
+				model.redirectUri = client.RedirectUris.FirstOrDefault().RedirectUri;
+			}
+
+			if (!client.PostLogoutRedirectUris.IsNullOrEmpty())
+			{
+				model.postLogoutRedirectUri = client.PostLogoutRedirectUris.FirstOrDefault().PostLogoutRedirectUri;
+			} 
+
+
 			return model;
 		}
 	}

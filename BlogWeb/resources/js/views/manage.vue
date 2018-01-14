@@ -23,7 +23,7 @@
 
          <hr/>
 
-         <!--  <user-table   @edit="onEdit" @remove="onDelete" >
+          <!-- <user-table   @edit="onEdit" @remove="onDelete" >
           
 			  <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"
@@ -34,9 +34,9 @@
          </user-table> -->
 
       </div>
-      <!-- <user-edit v-if="editting"  :id="selected" :category="category"  :categories="categories"
+      <user-edit v-if="editting"  :id="selected" :category="category"  :categories="categories"
          @saved="onIndex" @cancel="onIndex">
-      </user-edit> -->
+      </user-edit>
       
       <!-- <delete-confirm :showing="deleteConfirm.showing" :message="deleteConfirm.message"
         @close="deleteConfirm.showing=false" @confirmed="deleteUser">
@@ -48,13 +48,13 @@
 <script>
    import Searcher from '../components/searcher';
    import UserTable from '../components/user-table';
-   // import UserEdit from '../components/user-edit';
+   import UserEdit from '../components/user-edit';
    export default {
       name:'ManageView',
       components: {
          Searcher,
          'user-table':UserTable,
-         // 'user-edit':UserEdit
+         'user-edit':UserEdit
       },
       props: {
          init_model: {

@@ -14,7 +14,7 @@ namespace IdentityApp.Areas.Admin.Services
 	{
 		Task<IEnumerable<Client>> FetchClients(string keyword = "");
 		Client GetClientById(int id);
-		Task UpdateClientAsync(Client client, string clientId, string title, string secret, string uri);
+		Task UpdateClientAsync(Client client, string clientId, string title, string secret, string redirectUri, string postLogoutRedirectUri);
 	}
 
 	public class IdentityConfigService: IIdentityConfigService
@@ -56,8 +56,8 @@ namespace IdentityApp.Areas.Admin.Services
 
 		public async Task<IEnumerable<Client>> GetAllAsync()
 		{
-
-			return await clientRepository.ListAllAsync();
+			
+			return await clientRepository.ListAsync(new BaseClientFilterSpecification());
 		}
 
 		public async Task<IEnumerable<Client>> GetByKeywordAsync(string keyword)
@@ -73,20 +73,41 @@ namespace IdentityApp.Areas.Admin.Services
 			return  clientRepository.GetSingleBySpec(spec);
 		}
 
-		public async Task UpdateClientAsync(Client client, string  clientId ,string title, string secret, string uri )
+		public async Task UpdateClientAsync(Client client, string  clientId ,string title, string secret, string redirectUri, string postLogoutRedirectUri)
 		{
 			if (!String.IsNullOrEmpty(clientId)) client.ClientId = clientId;
 
 			if (!String.IsNullOrEmpty(title)) client.ClientName = title;
 
-			if (!String.IsNullOrEmpty(uri))
+			if (String.IsNullOrEmpty(redirectUri))
 			{
-				client.ClientUri = uri;
-
-				SetClientRedirectUris(client);
-				SetClientPostLogoutRedirectUris(client);
-
+				if (!client.RedirectUris.IsNullOrEmpty())
+				{
+					redirectUriRepository.DbSet.RemoveRange(client.RedirectUris);
+				}
 			}
+			else
+			{
+				SetClientRedirectUris(client, redirectUri);
+			}
+
+			if (String.IsNullOrEmpty(postLogoutRedirectUri))
+			{
+				if (!client.PostLogoutRedirectUris.IsNullOrEmpty())
+				{
+					postLogoutRedirectUriConfigRepository.DbSet.RemoveRange(client.PostLogoutRedirectUris);
+				}
+			}
+			else
+			{
+				SetClientPostLogoutRedirectUris(client, postLogoutRedirectUri);
+			}
+
+			
+
+			
+
+			
 
 			if (!String.IsNullOrEmpty(secret)) SetClientSecret(client,secret);
 
@@ -94,10 +115,9 @@ namespace IdentityApp.Areas.Admin.Services
 		}
 
 
-		private void SetClientRedirectUris(Client client)
+		private void SetClientRedirectUris(Client client,string redirectUri)
 		{
-			string redirectUri = String.Format("{0}/signin-oidc", client.ClientUri);
-
+			
 			if (client.RedirectUris.IsNullOrEmpty())
 			{
 				client.RedirectUris = new List<ClientRedirectUri>();
@@ -114,22 +134,21 @@ namespace IdentityApp.Areas.Admin.Services
 
 		}
 
-		private void SetClientPostLogoutRedirectUris(Client client)
+		private void SetClientPostLogoutRedirectUris(Client client, string postLogoutRedirectUri)
 		{
-			string redirectUri = String.Format("{0}/signout-callback-oidc", client.ClientUri);
-
+			
 			if (client.PostLogoutRedirectUris.IsNullOrEmpty())
 			{
-				client.RedirectUris = new List<ClientRedirectUri>();
+				client.PostLogoutRedirectUris = new List<ClientPostLogoutRedirectUri>();
 				client.PostLogoutRedirectUris.Add(new ClientPostLogoutRedirectUri
 				{
-					PostLogoutRedirectUri = redirectUri
+					PostLogoutRedirectUri = postLogoutRedirectUri
 
 				});
 			}
 			else
 			{
-				client.PostLogoutRedirectUris.FirstOrDefault().PostLogoutRedirectUri = redirectUri;
+				client.PostLogoutRedirectUris.FirstOrDefault().PostLogoutRedirectUri = postLogoutRedirectUri;
 			}
 
 		}

@@ -18,8 +18,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
-
+using Permissions.DAL;
 using ApplicationCore.Helpers;
+using BlogWeb.Authorization;
+using Permissions.Services;
 
 namespace BlogWeb
 {
@@ -32,41 +34,7 @@ namespace BlogWeb
 
         public IConfiguration Configuration { get; }
 
-		// This method gets called by the runtime. Use this method to add services to the container.
-		//public void ConfigureServices(IServiceCollection services)
-		//{
-		//	services.AddOptions();
-
-		//	services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
-
-
-		//	services.AddDbContext<BlogContext>(c =>
-		//	{
-		//		try
-		//		{
-
-		//			c.UseSqlServer(Configuration.GetConnectionString("BlogConnection"));
-		//		}
-		//		catch (System.Exception ex)
-		//		{
-		//			var message = ex.Message;
-		//		}
-		//	});
-
-
-		//	services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
-		//	services.AddScoped(typeof(IPostsCategoriesRepository), typeof(PostsCategoriesRepository));
-
-		//	services.AddScoped<IPostService, PostService>();
-		//	services.AddScoped<IAttachmentService, AttachmentService>();
-		//	services.AddScoped<ITopPostService, TopPostService>();
-
-
-
-		//	services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
-
-
-		//}
+		
 
 		public void ConfigureServices(IServiceCollection services)
 		{
@@ -82,14 +50,14 @@ namespace BlogWeb
 				options.AddPolicy("DEV_ONLY", policy =>
 				  policy.RequireRole("Dev"));
 
-				//options.AddPolicy("EDIT_POSTS", policy =>
-				//	policy.Requirements.Add(new HasPermissionRequirement("EDIT_POSTS")));
+				options.AddPolicy("EDIT_POSTS", policy =>
+					policy.Requirements.Add(new HasPermissionRequirement("EDIT_POSTS")));
 
-				//options.AddPolicy("MANAGE_USERS", policy =>
-				//	policy.Requirements.Add(new HasPermissionRequirement("MANAGE_USERS")));
+				options.AddPolicy("MANAGE_USERS", policy =>
+					policy.Requirements.Add(new HasPermissionRequirement("MANAGE_USERS")));
 			});
 
-			//services.AddScoped<IAuthorizationHandler, HasPermissionHandler>();
+			services.AddScoped<IAuthorizationHandler, HasPermissionHandler>();
 
 			services.AddAuthentication(options =>
 			{
@@ -132,6 +100,18 @@ namespace BlogWeb
 
 			services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 
+			services.AddDbContext<PermissionContext>(c =>
+			{
+				try
+				{
+
+					c.UseSqlServer(Configuration.GetConnectionString("BlogConnection"));
+				}
+				catch (System.Exception ex)
+				{
+					var message = ex.Message;
+				}
+			});
 
 			services.AddDbContext<BlogContext>(c =>
 			{
@@ -146,6 +126,9 @@ namespace BlogWeb
 				}
 			});
 
+			
+
+			services.AddScoped(typeof(IPermissionRepository<>), typeof(PermissionRepository<>));
 
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
 			services.AddScoped(typeof(IPostsCategoriesRepository), typeof(PostsCategoriesRepository));
@@ -153,7 +136,9 @@ namespace BlogWeb
 			services.AddScoped<IPostService, PostService>();
 			services.AddScoped<IAttachmentService, AttachmentService>();
 			services.AddScoped<ITopPostService, TopPostService>();
-			//services.AddScoped<IPermissionService, PermissionService>();
+
+
+			services.AddScoped<IPermissionService, PermissionService>();
 
 
 

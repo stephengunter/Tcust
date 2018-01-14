@@ -11,9 +11,10 @@ using System;
 namespace Blog.Migrations
 {
     [DbContext(typeof(BlogContext))]
-    partial class BlogContextModelSnapshot : ModelSnapshot
+    [Migration("20180113083147_editPermission5")]
+    partial class editPermission5
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,7 +26,7 @@ namespace Blog.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<bool>("Active");
+                    b.Property<bool>("Activce");
 
                     b.Property<DateTime>("CreatedAt");
 
@@ -34,6 +35,8 @@ namespace Blog.Migrations
                     b.Property<string>("Name");
 
                     b.Property<string>("PS");
+
+                    b.Property<int>("PermissionId");
 
                     b.Property<bool>("Removed");
 
@@ -51,6 +54,8 @@ namespace Blog.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<int?>("AppUserId");
+
                     b.Property<string>("Name");
 
                     b.Property<bool>("Removed");
@@ -59,33 +64,9 @@ namespace Blog.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AppUserId");
+
                     b.ToTable("Permissons");
-                });
-
-            modelBuilder.Entity("ApplicationCore.Entities.UserPermission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<DateTime>("CreatedAt");
-
-                    b.Property<DateTime>("LastUpdated");
-
-                    b.Property<int>("PermissionId");
-
-                    b.Property<bool>("Removed");
-
-                    b.Property<string>("UpdatedBy");
-
-                    b.Property<int>("UserId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PermissionId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserPermission");
                 });
 
             modelBuilder.Entity("Blog.Models.Category", b =>
@@ -199,17 +180,11 @@ namespace Blog.Migrations
                     b.ToTable("UploadFiles");
                 });
 
-            modelBuilder.Entity("ApplicationCore.Entities.UserPermission", b =>
+            modelBuilder.Entity("ApplicationCore.Entities.Permission", b =>
                 {
-                    b.HasOne("ApplicationCore.Entities.Permission", "Permission")
-                        .WithMany()
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("ApplicationCore.Entities.AppUser", "User")
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                    b.HasOne("ApplicationCore.Entities.AppUser")
+                        .WithMany("Permissions")
+                        .HasForeignKey("AppUserId");
                 });
 
             modelBuilder.Entity("Blog.Models.PostCategory", b =>

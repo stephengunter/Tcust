@@ -8,8 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Entities\Permisson.cs" />
     <Compile Remove="Entities\Plan.cs" />
     <Compile Remove="Interfaces\IPostService.cs" />
+    <Compile Remove="Specifications\PermissionFilterSpecification.cs" />
     <Compile Remove="Specifications\PostFilterSpecification.cs" />
   </ItemGroup>
 
@@ -27,6 +29,7 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
+    <Folder Include="Permissions\" />
   </ItemGroup>
 
 </Project>

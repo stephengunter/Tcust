@@ -8,11 +8,24 @@ using ApplicationCore.Helpers;
 
 namespace IdentityApp.Areas.Admin.Specifications
 {
-    public class ClientFilterSpecification : BaseSpecification<Client>
+	public class BaseClientFilterSpecification : BaseSpecification<Client>
+	{	
+		public BaseClientFilterSpecification()
+		{
+			Criteria = c => c.Id > 0;
+
+			AddInclude(c => c.RedirectUris);
+			AddInclude(c => c.PostLogoutRedirectUris);
+		}
+	}
+
+	public class ClientFilterSpecification : BaseClientFilterSpecification
 	{
 		public ClientFilterSpecification(string keyword)
 		{
-			Criteria = c => c.ClientName.CaseInsensitiveContains(keyword);
+			
+			Criteria = c =>  c.ClientName.CaseInsensitiveContains(keyword);
+
 		}
 
 		public ClientFilterSpecification(int id)
@@ -23,13 +36,7 @@ namespace IdentityApp.Areas.Admin.Specifications
 		}
 	}
 
-	public class ClientRedirectUriFilterSpecification : BaseSpecification<ClientRedirectUri>
-	{
-		//public ClientRedirectUriFilterSpecification(Client client)
-		//{
-		//	Criteria = c => 
-		//}
-	}
+	
 
 
 

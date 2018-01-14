@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ApplicationCore.Helpers;
+using Permissions.Services;
 
-using Blog.Services;
+
 namespace BlogWeb.Authorization
 {
 	public class HasPermissionHandler : AuthorizationHandler<HasPermissionRequirement>

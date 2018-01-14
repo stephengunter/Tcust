@@ -1,18 +1,18 @@
 ﻿using System;
-using Blog.DAL;
-using ApplicationCore.Entities;
-using ApplicationCore.Specifications;
-using Infrastructure.Data;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text;
+using Permissions.Models;
+using System.Threading.Tasks;
 using System.Linq;
+using Permissions.DAL;
+using Permissions.Specifications;
 
-namespace Blog.Services
+namespace Permissions.Services
 {
 	public interface IPermissionService
 	{
 		bool IsUserHasPermission(string userId, string permissionName);
-		Task<IEnumerable<AppUser>> FetchUsersWithPermissions(Permission permission = null, string keyword="");
+		Task<IEnumerable<AppUser>> FetchUsersWithPermissions(Permission permission = null, string keyword = "");
 
 		Task<Permission> GetPermissionByIdAsync(int id);
 		Task<IEnumerable<Permission>> GetPermissionsAsync();
@@ -21,12 +21,12 @@ namespace Blog.Services
 
 	public class PermissionService : IPermissionService
 	{
-		private readonly IBlogRepository<Permission> permissionRepository;
-		private readonly IBlogRepository<AppUser> appUserRepository;
-		private readonly IBlogRepository<UserPermission> userPermissionRepository;
+		private readonly IPermissionRepository<Permission> permissionRepository;
+		private readonly IPermissionRepository<AppUser> appUserRepository;
+		private readonly IPermissionRepository<UserPermission> userPermissionRepository;
 
-		public PermissionService(IBlogRepository<Permission> permissionRepository
-			, IBlogRepository<AppUser> appUserRepository, IBlogRepository<UserPermission> userPermissionRepository)
+		public PermissionService(IPermissionRepository<Permission> permissionRepository
+			, IPermissionRepository<AppUser> appUserRepository, IPermissionRepository<UserPermission> userPermissionRepository)
 		{
 			this.permissionRepository = permissionRepository;
 			this.appUserRepository = appUserRepository;
@@ -38,7 +38,7 @@ namespace Blog.Services
 			return await permissionRepository.GetByIdAsync(id);
 		}
 
-		public async Task<IEnumerable<AppUser>> FetchUsersWithPermissions(Permission permission=null, string keyword = "")
+		public async Task<IEnumerable<AppUser>> FetchUsersWithPermissions(Permission permission = null, string keyword = "")
 		{
 			Task<IEnumerable<AppUser>> getAppUsersTask;
 
@@ -51,7 +51,7 @@ namespace Blog.Services
 				getAppUsersTask = GetByKeywordAsync(keyword);
 			}
 
-			
+
 
 			var users = await getAppUsersTask;
 
@@ -61,7 +61,7 @@ namespace Blog.Services
 				var userIdsInPermission = await GetUserIdsInPermission(permission);
 
 				return users.Where(u => userIdsInPermission.Contains(u.Id));
-			
+
 
 			}
 
@@ -71,7 +71,8 @@ namespace Blog.Services
 
 		public async Task<IEnumerable<Permission>> GetPermissionsAsync()
 		{
-
+			var spec = new BasePermissionFilterSpecification();
+			return await permissionRepository.ListAsync(spec);
 		}
 
 		private async Task<IEnumerable<AppUser>> GetAllUsersAsync()

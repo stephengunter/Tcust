@@ -32,10 +32,6 @@ namespace Blog.Services
 
 		Task<int> CheckYearAsync(int year, IEnumerable<Post> postList = null);
 
-		//Task<IEnumerable<Post>> GetByYearAsync(int year, IEnumerable<Post> postList = null);
-
-		//Task<IEnumerable<Post>> GetByYearMonthAsync(int year, int month);
-
 		Task<IEnumerable<Category>> GetCategoriesAsync(bool excludeDefault = false);
 		Task<Category> GetCategoryByIdAsync(int id, bool returnDefault = false);
 		Task<IList<int>> GetCategoryIdsAsync(int postId);
@@ -51,8 +47,6 @@ namespace Blog.Services
 		private readonly IBlogRepository<Category> categoryRepository;
 		private readonly IBlogRepository<UploadFile> uploadFileRepository;
 		private readonly IBlogRepository<PostCategory> postsCategoriesRepository;
-
-		//private readonly IPostsCategoriesRepository postsCategoriesRepository;
 
 
 		public PostService(IBlogRepository<Post> postRepository, IBlogRepository<Category> categoryRepository

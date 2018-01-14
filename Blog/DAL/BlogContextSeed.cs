@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Blog.Models;
-using ApplicationCore.Entities;
+using Permissions.Models;
 
 namespace Blog.DAL
 {
@@ -22,7 +22,7 @@ namespace Blog.DAL
 				SeedCategories(context);
 
 
-				//SeedPermissions(context);
+				SeedPermissions(context);
 
 				
 			}
@@ -77,75 +77,42 @@ namespace Blog.DAL
 			}
 		}
 
-		//static void SeedPermissions(BlogContext context)
-		//{
-		//	var permissions = new List<Permission>
-		//	{
+		static void SeedPermissions(BlogContext context)
+		{
+			var permissions = new List<Permission>
+			{
 
-		//		new  Permission
-		//		{
-		//			Name = "EDIT_POSTS",
-		//			Title = "編輯文章"
-		//		},
-		//		new  Permission
-		//		{
-		//			Name = "MANAGE_USERS",
-		//			Title = "使用者管理"
-		//		}
-				
-		//	};
+				new  Permission
+				{
+					Name = "EDIT_POSTS",
+					Title = "編輯文章"
+				},
+				new  Permission
+				{
+					Name = "MANAGE_USERS",
+					Title = "使用者管理"
+				}
 
-		//	foreach (var item in permissions)
-		//	{
-		//		CreatePermission(item, context);
-		//	}
+			};
 
-		//}
+			foreach (var item in permissions)
+			{
+				CreatePermission(item, context);
+			}
 
-		//static void CreatePermission(Permission permission, BlogContext context)
-		//{
-		//	var exist = context.Permissions.Where(c => c.Name == permission.Name).FirstOrDefault();
-		//	if (exist == null)
-		//	{
-		//		context.Permissions.Add(permission);
-		//		context.SaveChanges();
-		//	}
-		//}
+		}
 
-		//static void SeedAppUsers(BlogContext context)
-		//{
-		//	string name = "secac11@tcust.edu.tw";
-		//	string[] permissionNames= { "EDIT_POSTS", "MANAGE_USERS"};
+		static void CreatePermission(Permission permission, BlogContext context)
+		{
+			var exist = context.Permissons.Where(c => c.Name == permission.Name).FirstOrDefault();
+			if (exist == null)
+			{
+				context.Permissons.Add(permission);
+				context.SaveChanges();
+			}
+		}
 
-			
-		//	CreateAppUser(context , name, permissionNames);
-		//}
-
-		//static void CreateAppUser(BlogContext context, string name, string[] permissionNames)
-		//{
-		//	var exist = context.AppUsers.Where(u => u.Name == name).FirstOrDefault();
-		//	if (exist == null)
-		//	{
-		//		context.AppUsers.Add(new AppUser {
-		//			Active =true ,
-		//			CreatedAt=DateTime.Now,
-		//			LastUpdated=DateTime.Now,
-		//			Name= name,
-
-		//		});
-		//		context.SaveChanges();
-
-				
-		//	}
-
-		//	AddUserPermissions(context, name, permissionNames);
-
-		//}
-
-		//static void AddUserPermissions(BlogContext context, string userName, string[] permissionNames)
-		//{
-
-		//}
+		
 
 
 

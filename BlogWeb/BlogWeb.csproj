@@ -5,11 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Authorization\HasPermissionHandler.cs" />
-    <Compile Remove="Authorization\HasPermissionRequirement.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="CoreCompat.System.Drawing" Version="1.0.0-beta006" />
     <PackageReference Include="CsvHelper" Version="6.1.0" />
     <PackageReference Include="IdentityModel" Version="3.0.0" />
@@ -29,10 +24,12 @@
     <ProjectReference Include="..\ApplicationCore\ApplicationCore.csproj" />
     <ProjectReference Include="..\Blog\Blog.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\Permissions\Permissions.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Authorization\" />
+    <Folder Include="Areas\Admin\Helper\" />
+    <Folder Include="Areas\Admin\Models\" />
     <Folder Include="resources\" />
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\js\" />

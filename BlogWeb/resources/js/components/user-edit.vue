@@ -21,48 +21,39 @@
 		</div>
       <hr/>
       <form @submit.prevent="onSubmit" @keydown="clearErrorMsg($event.target.name)" class="form-horizontal">
+			
 			<div class="form-group">
-				<label class="col-md-2 control-label">ClientId</label>
+				<label class="col-md-2 control-label">Email</label>
 				<div class="col-md-10">
-					<input name="client.clientId" v-model="form.client.clientId" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('client.clientId')" v-text="form.errors.get('client.clientId')"></small>
+					<input name="email" v-model="email" class="form-control" />
+					<small class="text-danger" v-if="emailError" v-text="emailError"></small>
 				
 				</div>
          </div>
-			<div class="form-group">
+         <div class="form-group">
 				<label class="col-md-2 control-label">名稱</label>
 				<div class="col-md-10">
-					<input name="client.title" v-model="form.client.title" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('client.title')" v-text="form.errors.get('client.title')"></small>
+					<input name="user.name" v-model="form.user.name" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('user.name')" v-text="form.errors.get('user.name')"></small>
 				
 				</div>
          </div>
-			<div class="form-group">
-				<label class="col-md-2 control-label">密碼</label>
+         <div class="form-group">
+				<label class="col-md-2 control-label">權限</label>
 				<div class="col-md-10">
-					<input name="client.secret" v-model="form.client.secret" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('client.secret')" v-text="form.errors.get('client.secret')"></small>
-				
+					<check-box :value="1" :default="true" text="權限A"></check-box>
 				</div>
          </div>
-			<div class="form-group">
-				<label class="col-md-2 control-label">RedirectUri</label>
+			
+         <div class="form-group">
+				<label class="col-md-2 control-label">備註</label>
 				<div class="col-md-10">
-					<input name="client.redirectUri" v-model="form.client.redirectUri" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('client.redirectUri')" v-text="form.errors.get('client.redirectUri')"></small>
-				
+					<input name="user.ps" v-model="form.user.ps" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('user.ps')" v-text="form.errors.get('user.ps')"></small>
 				</div>
          </div>
-
-			<div class="form-group">
-				<label class="col-md-2 control-label">PostRedirectUri</label>
-				<div class="col-md-10">
-					<input name="client.postLogoutRedirectUri" v-model="form.client.postLogoutRedirectUri" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('client.postLogoutRedirectUri')" v-text="form.errors.get('client.postLogoutRedirectUri')"></small>
-				
-				</div>
-         </div>
-        
+         
+			
 			<div class="form-group">
 				<label class="col-md-2 control-label"></label>
 				
@@ -90,14 +81,11 @@
 </template>
 
 <script>
+
 export default {
-	name:'ClientEdit',
+	name:'UserEdit',
 	props:{
-		category:{
-			type:Object,
-			default:null
-		},
-		categories:{
+		permissions:{
 			type:Array,
 			default:null
 		},
@@ -109,12 +97,9 @@ export default {
 	data(){
 		return {
 			loaded:false,
-			title:'',
-
-			textEditor:{
-				height:360,
-            toolbar:[]
-         },
+         title:'',
+         email:'',
+         emailError:'',
 
 			form:{},
 			submitting:false
@@ -128,32 +113,35 @@ export default {
 	},
 	beforeMount() {
 		this.init();
-	},
+	}, 
 	methods:{
 		cancel(){
 			this.$emit('cancel');
 		},
 		init(){
 			if(this.isCreate){
-				this.title = '新增 Client';
+				this.title = '新增使用者';
 			}else{
-				this.title += '編輯 Client';				
+				this.title += '編輯使用者';				
 			}
-         
+
 			this.fetchData();
 			
 		},
 		fetchData(){
 			let getData=null
 
-			if(this.isCreate)   getData=ClientAdmin.create();                  
-			else  getData=ClientAdmin.edit(this.id);  
+			if(this.isCreate)   getData=Manage.create();                  
+			else  getData=Manage.edit(this.id);  
 
 			getData.then(model => {
 			
 				this.form = new Form({
 					...model
 				});
+
+				//if(this.isCreate) this.form.user.categoryId=this.category.value;
+				
 
 				this.loaded=true;
 				
@@ -164,21 +152,44 @@ export default {
 			})
 		},
 		onCategorySelected(category){
-			this.form.client.categoryId=category.value
+			this.form.user.categoryId=category.value
 		},
+		setDate(val){
+			this.form.user.date=val;
+		},
+		setContent(val){
+			this.form.user.content=val
+			this.onSubmit()
+      },
 		onSubmit(){
 			this.submitting=true;
 
+			let medias=this.$refs.mediaEdit.getMedias();
+			this.form.user.medias=medias;
+
+			let contentValue=this.$refs.contentEditor.getValue();
+			this.form.user.content=contentValue;
+			
 			let save=null;
 
-			if(this.isCreate)  save=ClientAdmin.store(this.form);            
-			else  save=ClientAdmin.update(this.id,this.form);  
+			if(this.isCreate)  save=UserAdmin.store(this.form);            
+			else  save=UserAdmin.update(this.id,this.form);  
 
-			save.then(() => {
+			save.then(user => {
 
-					this.submitting=false;
-				   this.$emit('saved');
-					Helper.BusEmitOK('資料已存檔');
+					let setUser = new Promise( (resolve, reject) => {
+						this.form = new Form({
+							user:user
+						});
+						resolve(true);
+					
+					});
+
+					setUser.then(()=>{
+						this.submitMedias();	
+					});
+
+					
 				
 				})
 				.catch(error => {
@@ -187,6 +198,17 @@ export default {
 
 
 			
+		},
+		submitMedias(){
+			let save=this.$refs.mediaEdit.submit();	
+			save.then(result => {
+					this.submitting=false;
+				   this.$emit('saved');
+					Helper.BusEmitOK('資料已存檔');
+				})
+				.catch(error => {
+					Helper.BusEmitError(error,'存檔失敗');
+				})
 		},
 		clearErrorMsg(name) {
       	this.form.errors.clear(name);

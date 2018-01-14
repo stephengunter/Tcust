@@ -36,9 +36,13 @@ window.Helper = Helper;
 import Form from './utilities/Form';
 window.Form = Form;
 
+
+import Manage from './models/manage';
 import Post from './models/post';
 import PostAdmin from './models/postAdmin';
 import Attachment from './models/attachment';
+
+window.Manage=Manage;
 window.Post = Post;
 window.PostAdmin = PostAdmin;
 window.Attachment = Attachment;

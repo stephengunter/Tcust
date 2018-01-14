@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ApplicationCore.Entities
 {
-    public  class Permisson : BaseEntity
+    public  class Permission : BaseEntity
 	{
 		public string Name { get; set; }
 		public string Title { get; set; }
@@ -19,11 +19,27 @@ namespace ApplicationCore.Entities
 		public string Name { get; set; }
 		public string PS { get; set; }
 
-		public int PermissionId { get; set; }
+		
 
-		public ICollection<Permisson> Permissions { get; set; }
+		public ICollection<UserPermission> UserPermissions { get; set; }
 
-		public bool Activce { get; set; }
+		public bool Active { get; set; }
 		public bool Removed { get; set; }
 	}
+
+	public class UserPermission : BaseRecord
+	{
+		public int UserId { get; set; }
+		public AppUser User { get; set; }
+
+		public int PermissionId { get; set; }
+		public Permission Permission { get; set; }
+
+		public bool Removed { get; set; }
+	}
+
+
+	//ViewModels
+
+	
 }

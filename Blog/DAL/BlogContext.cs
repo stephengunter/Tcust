@@ -1,7 +1,7 @@
 ﻿using Blog.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ApplicationCore.Entities;
+using Permissions.Models;
 
 namespace Blog.DAL
 {
@@ -24,7 +24,7 @@ namespace Blog.DAL
 		public DbSet<PostCategory> PostsCategories { get; set; }
 
 		public DbSet<AppUser> AppUsers { get; set; }
-		public DbSet<Permisson> Permissons { get; set; }
+		public DbSet<Permission> Permissons { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
