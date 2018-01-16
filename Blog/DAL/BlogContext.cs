@@ -23,8 +23,7 @@ namespace Blog.DAL
 		public DbSet<UploadFile> UploadFiles { get; set; }
 		public DbSet<PostCategory> PostsCategories { get; set; }
 
-		public DbSet<AppUser> AppUsers { get; set; }
-		public DbSet<Permission> Permissons { get; set; }
+		
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
@@ -49,8 +48,8 @@ namespace Blog.DAL
 			
 
 		}
-
 		
+
 
 
 

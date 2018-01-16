@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Data\BaseRepository.cs" />
     <Compile Remove="Data\UserPermissionRepository.cs" />
   </ItemGroup>
 

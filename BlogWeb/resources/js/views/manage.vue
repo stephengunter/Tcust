@@ -5,8 +5,14 @@
             <div class="col-sm-3" >
 					<h2>使用者管理</h2>
             </div>
-            <div class="col-sm-3">
-               
+            <div class="col-sm-3" style="margin-top: 20px;">
+               <drop-down :items="permissions" :selected="permission.value"
+					  @selected="onPermissionSelected">
+					  <label slot="label" style="font-size:1.2em">  權限：
+      			  </label> 
+     				 
+					 
+					</drop-down>
             </div>
             <div class="col-sm-3" style="margin-top: 20px;">
                <searcher @search="onSearch">
@@ -23,18 +29,18 @@
 
          <hr/>
 
-          <!-- <user-table   @edit="onEdit" @remove="onDelete" >
+          <user-table :model="model" @edit="onEdit" @remove="onDelete" >
           
 			  <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
-					<page-controll   :model="model" @page-changed="onPageChanged"
+					<!-- <page-controll   :model="model" @page-changed="onPageChanged"
 						@pagesize-changed="fetchData">
-					</page-controll>
+					</page-controll> -->
             
             </div>
-         </user-table> -->
+         </user-table>
 
       </div>
-      <user-edit v-if="editting"  :id="selected" :category="category"  :categories="categories"
+      <user-edit v-if="editting"  :id="selected" 
          @saved="onIndex" @cancel="onIndex">
       </user-edit>
       
@@ -61,7 +67,7 @@
             type: Object,
             default: null
 			},
-			categories:{
+			permissions:{
 				type:Array,
 				default:null
 			}
@@ -74,13 +80,13 @@
 				create:false,
 				
 				params:{
-					category:0,
+					permission:0,
 					keyword:'',
 					page:1,
 					pageSize:10
 				},
 				
-				category:null,
+				permission:null,
 
             deleteConfirm:{
                id:0,
@@ -90,16 +96,18 @@
          }
       },
       beforeMount() {
-         // if(this.init_model){
-			// 	this.model={...this.init_model };
-			// 	this.params.page=this.init_model.pageNumber;
-			// 	this.params.pageSize=this.init_model.pageSize;
-			// }
+         if(this.init_model){
+				this.model={...this.init_model };
+				this.params.page=this.init_model.pageNumber;
+				this.params.pageSize=this.init_model.pageSize;
+			}
 			
-			// if(this.categories){
-			// 	this.setCategory(this.categories[0]);
+			if(this.permissions){
+				this.setPermission(this.permissions[0]);
 				
-			// }	
+			}
+			
+			
 
 		},
       computed:{
@@ -114,6 +122,7 @@
       }, 
       methods:{
          onIndex(){
+				
             this.fetchData();
 
             this.selected=0;
@@ -147,13 +156,13 @@
 				
 				this.deleteConfirm.showing=false;
 			},
-			onCategorySelected(category){
-				this.setCategory(category);
+			onPermissionSelected(permission){
+				this.setPermission(permission);
 				this.fetchData();
 			},
-			setCategory(category){
-				this.category=category;
-				this.params.category=category.value;
+			setPermission(permission){
+				this.permission=permission;
+				this.params.permission=permission.value;
 			},
 			onPageChanged(page){
 				this.params.page=page;
@@ -166,7 +175,7 @@
 			},
          fetchData() {
 				
-            let getData = UserAdmin.index(this.params);
+            let getData = Manage.index(this.params);
 
             getData.then(model => {
 

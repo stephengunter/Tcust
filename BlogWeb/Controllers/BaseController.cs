@@ -1,18 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using System.Net.Http;
 
 namespace BlogWeb.Controllers
 {
-	public abstract class BaseController : Controller
+	public abstract class BaseController : ApplicationCore.Controllers.BaseController
 	{
 		private readonly JsonSerializerSettings jsonSettings;
 
@@ -56,6 +55,14 @@ namespace BlogWeb.Controllers
 			return year.ToString() + 1;
 
 		}
+
+		protected async Task<string> GetToken()
+		{
+			var accessToken = await HttpContext.GetTokenAsync("access_token");
+
+			return accessToken;
+		}
+			
 
 
 

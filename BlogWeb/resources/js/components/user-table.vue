@@ -4,22 +4,21 @@
          <table class="table table-striped">
             <thead>
                <tr>
-                  <th style="width:10%">#</th>
-                  <th style="width:10%">編號</th>
-                  <th style="width:25%">標題</th>
-                  <th style="width:25%">作者</th>
-                  <th style="width:10%">日期</th>
+                  
+                  <th style="width:25%">Email</th>
+                  <th style="width:25%">Name</th>
+                  <th style="width:10%">PS</th>
+						<th style="width:10%">最後更新</th>
                   <th style="width:10%"></th>
                </tr>
             </thead>
             <tbody>
                <tr v-for="(user,index) in model.viewList" :key="index">
-                  <td>
-                    {{  index+1 }}
-                  </td>
-                  <td>{{ user.number }}</td>
-                  <td>{{ user.title }}</td>
-                  <td>{{ user.author }}</td>
+                 
+                  <td>{{ user.email }}</td>
+                  <td>{{ user.name }}</td>
+                  <td>{{ user.ps }}</td>
+						<td>{{ user.lastUpdated }}</td>
                   <td>{{ user.date }}</td>
                   <td>
                      <button class="btn btn-sm btn-primary" @click.prevent="edit(user.id)">

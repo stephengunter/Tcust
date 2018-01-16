@@ -5,14 +5,26 @@ using System.Text;
 
 namespace Permissions.Models
 {
-	public class UserPermission : BaseRecord
+	
+
+	public class UserPermission : IJoinEntity<AppUser>, IJoinEntity<Permission>
 	{
-		public int UserId { get; set; }
-		public AppUser User { get; set; }
+		public int AppUserId { get; set; }
+		public AppUser AppUser { get; set; }
+		AppUser IJoinEntity<AppUser>.Navigation
+		{
+			get => AppUser;
+			set => AppUser = value;
+		}
 
 		public int PermissionId { get; set; }
 		public Permission Permission { get; set; }
+		Permission IJoinEntity<Permission>.Navigation
+		{
+			get => Permission;
+			set => Permission = value;
+		}
 
-		public bool Removed { get; set; }
+
 	}
 }

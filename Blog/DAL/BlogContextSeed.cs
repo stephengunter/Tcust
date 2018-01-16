@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Blog.Models;
 using Permissions.Models;
+using Permissions.DAL;
 
 namespace Blog.DAL
 {
@@ -17,12 +18,10 @@ namespace Blog.DAL
 			using (var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
 			{
 				var context = scope.ServiceProvider.GetRequiredService<BlogContext>();
-
-
 				SeedCategories(context);
 
-
-				SeedPermissions(context);
+				var permissionContext = scope.ServiceProvider.GetRequiredService<PermissionContext>();
+				SeedPermissions(permissionContext);
 
 				
 			}
@@ -77,7 +76,7 @@ namespace Blog.DAL
 			}
 		}
 
-		static void SeedPermissions(BlogContext context)
+		static void SeedPermissions(PermissionContext context)
 		{
 			var permissions = new List<Permission>
 			{
@@ -90,7 +89,8 @@ namespace Blog.DAL
 				new  Permission
 				{
 					Name = "MANAGE_USERS",
-					Title = "使用者管理"
+					Title = "使用者管理",
+					AdminOnly=true
 				}
 
 			};
@@ -102,7 +102,7 @@ namespace Blog.DAL
 
 		}
 
-		static void CreatePermission(Permission permission, BlogContext context)
+		static void CreatePermission(Permission permission, PermissionContext context)
 		{
 			var exist = context.Permissons.Where(c => c.Name == permission.Name).FirstOrDefault();
 			if (exist == null)

@@ -5,10 +5,26 @@
     <UserSecretsId>aspnet-IdentityApp-C0E244AB-71AF-40BF-8CAC-A6ECF222B97D</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Areas\Api\**" />
+    <Compile Remove="Data\**" />
+    <Content Remove="Areas\Api\**" />
+    <Content Remove="Data\**" />
+    <EmbeddedResource Remove="Areas\Api\**" />
+    <EmbeddedResource Remove="Data\**" />
+    <None Remove="Areas\Api\**" />
+    <None Remove="Data\**" />
+  </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\ApplicationUser.cs" />
+    <Compile Remove="Models\Profile.cs" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="2.3.0" />
     <PackageReference Include="IdentityServer4.AspNetIdentity" Version="2.0.0" />
-    <PackageReference Include="IdentityServer4.EntityFramework" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.0.0" PrivateAssets="All" />
@@ -23,11 +39,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ApplicationCore\ApplicationCore.csproj" />
+    <ProjectReference Include="..\Identity\Identity.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Data\Migrations\" />
   </ItemGroup>
 
 </Project>

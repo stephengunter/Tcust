@@ -4,6 +4,8 @@ using ApplicationCore.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Data
 {
@@ -130,6 +132,26 @@ namespace Infrastructure.Data
 		{
 			_dbSet.RemoveRange(entityList);
 			_dbContext.SaveChanges();
+
+		}
+
+		public T Get(Expression<Func<T, bool>> criteria)
+		{
+			return  _dbSet.Where(criteria).FirstOrDefault();
+		}
+
+		public List<T> GetMany(Expression<Func<T, bool>> criteria)
+		{
+			return _dbSet.Where(criteria).ToList();
+		}
+
+		public async Task<T> GetAsync(Expression<Func<T, bool>> criteria)
+		{
+			return await _dbSet.Where(criteria).FirstOrDefaultAsync();
+		}
+		public async  Task<List<T>> GetManyAsync(Expression<Func<T, bool>> criteria)
+		{
+			return await _dbSet.Where(criteria).ToListAsync();
 
 		}
 	}

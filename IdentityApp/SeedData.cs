@@ -153,7 +153,7 @@ namespace IdentityApp
 
 					Profile = new Profile
 					{
-
+						Fullname="何金水",
 						CreatedAt = DateTime.Now,
 						DOB = new DateTime(1979,1,1),
 						LastUpdated= DateTime.Now,

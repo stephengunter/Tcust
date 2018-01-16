@@ -8,11 +8,11 @@ using IdentityApp.Data;
 using IdentityApp.Models;
 using IdentityApp.Services;
 using System.Reflection;
-using IdentityServer4.EntityFramework.DbContexts;
-using System.Linq;
-using IdentityServer4.EntityFramework.Mappers;
 using IdentityApp.Areas.Admin.Data;
 using IdentityApp.Areas.Admin.Services;
+using System.Threading.Tasks;
+using System.Net;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace IdentityApp
 {
@@ -43,30 +43,30 @@ namespace IdentityApp
 				options.Password.RequireUppercase = false;
 				options.Password.RequireLowercase = false;
 
-				
-
-
-
 			})
 			.AddEntityFrameworkStores<ApplicationDbContext>()
 			.AddDefaultTokenProviders();
 
-			
+			services.ConfigureApplicationCookie(options =>
+			{
+				options.Events.OnRedirectToLogin = ctx =>
+				{
+					if (ctx.Request.Path.StartsWithSegments("/api") && ctx.Response.StatusCode == (int)HttpStatusCode.OK)
+					{
+						ctx.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+					}
+					else
+					{
+						ctx.Response.Redirect(ctx.RedirectUri);
+					}
 
-			// Add application services.
-			services.AddTransient<IEmailSender, EmailSender>();
+					return Task.FromResult(0);
+				};
+			});
 
-			
-
-			services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
-
+			var migrationsAssembly = typeof(ApplicationDbContext).GetTypeInfo().Assembly.GetName().Name;
 
 
-
-
-			var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
-
-			
 			services.AddIdentityServer()
 				.AddDeveloperSigningCredential()
 				.AddAspNetIdentity<ApplicationUser>()
@@ -90,6 +90,27 @@ namespace IdentityApp
 				});
 
 
+
+			services.AddTransient<IEmailSender, EmailSender>();
+
+
+			services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+			services.AddCors(options =>
+			{
+				// this defines a CORS policy called "default"
+				options.AddPolicy("default", policy =>
+				{
+					policy.WithOrigins("http://localhost:50002", "http://localhost:50003")
+						.AllowAnyHeader()
+						.AllowAnyMethod();
+				});
+			});
+
+
+
+			
+
 			services.AddOptions();
 
 			services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
@@ -104,18 +125,20 @@ namespace IdentityApp
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-			
+
 
 			if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseBrowserLink();
-                app.UseDatabaseErrorPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-            }
+			{
+				app.UseDeveloperExceptionPage();
+				app.UseBrowserLink();
+				app.UseDatabaseErrorPage();
+			}
+			else
+			{
+				app.UseExceptionHandler("/Home/Error");
+			}
+
+			app.UseCors("default");
 
 			app.UseIdentityServer();
 
@@ -126,7 +149,8 @@ namespace IdentityApp
 			{
 				routes.MapRoute(
 					name: "areaRoute",
-					template: "{area:exists}/{controller=Clients}/{action=Index}/{id?}");
+					template: "{area:exists}/{controller}/{action=Index}/{id?}");
+
 
 				routes.MapRoute(
 					name: "default",

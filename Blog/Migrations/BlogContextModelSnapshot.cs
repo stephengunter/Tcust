@@ -20,74 +20,6 @@ namespace Blog.Migrations
                 .HasAnnotation("ProductVersion", "2.0.1-rtm-125")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-            modelBuilder.Entity("ApplicationCore.Entities.AppUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<bool>("Active");
-
-                    b.Property<DateTime>("CreatedAt");
-
-                    b.Property<DateTime>("LastUpdated");
-
-                    b.Property<string>("Name");
-
-                    b.Property<string>("PS");
-
-                    b.Property<bool>("Removed");
-
-                    b.Property<string>("UpdatedBy");
-
-                    b.Property<string>("UserId");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AppUsers");
-                });
-
-            modelBuilder.Entity("ApplicationCore.Entities.Permission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("Name");
-
-                    b.Property<bool>("Removed");
-
-                    b.Property<string>("Title");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Permissons");
-                });
-
-            modelBuilder.Entity("ApplicationCore.Entities.UserPermission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<DateTime>("CreatedAt");
-
-                    b.Property<DateTime>("LastUpdated");
-
-                    b.Property<int>("PermissionId");
-
-                    b.Property<bool>("Removed");
-
-                    b.Property<string>("UpdatedBy");
-
-                    b.Property<int>("UserId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PermissionId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserPermission");
-                });
-
             modelBuilder.Entity("Blog.Models.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -197,19 +129,6 @@ namespace Blog.Migrations
                     b.HasIndex("PostId");
 
                     b.ToTable("UploadFiles");
-                });
-
-            modelBuilder.Entity("ApplicationCore.Entities.UserPermission", b =>
-                {
-                    b.HasOne("ApplicationCore.Entities.Permission", "Permission")
-                        .WithMany()
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("ApplicationCore.Entities.AppUser", "User")
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Blog.Models.PostCategory", b =>

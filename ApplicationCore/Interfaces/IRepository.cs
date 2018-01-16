@@ -16,6 +16,11 @@ namespace ApplicationCore.Interfaces
 		T GetSingleBySpec(ISpecification<T> spec);
 		IEnumerable<T> ListAll();
 		IEnumerable<T> List(ISpecification<T> spec);
+
+		T Get(Expression<Func<T, bool>> criteria);
+		List<T> GetMany(Expression<Func<T, bool>> criteria);
+
+
 		T Add(T entity);
 		void Update(T entity);
 		void Delete(T entity);

@@ -25,12 +25,15 @@
 			<div class="form-group">
 				<label class="col-md-2 control-label">Email</label>
 				<div class="col-md-10">
-					<input name="email" v-model="email" class="form-control" />
+					<input name="user.email" v-model="form.user.email" class="form-control" />
 					<small class="text-danger" v-if="emailError" v-text="emailError"></small>
-				
+
+
+					<input type="hidden" name="userId" v-model="form.user.userId" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('user.userId')" v-text="form.errors.get('user.userId')"></small>
 				</div>
          </div>
-         <div class="form-group">
+         <div v-show="!isCreate" class="form-group">
 				<label class="col-md-2 control-label">名稱</label>
 				<div class="col-md-10">
 					<input name="user.name" v-model="form.user.name" class="form-control" />
@@ -41,7 +44,10 @@
          <div class="form-group">
 				<label class="col-md-2 control-label">權限</label>
 				<div class="col-md-10">
-					<check-box :value="1" :default="true" text="權限A"></check-box>
+					<check-box-list :options="permissionOptions" :default_values="form.user.permissionIds" 
+						@select-changed="onPermissionChanged">
+					</check-box-list>
+					<small class="text-danger" v-if="permissionError" v-text="permissionError"></small>
 				</div>
          </div>
 			
@@ -67,7 +73,7 @@
 					<button class="btn btn-success" type="submit">
 						<i class="fa fa-floppy-o" aria-hidden="true"></i>
 							確認存檔
-						</button>
+					</button>
 					&nbsp;&nbsp;&nbsp;
 					<button @click.prevent="cancel" class="btn btn-default">
 						
@@ -85,10 +91,6 @@
 export default {
 	name:'UserEdit',
 	props:{
-		permissions:{
-			type:Array,
-			default:null
-		},
 		id:{
 			type:Number,
 			default:0
@@ -99,7 +101,10 @@ export default {
 			loaded:false,
          title:'',
          email:'',
-         emailError:'',
+			emailError:'',
+			permissionError:'',
+			
+			permissionOptions:[],
 
 			form:{},
 			submitting:false
@@ -136,11 +141,14 @@ export default {
 
 			getData.then(model => {
 			
+				
 				this.form = new Form({
-					...model
+					user:{
+						...model.user
+					}
 				});
 
-				//if(this.isCreate) this.form.user.categoryId=this.category.value;
+				this.permissionOptions=model.permissionOptions.slice(0);
 				
 
 				this.loaded=true;
@@ -151,8 +159,10 @@ export default {
 				this.loaded=false;
 			})
 		},
-		onCategorySelected(category){
-			this.form.user.categoryId=category.value
+		onPermissionChanged(selectedValues){
+			
+			this.form.user.permissionIds=selectedValues.slice(0);
+			this.permissionError='';
 		},
 		setDate(val){
 			this.form.user.date=val;
@@ -160,57 +170,58 @@ export default {
 		setContent(val){
 			this.form.user.content=val
 			this.onSubmit()
-      },
+		},
 		onSubmit(){
-			this.submitting=true;
+			let email= this.form.user.email
+			if(!email){
+				this.emailError='請填寫Email';
+				return;
+			} 
 
-			let medias=this.$refs.mediaEdit.getMedias();
-			this.form.user.medias=medias;
-
-			let contentValue=this.$refs.contentEditor.getValue();
-			this.form.user.content=contentValue;
-			
-			let save=null;
-
-			if(this.isCreate)  save=UserAdmin.store(this.form);            
-			else  save=UserAdmin.update(this.id,this.form);  
-
-			save.then(user => {
-
-					let setUser = new Promise( (resolve, reject) => {
-						this.form = new Form({
-							user:user
-						});
-						resolve(true);
-					
-					});
-
-					setUser.then(()=>{
-						this.submitMedias();	
-					});
-
-					
-				
-				})
-				.catch(error => {
-					Helper.BusEmitError(error,'存檔失敗');
-				})
+			if(!this.form.user.permissionIds || !this.form.user.permissionIds.length){
+				this.permissionError='請選擇權限';
+				return;
+			} 
 
 
+			let find=Identity.getUserByEmail(email);
+			find.then(user => {
+			   this.submit(user);
+			})
+			.catch(error => {
+				this.emailError='這個Email不存在';
+				return;
+			})
 			
 		},
-		submitMedias(){
-			let save=this.$refs.mediaEdit.submit();	
-			save.then(result => {
-					this.submitting=false;
+		submit(user){
+			
+			this.submitting=true;
+
+			this.form.user.userId=user.id;
+			this.form.user.name=user.fullname;
+
+
+			let save=null;
+
+			if(this.isCreate)  save=Manage.store(this.form);            
+			else  save=Manage.update(this.id,this.form);  
+
+			save.then(user => {
+					Helper.BusEmitOK();
 				   this.$emit('saved');
-					Helper.BusEmitOK('資料已存檔');
 				})
 				.catch(error => {
 					Helper.BusEmitError(error,'存檔失敗');
+					this.submitting=false;
 				})
 		},
 		clearErrorMsg(name) {
+			
+			if(name=='user.email'){
+				this.emailError='';
+				name='user.userId'
+			} 
       	this.form.errors.clear(name);
       },
 	}

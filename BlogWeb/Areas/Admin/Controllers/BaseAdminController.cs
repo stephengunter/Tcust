@@ -20,20 +20,5 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		}
 
-		protected string CurrentUserId
-		{
-			get
-			{
-
-				var entity = User.Claims.Where(c => c.Type == "sub").FirstOrDefault();
-				if (entity == null) return "";
-
-				return entity.Value;
-
-			}
-		}
-
-		
-
 	}
 }

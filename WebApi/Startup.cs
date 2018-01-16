@@ -1,24 +1,26 @@
 ﻿
+using IdentityApp.Data;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Blog.DAL;
-using Blog.Services;
-using Tcust.DAL;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using IdentityApp.Services;
 
 namespace WebApi
 {
-    public class Startup
-    {
+	public class Startup
+	{
+		public IConfiguration Configuration { get; }
+
+		public Startup(IConfiguration configuration)
+		{
+			Configuration = configuration;
+		}
+
 		public void ConfigureServices(IServiceCollection services)
 		{
-			services.AddMvcCore()
-				.AddAuthorization()
-				.AddJsonFormatters();
-
+			services.AddMvcCore().AddAuthorization().AddJsonFormatters();
+			
 			services.AddAuthentication("Bearer")
 				.AddIdentityServerAuthentication(options =>
 				{
@@ -26,18 +28,38 @@ namespace WebApi
 					options.RequireHttpsMetadata = false;
 
 					options.ApiName = "apiApp";
+
+
 				});
+			
 
 			services.AddCors(options =>
 			{
 				// this defines a CORS policy called "default"
 				options.AddPolicy("default", policy =>
 				{
-					policy.WithOrigins("http://localhost:50003")
+					policy.WithOrigins("http://localhost:50003", "http://localhost:50002")
 						.AllowAnyHeader()
 						.AllowAnyMethod();
 				});
 			});
+
+			services.AddDbContext<ApplicationDbContext>(c =>
+			{
+				try
+				{
+					c.UseSqlServer(Configuration.GetConnectionString("IdentityConnection"));
+				}
+				catch (System.Exception ex)
+				{
+					var message = ex.Message;
+				}
+			});
+
+			services.AddScoped(typeof(IIdentityRepository<>), typeof(IdentityRepository<>));
+
+			services.AddScoped<IUserService, UserService>();
+
 		}
 
 		public void Configure(IApplicationBuilder app)
@@ -46,7 +68,16 @@ namespace WebApi
 
 			app.UseAuthentication();
 
-			app.UseMvc();
+			app.UseMvc(routes =>
+			{
+				
+
+				routes.MapRoute(
+					name: "default",
+					template: "api/{controller}/{action=Index}/{id?}");
+			});
 		}
 	}
+
+	
 }

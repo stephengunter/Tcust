@@ -131,7 +131,7 @@ namespace BlogWeb
 			services.AddScoped(typeof(IPermissionRepository<>), typeof(PermissionRepository<>));
 
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
-			services.AddScoped(typeof(IPostsCategoriesRepository), typeof(PostsCategoriesRepository));
+			//services.AddScoped(typeof(IPostsCategoriesRepository), typeof(PostsCategoriesRepository));
 
 			services.AddScoped<IPostService, PostService>();
 			services.AddScoped<IAttachmentService, AttachmentService>();
@@ -175,7 +175,7 @@ namespace BlogWeb
 			{
 				routes.MapRoute(
 					name: "areaRoute",
-					template: "{area:exists}/{controller}/{action=Index}/{id?}");
+					template: "{area:exists}/{controller=Posts}/{action=Index}/{id?}");
 
 				routes.MapRoute(
 					name: "default",

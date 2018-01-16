@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DAL\PostsCategoriesRepository.cs" />
     <Compile Remove="Services\PermissionService.cs" />
   </ItemGroup>
 

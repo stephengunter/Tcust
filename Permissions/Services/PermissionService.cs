@@ -6,16 +6,27 @@ using System.Threading.Tasks;
 using System.Linq;
 using Permissions.DAL;
 using Permissions.Specifications;
+using Permissions.Views;
 
 namespace Permissions.Services
 {
 	public interface IPermissionService
 	{
-		bool IsUserHasPermission(string userId, string permissionName);
+		Task<AppUser> GetAppUserById(int id);
+		AppUser GetAppUserByUserId(string userId);
 		Task<IEnumerable<AppUser>> FetchUsersWithPermissions(Permission permission = null, string keyword = "");
+		Task<AppUser> CreateAppUserAsync(AppUser user);
+
+
+
+		bool IsUserHasPermission(string userId, string permissionName);
+
+		Task<IEnumerable<Permission>> GetUserPermissionsAsync(AppUser user);
 
 		Task<Permission> GetPermissionByIdAsync(int id);
-		Task<IEnumerable<Permission>> GetPermissionsAsync();
+
+
+		Task<IEnumerable<PermissionOption>> GetPermissionOptionsAsync(bool edit, bool isDev = false);
 
 	}
 
@@ -31,6 +42,15 @@ namespace Permissions.Services
 			this.permissionRepository = permissionRepository;
 			this.appUserRepository = appUserRepository;
 			this.userPermissionRepository = userPermissionRepository;
+		}
+
+		public async Task<AppUser> GetAppUserById(int id)
+		{
+			return await appUserRepository.GetByIdAsync(id);
+		}
+		public AppUser GetAppUserByUserId(string userId)
+		{
+			return appUserRepository.Get(u => u.UserId == userId);
 		}
 
 		public async Task<Permission> GetPermissionByIdAsync(int id)
@@ -69,44 +89,100 @@ namespace Permissions.Services
 
 		}
 
-		public async Task<IEnumerable<Permission>> GetPermissionsAsync()
+		public async Task<IEnumerable<PermissionOption>> GetPermissionOptionsAsync(bool edit, bool isDev=false)
 		{
-			var spec = new BasePermissionFilterSpecification();
-			return await permissionRepository.ListAsync(spec);
+			var permissions = await permissionRepository.ListAllAsync();
+			
+			if (edit)
+			{
+				if (!isDev) permissions = permissions.Where(p => p.AdminOnly).ToList();  
+			}
+
+			var options = new List<PermissionOption>();
+			foreach (var item in permissions)
+			{
+				options.Add(PermissionViewService.MapPermissionOption(item));
+			}
+
+			return options;
+		}
+
+		public async Task<AppUser> CreateAppUserAsync(AppUser user)
+		{
+			return await appUserRepository.AddAsync(user);
+
+	    }
+
+		public async Task<IEnumerable<Permission>> GetUserPermissionsAsync(AppUser user)
+		{
+			var permissionIds =await GetPermissionIdsInUser(user);
+
+			var filter = new PermissionFilterSpecification(permissionIds);
+			return  permissionRepository.List(filter);
+			
 		}
 
 		private async Task<IEnumerable<AppUser>> GetAllUsersAsync()
 		{
-			var filter = new BaseAppUserFilterSpecification();
-			return await appUserRepository.ListAsync(filter);
+			return await appUserRepository.ListAllAsync();
 
 		}
 
 		private async Task<IEnumerable<AppUser>> GetByKeywordAsync(string keyword)
 		{
-			var filter = new AppUserFilterSpecification(keyword);
+			return null;
+			//var filter = new AppUserKeywordFilterSpecification(keyword);
 
-			return await appUserRepository.ListAsync(filter);
+			//return await appUserRepository.ListAsync(filter);
 		}
+
+
 		private async Task<IList<int>> GetUserIdsInPermission(Permission permission)
 		{
 			var filter = new UserPermissionFilterSpecification(permission);
 
 			var userPermissions = await userPermissionRepository.ListAsync(filter);
 
-			return userPermissions.Select(up => up.UserId).ToList();
+			return userPermissions.Select(up => up.AppUserId).ToList();
 
 
 		}
+		//private async Task SyncUserPermissions(AppUser user, IEnumerable<Permission> permissions)
+		//{
+			//var currentPermissions = permissionRepository.
+			//var currentPermissions=
+
+			//var current = await GetCategoryIdsInPost(post);
+
+			//var needRemoveIds = current.Where(i => !categoryIds.Contains(i));
+			//if (!needRemoveIds.IsNullOrEmpty())
+			//{
+			//	var spec = new PostCategoryFilterSpecification(post, needRemoveIds.ToList());
+			//	var removeItems = await postsCategoriesRepository.ListAsync(spec);
+
+			//	postsCategoriesRepository.DeleteRange(removeItems);
+			//}
+
+			//var needToAdd = categoryIds.Where(i => !current.Contains(i));
+			//if (!needToAdd.IsNullOrEmpty())
+			//{
+			//	foreach (var newCategoryId in needToAdd)
+			//	{
+			//		await postsCategoriesRepository.AddAsync(new PostCategory { PostId = post.Id, CategoryId = newCategoryId });
+
+			//	}
+			//}
+
+		//}
 
 
-		public AppUser GetAppUser(string name)
-		{
-			var spec = new AppUserFilterSpecification(name);
-			var user = appUserRepository.GetSingleBySpec(spec);
+		//public AppUser GetAppUser(string name)
+		//{
+		//	var spec = new AppUserFilterSpecification(name);
+		//	var user = appUserRepository.GetSingleBySpec(spec);
 
-			return user;
-		}
+		//	return user;
+		//}
 
 		public bool IsUserHasPermission(string userId, string permissionName)
 		{
@@ -128,10 +204,13 @@ namespace Permissions.Services
 
 		}
 
-		//public async Task<IEnumerable<UserPermission>> GetAllUserWithPermission()
-		//{
-		//	var spec = new UserPermissionFilterSpecification();
-		//	return await userPermissionRepository.ListAsync(spec);
-		//}
+		private async Task<IList<int>> GetPermissionIdsInUser(AppUser user)
+		{
+			var filter = new UserPermissionFilterSpecification(user);
+
+			var userPermissions = await userPermissionRepository.ListAsync(filter);
+
+			return userPermissions.Select(up => up.PermissionId).ToList();
+		}
 	}
 }

@@ -1,5 +1,5 @@
-﻿<manage></manage>
-
+﻿
+<manage :init_model="model" :permissions="permissions" ></manage>
 
 
 @section scripts{
@@ -11,11 +11,20 @@
 			data() {
 				return {
 					model: {},
-					categories: []
+					permissions: [],
+					
 				}
 			},
 			beforeMount() {
+				this.model =@Html.Raw(ViewData["list"]);
+
+				let permissionList =@Html.Raw(ViewData["permissions"]);
+				this.permissions = permissionList;
+
 				
+
+				let token = '@Html.Raw(ViewData["token"])';
+				this.$auth.setToken(token);
 			},
 			methods: {
 
@@ -27,9 +36,4 @@
 
 	</script>
 
-
-
 }
-
-
-

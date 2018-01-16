@@ -23,7 +23,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityApp", "IdentityApp\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JavascriptClient", "JavascriptClient\JavascriptClient.csproj", "{D20A87A6-CD6B-4015-BE6F-399349789701}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Permissions", "Permissions\Permissions.csproj", "{FA53061D-85EB-4F8C-9648-591FF3C24AF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Permissions", "Permissions\Permissions.csproj", "{FA53061D-85EB-4F8C-9648-591FF3C24AF8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Identity", "Identity\Identity.csproj", "{24B3E853-906E-4F73-88E0-03A96F3C31AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,6 +73,10 @@ Global
 		{FA53061D-85EB-4F8C-9648-591FF3C24AF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA53061D-85EB-4F8C-9648-591FF3C24AF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA53061D-85EB-4F8C-9648-591FF3C24AF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24B3E853-906E-4F73-88E0-03A96F3C31AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24B3E853-906E-4F73-88E0-03A96F3C31AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24B3E853-906E-4F73-88E0-03A96F3C31AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24B3E853-906E-4F73-88E0-03A96F3C31AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,6 +92,7 @@ Global
 		{B598BC99-B661-4C24-99A2-1CD6EBA587EF} = {D3795BF7-D936-4703-94CA-48D82C457311}
 		{D20A87A6-CD6B-4015-BE6F-399349789701} = {D3795BF7-D936-4703-94CA-48D82C457311}
 		{FA53061D-85EB-4F8C-9648-591FF3C24AF8} = {D3795BF7-D936-4703-94CA-48D82C457311}
+		{24B3E853-906E-4F73-88E0-03A96F3C31AB} = {D3795BF7-D936-4703-94CA-48D82C457311}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AA09182A-7455-4BEA-AD38-67F35115133E}

@@ -1,7 +1,12 @@
+import Vue from 'vue';
+window.Vue = Vue;
+
 window._ = require('lodash');
 
 window.axios = require('axios');
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+
 
 /**
  * Next we will register the CSRF Token as a common header with Axios so that
@@ -26,23 +31,25 @@ require('./packages/fancybox/dist/jquery.fancybox.js');
 window.Clipboard=require('clipboard');
 
 
-import Vue from 'vue';
-window.Vue = Vue;
+import Auth from './packages/auth.js'
+Vue.use(Auth)
 
 
 import Helper from './helper';
 window.Helper = Helper;
 
-import Form from './utilities/Form';
+import Form from './utilities/form';
 window.Form = Form;
 
 
 import Manage from './models/manage';
+import Identity from './models/identity';
 import Post from './models/post';
 import PostAdmin from './models/postAdmin';
 import Attachment from './models/attachment';
 
 window.Manage=Manage;
+window.Identity = Identity;
 window.Post = Post;
 window.PostAdmin = PostAdmin;
 window.Attachment = Attachment;

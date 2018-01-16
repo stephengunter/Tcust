@@ -8,7 +8,8 @@ Vue.component('modal', require('./packages/components/Modal'));
 Vue.component('delete-confirm', require('./packages/components/DeleteConfirm'));
 Vue.component('drop-down', require('./packages/components/DropDown'));
 Vue.component('html-editor', require('./packages/components/HtmlEditor'));
-Vue.component('check-box', require('./packages/components/Checkbox'))
+Vue.component('check-box', require('./packages/components/Checkbox'));
+Vue.component('check-box-list', require('./packages/components/CheckboxList'));
 
 
 Vue.component('navbar', require('./components/navbar'));
@@ -23,6 +24,10 @@ Vue.component('manage', require('./views/manage'));
 
 
 Vue.component('test', require('./views/test'));
+
+
+import ErrorHandler from './utilities/error-handler';
+
 new Vue({
     el: '#footer',
     data() {
@@ -42,8 +47,7 @@ new Vue({
         }
     },
     created() {
-       
-        Bus.$on('errors',this.showErrorMsg);
+        Bus.$on('errors',this.onErrors);
         Bus.$on('okmsg',this.showSuccessMsg);
      
     },
@@ -57,24 +61,24 @@ new Vue({
             this.alertSetting.title = title
             this.alertSetting.text = text
         },
-        showErrorMsg(error) {
-            let msg = {}
-            if (error.status == 500) {
-                msg = {
-                    title: '處理您的要求時發生錯誤',
-                    text: '系統暫時無回應，請稍後再試'
-                }
-            }else if(error.status == 404){
-                msg = {
-                    title: '查無資料',
-                    text: ''
-                }
-            }else {
-                msg = {
-                    title: error.title,
-                    text: error.text
-                }
-            }
+        // Bus Event Handlers
+        onErrors(error,msg){ 
+            
+
+            if(msg){
+                this.showErrorMsg({
+                    title:msg
+                });
+            }else{
+                let errorHandler=new ErrorHandler(error);
+                msg =errorHandler.handle();
+
+                if(msg) this.showErrorMsg(msg);
+            }   
+            
+        },
+        showErrorMsg(msg) {
+            
             this.setAlertText(msg);
             this.alertSetting.class = 'fa fa-exclamation-circle'
             this.alertSetting.type = 'danger'

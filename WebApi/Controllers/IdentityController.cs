@@ -9,15 +9,13 @@ using Microsoft.AspNetCore.Authorization;
 namespace WebApi.Controllers
 {
 	
-
-	[Route("api/[controller]")]
 	[Authorize]
-	public class IdentityController : Controller
-    {
+	public class IdentityController : BaseApiController
+	{
 		[HttpGet]
 		public IActionResult Get()
 		{
 			return new JsonResult(from c in User.Claims select new { c.Type, c.Value });
 		}
-    }
+	}
 }

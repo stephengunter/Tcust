@@ -1,4 +1,5 @@
 ﻿using Blog.Services;
+using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -9,6 +10,11 @@ using ApplicationCore.Helpers;
 using Permissions.Services;
 using Permissions.Models;
 using Permissions.Views;
+using System.Net.Http;
+using Microsoft.AspNetCore.Authentication;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
@@ -24,6 +30,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		public async Task<IActionResult> Index(int permission = 0, string keyword = "", int page = 1, int pageSize = 10)
 		{
+			
 			Permission selectedPermission = null;
 			if (permission > 0) selectedPermission = await permissionService.GetPermissionByIdAsync(permission);
 			if (selectedPermission == null) permission = 0;
@@ -34,9 +41,11 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 			var pageList = new PagedList<AppUser, UserViewModel>(users, page, pageSize);
 
-			foreach (var item in pageList.List)
+			foreach (var user in pageList.List)
 			{
-				pageList.ViewList.Add(PermissionViewService.MapUserViewModel(item));
+				var permissions =await permissionService.GetUserPermissionsAsync(user);
+				
+				pageList.ViewList.Add(PermissionViewService.MapUserViewModel(user, permissions.ToList()));
 			}
 
 			pageList.List = null;
@@ -47,59 +56,75 @@ namespace BlogWeb.Areas.Admin.Controllers
 				return new ObjectResult(pageList);
 			}
 
-			var permissions = await permissionService.GetPermissionsAsync();
-			var options = permissions.Select(p => new { value = p.Id, text = p.Name });
+			string token = await GetToken();
+			ViewData["token"] = token;
 
-			ViewData["permissions"] = this.ToJsonString(options);
+			bool edit = false;
+			var permissionsOptions = await permissionService.GetPermissionOptionsAsync(edit);
+
+			ViewData["permissions"] = this.ToJsonString(permissionsOptions);
 
 
 			ViewData["list"] = this.ToJsonString(pageList);
 
 			return View();
 		}
+		
 
 		[HttpGet]
-		public IActionResult Create()
+		public async Task<IActionResult> Create()
 		{
 
 			var model = new UserEditForm
 			{
-				user = new UserViewModel()
+				user = new UserViewModel() 
 			};
+
+			bool edit = true;
+			bool isDev = CurrentUserIsDev;
+			var permissionOptions = await permissionService.GetPermissionOptionsAsync(edit, isDev);
+			model.permissionOptions= permissionOptions.ToList();
 
 			return new ObjectResult(model);
 		}
 
-
-		//[HttpPost("[area]/[controller]")]
-		//public async Task<IActionResult> Store([FromBody] PostEditForm model)
-		//{
-
-		//	if (!ModelState.IsValid)
-		//	{
-		//		return BadRequest(ModelState);
-		//	}
-
-		//	var post = model.post.MapToEntity(CurrentUserId);
-
-		//	foreach (var item in model.post.medias)
-		//	{
-		//		post.Attachments.Add(item.MapToEntity(CurrentUserId));
-		//	}
-
-		//	var caregory = await postService.GetCategoryByIdAsync(model.post.categoryId);
-		//	post.Categories.Add(caregory);
+		[HttpPost("[area]/[controller]")]
+		public async Task<IActionResult> Store([FromBody] UserEditForm model)
+		{
+			
+			var exist = permissionService.GetAppUserByUserId(model.user.userId);
+			if(exist!=null) ModelState.AddModelError("user.userId", "這個User重複了");
 
 
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			var user = model.user.MapToEntity(CurrentUserId);
+			user.CreatedAt = DateTime.Now;
+			user.SetUpdated(CurrentUserId);
+
+			var permissionIds = model.user.permissionIds;
+			
+			foreach (var permissionId in permissionIds)
+			{
+				var permission = await permissionService.GetPermissionByIdAsync(permissionId);
+				if (permission.AdminOnly && !CurrentUserIsDev)
+				{
+					throw new Exception("無權授予此權限. Permission=" + permission.Name);
+				}
+
+				user.Permissions.Add(permission);
+
+			}
+
+			user = await permissionService.CreateAppUserAsync(user);
 
 
-
-		//	post = await postService.CreateAsync(post);
-
-
-		//	return new ObjectResult(post);
+			return new ObjectResult(user);
 
 
-		//}
+		}
 	}
 }
