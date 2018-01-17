@@ -5,15 +5,10 @@ class PostReview {
 		return '/admin/review';
    }
 	
-	static editUrl(id) {
-		return `${this.source()}/${id}/edit`;
-	}
-	static updateUrl(id) {
-		return this.source() + `/${id}`;
-	}
-	static deleteUrl(id){
-		return this.source() + '/delete/' + id;
-	}
+	static storeUrl() {
+		return this.source()
+   }
+	
 
 	static index(params){
 		let url = this.source();
@@ -32,39 +27,27 @@ class PostReview {
 		})
 	}
 	
-	
 
-	
-
-	static update(id,form){
-		let url = this.updateUrl(id);
-		let method = 'put';
-		return new Promise((resolve, reject) => {
-			form.submit(method, url)
-					.then(data => {
-						resolve(data);
-					})
-					.catch(error => {
-						reject(error);
-					})
+	static store(post_ids) {
+		let url = this.storeUrl()
+		let method = 'post'
+		let form = new Form({
+			 postIds: post_ids
 		})
-	}
 
-
-	static remove(id) {
-		let url = this.deleteUrl(id);
-		
 		return new Promise((resolve, reject) => {
-			 axios.delete(url)
-				  .then(response => {
-						resolve(response.data);
+			 form.submit(method, url)
+				  .then(data => {
+						resolve(data);
 				  })
 				  .catch(error => {
 						reject(error);
 				  })
-
 		})
-	}
+   }
+
+
+	
    
    
    

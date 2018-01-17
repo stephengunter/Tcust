@@ -124,9 +124,6 @@
          onCreate(){
             this.create=true;
          },
-         onDetails(id){
-            alert(id);
-         },
          onEdit(id){
             this.selected=id;
          },

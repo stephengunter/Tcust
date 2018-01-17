@@ -22,7 +22,7 @@ namespace Blog.Services
 
 		Task<IEnumerable<Post>> FetchPosts(Category category = null, string keyword = "");
 
-
+		Task ReviewPosts(IList<int> ids);
 
 		Task<IEnumerable<Post>> GetAllAsync();
 
@@ -43,7 +43,7 @@ namespace Blog.Services
 		Task<IEnumerable<Category>> GetCategoriesAsync(bool excludeDefault = false);
 		Task<Category> GetCategoryByIdAsync(int id, bool returnDefault = false);
 		Task<IList<int>> GetCategoryIdsAsync(int postId);
-
+		Task<IEnumerable<Category>> GetPostCategoriesAsync(Post post);
 
 
 
@@ -167,6 +167,16 @@ namespace Blog.Services
 
 		}
 
+		public async Task ReviewPosts(IList<int> ids)
+		{
+			foreach (var id in ids)
+			{
+				var post = await GetByIdAsync(id);
+				post.Reviewed = true;
+				await postRepository.UpdateAsync(post);
+			}
+		}
+
 		public async Task DeleteAsync(int id, string updatedBy)
 		{
 			var post = postRepository.GetById(id);
@@ -250,6 +260,13 @@ namespace Blog.Services
 			var post = await GetByIdAsync(postId);
 			
 			return await GetCategoryIdsInPost(post);
+		}
+
+		public async Task<IEnumerable<Category>> GetPostCategoriesAsync(Post post)
+		{
+			var categoryIds= await GetCategoryIdsInPost(post);
+			var filter = new CategoryFilterSpecification(categoryIds);
+			return await categoryRepository.ListAsync(filter);
 		}
 
 

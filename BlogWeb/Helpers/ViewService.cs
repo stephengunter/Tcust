@@ -5,6 +5,9 @@ using Blog.Models;
 using BlogWeb.Models;
 using Microsoft.Extensions.Options;
 using ApplicationCore.Views;
+using ApplicationCore.Paging;
+using System.Threading.Tasks;
+using Blog.Services;
 
 namespace BlogWeb.Helpers
 {
@@ -25,10 +28,12 @@ namespace BlogWeb.Helpers
 	public class ViewService
     {
 		private readonly IOptions<AppSettings> settings;
+		private readonly IPostService postService;
 
-		public ViewService(IOptions<AppSettings> settings)
+		public ViewService(IOptions<AppSettings> settings, IPostService postService)
 		{
 			this.settings = settings;
+			this.postService = postService;
 		}
 
 		public PostViewModel MapPostViewModel(Post post, bool allMedias = false)
@@ -88,6 +93,31 @@ namespace BlogWeb.Helpers
 			
 
 			return model;
+		}
+
+
+		public async Task<PagedList<Post, PostViewModel>> GetPostPagedList(IEnumerable<Post> posts,int page, int pageSize, bool withCategories=false)
+		{
+			var pageList = new PagedList<Post, PostViewModel>(posts, page, pageSize);
+
+			foreach (var post in pageList.List)
+			{
+				var postViewModel = MapPostViewModel(post);
+
+				if (withCategories)
+				{
+					var categories = await postService.GetPostCategoriesAsync(post);
+					postViewModel.categoryName = String.Join(",", categories.Select(c => c.Name));
+				}
+				
+				postViewModel.clickCount = await postService.GetPostClickCount(post.Id);
+
+				pageList.ViewList.Add(postViewModel);
+			}
+
+			pageList.List = null;
+
+			return pageList;
 		}
 
 

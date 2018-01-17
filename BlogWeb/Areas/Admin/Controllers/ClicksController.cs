@@ -31,9 +31,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 		{
 			this.postService = postService;
 
-			this.viewService = new ViewService(this.Settings);
+			this.viewService = new ViewService(this.Settings, this.postService);
 		}
-		public IActionResult Index(string period = "month", string sort = "desc", int page = 1, int pageSize = 10)
+		public async Task<IActionResult> Index(string period = "month", string sort = "desc", int page = 1, int pageSize = 10)
         {
 			List<PostClickModel> groupResult = null;
 
@@ -63,6 +63,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 				var postViewModel = viewService.MapPostViewModel(post);
 				postViewModel.clickCount = item.clickCount;
+
+				var categories = await postService.GetPostCategoriesAsync(post);
+				postViewModel.categoryName = String.Join(",", categories.Select(c => c.Name));
 
 				pageList.ViewList.Add(postViewModel);
 			}

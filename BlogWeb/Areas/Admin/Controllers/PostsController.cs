@@ -22,8 +22,6 @@ namespace BlogWeb.Areas.Admin.Controllers
 	public class PostsController: BaseAdminController
 	{
 		private readonly IPostService postService;
-		
-
 		private readonly ViewService viewService;
 
 		public PostsController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService ,
@@ -33,7 +31,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			this.postService = postService;
 			
 
-			this.viewService = new ViewService(this.Settings); 
+			this.viewService = new ViewService(this.Settings, this.postService); 
 		}
 
 		
@@ -51,17 +49,8 @@ namespace BlogWeb.Areas.Admin.Controllers
 			posts = posts.Where(p=>p.Reviewed)
 					     .OrderByDescending(p=>p.Date).ThenByDescending(p=>p.LastUpdated);
 
-			var pageList = new PagedList<Post, PostViewModel>(posts, page, pageSize);
-
-			foreach (var item in pageList.List)
-			{
-				var postViewModel = viewService.MapPostViewModel(item);
-				postViewModel.clickCount = await postService.GetPostClickCount(item.Id);
-
-				pageList.ViewList.Add(postViewModel);
-			}
-
-			pageList.List = null;
+			bool withCategories = true;
+			var pageList = await viewService.GetPostPagedList(posts, page, pageSize, withCategories);
 			
 
 			if (Request.IsAjaxRequest())
@@ -177,6 +166,8 @@ namespace BlogWeb.Areas.Admin.Controllers
 			if (post == null) return NotFound();
 
 			post = model.post.MapToEntity(CurrentUserId, post);
+
+			if (!CanReviewPost()) post.Reviewed = false;
 
 			if (post.Attachments.IsNullOrEmpty()) post.Attachments = new List<UploadFile>();
 

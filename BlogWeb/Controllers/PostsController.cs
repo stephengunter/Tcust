@@ -29,7 +29,7 @@ namespace BlogWeb.Controllers
 
 			this.postService = postService;
 
-			this.viewService = new ViewService(this.Settings);
+			this.viewService = new ViewService(this.Settings, this.postService);
 		}
 
 		[HttpGet]
@@ -42,8 +42,8 @@ namespace BlogWeb.Controllers
 
 			var posts = await postService.FetchPosts(selectedCategory, keyword);
 
-			posts = posts.Where(p => p.Reviewed)
-						 .OrderByDescending(p => p.Date).ThenByDescending(p => p.LastUpdated);
+			posts = posts.Where(p => p.Reviewed);
+						
 
 			if (!Request.IsAjaxRequest())
 			{
@@ -63,18 +63,8 @@ namespace BlogWeb.Controllers
 			posts = posts.OrderByDescending(p => p.Date).ThenByDescending(p => p.LastUpdated);
 
 
-
-			var pageList = new PagedList<Post, PostViewModel>(posts, page, pageSize);
-
-			foreach (var item in pageList.List)
-			{
-				var postViewModel = viewService.MapPostViewModel(item);
-				postViewModel.clickCount = await postService.GetPostClickCount(item.Id);
-
-				pageList.ViewList.Add(postViewModel);
-			}
-
-			pageList.List = null;
+			var pageList = await viewService.GetPostPagedList(posts, page, pageSize);
+			
 
 
 			if (Request.IsAjaxRequest())

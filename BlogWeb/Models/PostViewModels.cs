@@ -42,6 +42,8 @@ namespace BlogWeb.Models
 
 		public int categoryId { get; set; }
 
+		public string categoryName { get; set; }
+
 		public string url { get; set; }
 
 		public int clickCount { get; set; }  
@@ -92,7 +94,7 @@ namespace BlogWeb.Models
 		public DateTime updatedAt { get; set; }
 		public string fileIds { get; set; }
 
-		public string categoryName { get; set; }
+		
 
 	}
 
@@ -103,6 +105,11 @@ namespace BlogWeb.Models
 		public PostViewModel post { get; set; }
 
 		public List<BaseOption> categoryOptions { get; set; }
+	}
+
+	public class PostReviewForm
+	{
+		public IList<int> postIds { get; set; }
 	}
 
 

@@ -8,10 +8,16 @@ namespace Blog.Specifications
 {
     public class CategoryFilterSpecification : BaseSpecification<Category>
 	{
-		public CategoryFilterSpecification() : base(c => c.Active)
+		public CategoryFilterSpecification() 
 		{
+			Criteria = c => c.Active;
+		}
 
-
+		public CategoryFilterSpecification(IList<int> ids)
+		{
+			Criteria = c => ids.Contains(c.Id);
 		}
 	}
+
+	
 }
