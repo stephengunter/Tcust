@@ -84,7 +84,14 @@ namespace Blog.DAL
 				new  Permission
 				{
 					Name = "EDIT_POSTS",
-					Title = "編輯文章"
+					Title = "編輯文章",
+					AdminOnly=false
+				},
+				new  Permission
+				{
+					Name = "REVIEW_POSTS",
+					Title = "文章審核",
+					AdminOnly=false
 				},
 				new  Permission
 				{

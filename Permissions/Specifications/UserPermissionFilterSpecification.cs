@@ -15,6 +15,10 @@ namespace Permissions.Specifications
 		{
 			Criteria = up => up.AppUserId == userId && up.PermissionId == permissionId;
 		}
+		public UserPermissionFilterSpecification(AppUser appUser, Permission permission)
+		{
+			Criteria = up => up.AppUserId == appUser.Id && up.PermissionId == permission.Id;
+		}
 
 		public UserPermissionFilterSpecification(AppUser user)
 		{

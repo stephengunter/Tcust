@@ -25,7 +25,7 @@
 			<div class="form-group">
 				<label class="col-md-2 control-label">Email</label>
 				<div class="col-md-10">
-					<input name="user.email" v-model="form.user.email" class="form-control" />
+					<input name="user.email" v-model="form.user.email" class="form-control" :disabled="!isCreate"/>
 					<small class="text-danger" v-if="emailError" v-text="emailError"></small>
 
 
@@ -34,9 +34,9 @@
 				</div>
          </div>
          <div v-show="!isCreate" class="form-group">
-				<label class="col-md-2 control-label">名稱</label>
+				<label class="col-md-2 control-label">姓名</label>
 				<div class="col-md-10">
-					<input name="user.name" v-model="form.user.name" class="form-control" />
+					<input name="user.name" v-model="form.user.name" class="form-control"  :disabled="!isCreate"/>
 					<small class="text-danger" v-if="form.errors.has('user.name')" v-text="form.errors.get('user.name')"></small>
 				
 				</div>
@@ -183,20 +183,20 @@ export default {
 				return;
 			} 
 
-
+			this.submitting=true;
 			let find=Identity.getUserByEmail(email);
 			find.then(user => {
 			   this.submit(user);
 			})
 			.catch(error => {
 				this.emailError='這個Email不存在';
-				return;
+				this.submitting=false;
 			})
 			
 		},
 		submit(user){
 			
-			this.submitting=true;
+			
 
 			this.form.user.userId=user.id;
 			this.form.user.name=user.fullname;

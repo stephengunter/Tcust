@@ -35,7 +35,16 @@
 						<li id="linkPosts" style="font-size:1.8em">
 							<a href="/admin/posts">校園日誌管理</a>
 						</li>
-
+						<li id="linkClicks" style="font-size:1.2em">
+							<a href="/admin/clicks">點擊率分析</a>
+						</li>
+						@if ((await AuthorizationService.AuthorizeAsync(User, "REVIEW_POSTS")).Succeeded)
+						{
+							<li id="linkReview" style="font-size:1.2em">
+								<a href="/admin/review">文章審核</a>
+							</li>
+						}
+						
 						@if ((await AuthorizationService.AuthorizeAsync(User, "MANAGE_USERS")).Succeeded)
 						{
 							<li id="linkManage" style="font-size:1.2em">

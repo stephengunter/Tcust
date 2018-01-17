@@ -9,48 +9,34 @@ using Blog.Services;
 using ApplicationCore.Helpers;
 using BlogWeb.Models;
 using ApplicationCore.Paging;
-
-using Microsoft.AspNetCore.Http;
-using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using BlogWeb.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using ApplicationCore.Views;
+using Permissions.Services;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	
+	[Authorize(Policy = "EDIT_POSTS")]
 	public class PostsController: BaseAdminController
 	{
 		private readonly IPostService postService;
+		
 
 		private readonly ViewService viewService;
 
-		public PostsController(IHostingEnvironment environment, IOptions<AppSettings> settings,IPostService postService) : base(environment, settings)
+		public PostsController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService ,
+			IPostService postService) : base(environment, settings, permissionService)
 		{
 			
 			this.postService = postService;
+			
 
 			this.viewService = new ViewService(this.Settings); 
 		}
 
-		public IActionResult Test(int postId, int categoryId)
-		{
-			var user = User.Identity.Name;
-			//bool returnDefaultCategory = true;
-			//var selectedCategory = await postService.GetCategoryByIdAsync(0, returnDefaultCategory);
-
-			//var posts =await postService.GetAllAsync();
-			//posts = posts.Take(60);
-
-			//foreach (var post in posts)
-			//{
-			//	post.Categories.Add(selectedCategory);
-			//	postService.Update(post);
-			//}
-
-			return Content(user);
-			
-		}
+		
 
 		
 		[HttpGet]
@@ -62,13 +48,17 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 			var posts = await postService.FetchPosts(selectedCategory, keyword);
 
-			posts = posts.OrderByDescending(p=>p.Date).ThenByDescending(p=>p.LastUpdated);
+			posts = posts.Where(p=>p.Reviewed)
+					     .OrderByDescending(p=>p.Date).ThenByDescending(p=>p.LastUpdated);
 
 			var pageList = new PagedList<Post, PostViewModel>(posts, page, pageSize);
 
 			foreach (var item in pageList.List)
 			{
-				pageList.ViewList.Add(viewService.MapPostViewModel(item));
+				var postViewModel = viewService.MapPostViewModel(item);
+				postViewModel.clickCount = await postService.GetPostClickCount(item.Id);
+
+				pageList.ViewList.Add(postViewModel);
 			}
 
 			pageList.List = null;
@@ -79,10 +69,10 @@ namespace BlogWeb.Areas.Admin.Controllers
 				return new ObjectResult(pageList);
 			}
 
-			var categories =await postService.GetCategoriesAsync();
-			var options = categories.Select(c => new { value = c.Id, text = c.Name });
+			bool edit = false;
+			var categoryOptions = await GetCategoryOptions(edit);
 
-			ViewData["categories"] = this.ToJsonString(options);
+			ViewData["categories"] = this.ToJsonString(categoryOptions);
 			
 
 			ViewData["list"]= this.ToJsonString(pageList);
@@ -91,17 +81,26 @@ namespace BlogWeb.Areas.Admin.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult Create()
+		public async Task<IActionResult> Create()
 		{
+			bool canReviewPost = CanReviewPost();
 			var post = new PostViewModel()
 			{
-				termNumber = DefaultTermNumber()
+				termNumber = DefaultTermNumber(),
+				reviewed= canReviewPost
 			};
+
+			bool edit = true;
+			var categoryOptions = await GetCategoryOptions(edit);
+
 			var model = new PostEditForm
 			{
-				post = post
+				post = post,
+				categoryOptions= categoryOptions,
+				canReview= canReviewPost.ToInt()
+
 			};
-		
+			
 
 
 			return new ObjectResult(model);
@@ -145,15 +144,23 @@ namespace BlogWeb.Areas.Admin.Controllers
 			var post = postService.GetById(id);
 			if (post == null) return NotFound();
 
+			bool canReviewPost = CanReviewPost();
+
 			bool allMedias = true;
 			var model = new PostEditForm
 			{
-				post = viewService.MapPostViewModel(post, allMedias)
+				post = viewService.MapPostViewModel(post, allMedias),
+				canReview = canReviewPost.ToInt()
 			};
 
 			var categoryIds =await postService.GetCategoryIdsAsync(id);
 
 			model.post.categoryId = categoryIds.FirstOrDefault();
+
+			bool edit = true;
+			var categoryOptions = await GetCategoryOptions(edit);
+
+			model.categoryOptions = categoryOptions;
 
 			return new ObjectResult(model);
 		}
@@ -205,6 +212,16 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 			return new NoContentResult();
 			
+		}
+
+
+		private async Task<List<BaseOption>> GetCategoryOptions(bool edit)
+		{
+			bool emptyOption = !edit;
+			var categories = await postService.GetCategoriesAsync();
+
+			return categories.ToOptions(emptyOption);
+
 		}
 
 

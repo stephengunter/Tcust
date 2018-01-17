@@ -5,6 +5,7 @@ Vue.component('datetime-picker', require('./components/datetime-picker'));
 Vue.component('page-controll', require('./components/page-controll'));
 Vue.component('alert', require('./packages/components/Alert'));
 Vue.component('modal', require('./packages/components/Modal'));
+Vue.component('toggle', require('./packages/components/Toggle'));
 Vue.component('delete-confirm', require('./packages/components/DeleteConfirm'));
 Vue.component('drop-down', require('./packages/components/DropDown'));
 Vue.component('html-editor', require('./packages/components/HtmlEditor'));
@@ -19,6 +20,8 @@ Vue.component('post-details', require('./views/post-details'));
 
 //Admin
 Vue.component('post-admin', require('./views/post-admin'));
+Vue.component('post-review', require('./views/post-review'));
+Vue.component('clicks', require('./views/clicks'));
 Vue.component('manage', require('./views/manage'));
 
 

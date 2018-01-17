@@ -42,6 +42,9 @@ namespace BlogWeb.Controllers
 
 			var posts = await postService.FetchPosts(selectedCategory, keyword);
 
+			posts = posts.Where(p => p.Reviewed)
+						 .OrderByDescending(p => p.Date).ThenByDescending(p => p.LastUpdated);
+
 			if (!Request.IsAjaxRequest())
 			{
 				var archives = LoadArchives(posts);
@@ -56,7 +59,7 @@ namespace BlogWeb.Controllers
 
 			posts = posts.Where(p => p.Year == year);
 
-			//Order
+			
 			posts = posts.OrderByDescending(p => p.Date).ThenByDescending(p => p.LastUpdated);
 
 
@@ -65,7 +68,10 @@ namespace BlogWeb.Controllers
 
 			foreach (var item in pageList.List)
 			{
-				pageList.ViewList.Add(viewService.MapPostViewModel(item));
+				var postViewModel = viewService.MapPostViewModel(item);
+				postViewModel.clickCount = await postService.GetPostClickCount(item.Id);
+
+				pageList.ViewList.Add(postViewModel);
 			}
 
 			pageList.List = null;
@@ -81,7 +87,7 @@ namespace BlogWeb.Controllers
 
 			bool excludeDefault = true;
 			var categories = await postService.GetCategoriesAsync(excludeDefault);
-			
+		    
 
 			var options = categories.Select(c => new { value = c.Id, text = c.Name });
 
@@ -106,6 +112,8 @@ namespace BlogWeb.Controllers
 		{
 			var post = postService.GetById(id);
 			if (post == null) return NotFound();
+
+			await postService.AddClick(id);
 
 			bool allMedias = true;
 			var model = new PostEditForm

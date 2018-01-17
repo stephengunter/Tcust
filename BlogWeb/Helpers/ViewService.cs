@@ -1,22 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-
-
 using Blog.Models;
-using Blog.Services;
-using ApplicationCore.Helpers;
 using BlogWeb.Models;
-using ApplicationCore.Paging;
-using Newtonsoft.Json;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
+using ApplicationCore.Views;
 
 namespace BlogWeb.Helpers
 {
-    public class ViewService
+	public static class ExtensionHelpers
+	{
+		public static List<BaseOption> ToOptions(this IEnumerable<Category> Categories, bool withEmpty=true)
+		{
+			var options = Categories.Select(c => new BaseOption(c.Id.ToString(), c.Name)).ToList();
+			if(withEmpty) options.Insert(0, new BaseOption("","所有分類") );
+
+			return options;
+		}
+
+	}
+
+
+
+	public class ViewService
     {
 		private readonly IOptions<AppSettings> settings;
 
@@ -34,6 +40,7 @@ namespace BlogWeb.Helpers
 			model.number = post.Number;
 			model.author = post.Author;
 			model.content = post.Content;
+			model.reviewed = post.Reviewed;
 			model.date = post.Date.ToShortDateString();
 			model.createdAt = post.CreatedAt;
 
@@ -82,9 +89,6 @@ namespace BlogWeb.Helpers
 
 			return model;
 		}
-
-		
-
 
 
 	}

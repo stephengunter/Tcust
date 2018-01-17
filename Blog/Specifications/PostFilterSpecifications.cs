@@ -40,6 +40,12 @@ namespace Blog.Specifications
 			Criteria = p => compiled(p) && p.Id == id;
 
 		}
+		public PostIdFilterSpecification(IList<int> ids)
+		{
+			var compiled = Criteria.Compile();
+			Criteria = p => compiled(p) && ids.Contains(p.Id);
+
+		}
 	}
 
 	public class PostFilterSpecification : BasePostFilterSpecification

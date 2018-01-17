@@ -10,7 +10,6 @@
 					  @selected="onPermissionSelected">
 					  <label slot="label" style="font-size:1.2em">  權限：
       			  </label> 
-     				 
 					 
 					</drop-down>
             </div>
@@ -32,9 +31,9 @@
           <user-table :model="model" @edit="onEdit" @remove="onDelete" >
           
 			  <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
-					<!-- <page-controll   :model="model" @page-changed="onPageChanged"
+					<page-controll   :model="model" @page-changed="onPageChanged"
 						@pagesize-changed="fetchData">
-					</page-controll> -->
+					</page-controll>
             
             </div>
          </user-table>
@@ -44,9 +43,9 @@
          @saved="onIndex" @cancel="onIndex">
       </user-edit>
       
-      <!-- <delete-confirm :showing="deleteConfirm.showing" :message="deleteConfirm.message"
+      <delete-confirm :showing="deleteConfirm.showing" :message="deleteConfirm.message"
         @close="deleteConfirm.showing=false" @confirmed="deleteUser">
-      </delete-confirm> -->
+      </delete-confirm>
    </div> 
 </template>
 
@@ -139,11 +138,12 @@
          },
          onDelete(user){
             this.deleteConfirm.id=user.id;
-            this.deleteConfirm.message='確定要刪除 ' + user.title + ' 嗎?';
+            this.deleteConfirm.message='確定要刪除 ' + user.name + ' 嗎?';
             this.deleteConfirm.showing=true;
          },
          deleteUser(){
-				let remove=UserAdmin.remove(this.deleteConfirm.id);
+				
+				let remove=Manage.remove(this.deleteConfirm.id);
 				
 				remove.then(() => {
 					this.fetchData();

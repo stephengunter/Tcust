@@ -5,11 +5,18 @@
             <thead>
                <tr>
                   <th style="width:10%">&nbsp;</th>
+                  <th style="width:10%" v-if="!can_edit">
+                     <a href="#" @click.prevent="onSort">
+                     點擊數
+                       <i v-if="desc" class="fa fa-sort-desc" aria-hidden="true"></i>
+                       <i v-else class="fa fa-sort-asc" aria-hidden="true"></i>
+                     </a>
+                  </th>
                   <th style="width:10%">編號</th>
                   <th style="width:25%">標題</th>
                   <th style="width:25%">作者</th>
                   <th style="width:10%">日期</th>
-                  <th style="width:10%"></th>
+                  <th style="width:10%" v-if="can_edit"></th>
                </tr>
             </thead>
             <tbody>
@@ -18,11 +25,14 @@
                      <img v-if="post.cover" class="thumbnail" style="max-width:60px" :src="post.cover.previewPath" />
                      
                   </td>
+                  <td v-if="!can_edit">
+                        {{ post.clickCount }} 
+                  </td>
                   <td>{{ post.number }}</td>
                   <td>{{ post.title }}</td>
                   <td>{{ post.author }}</td>
                   <td>{{ post.date }}</td>
-                  <td>
+                  <td v-if="can_edit">
                      <button class="btn btn-sm btn-primary" @click.prevent="edit(post.id)">
                         <i class="fa fa-pencil" aria-hidden="true"></i>
                      </button>
@@ -51,6 +61,14 @@ export default {
          type: Object,
          default: null
       },
+      can_edit:{
+         type: Boolean,
+         default: true
+      },
+      desc:{
+         type: Boolean,
+         default: true
+      }
    },
    methods:{
       edit(id){
@@ -58,7 +76,10 @@ export default {
       },
       remove(post){
          this.$emit('remove',post);
-      }
+      },
+      onSort(){
+         this.$emit('sort');
+      },
    }
 }
 </script>

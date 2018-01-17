@@ -30,8 +30,10 @@ namespace Blog.Models
 
 		public ICollection<UploadFile> Attachments { get; set; }
 
+		public ICollection<Click> Clicks { get; set; }
 
-		
+
+
 		[NotMapped]
 		public ICollection<Category> Categories { get; }
 

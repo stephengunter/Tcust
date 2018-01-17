@@ -1,21 +1,10 @@
-class Manage {
-   constructor(data) {
-
-      for (let property in data) {
-          this[property] = data[property];
-      }
-
-	}
+class PostReview {
+   
 
 	static source() {
-		return '/admin/manage';
+		return '/admin/review';
    }
-	static createUrl() {
-		return this.source() + '/create';
-	}
-	static storeUrl() {
-		return this.source();
-	}
+	
 	static editUrl(id) {
 		return `${this.source()}/${id}/edit`;
 	}
@@ -43,49 +32,9 @@ class Manage {
 		})
 	}
 	
-	static create() {
-		let url = this.createUrl();
-
-		return new Promise((resolve, reject) => {
-			 axios.get(url)
-				  .then(response => {
-						resolve(response.data);
-				  })
-				  .catch(error => {
-						reject(error);
-				  })
-
-		})
-	}
 	
-	static store(form){
-		let url = this.storeUrl();
-		let method = 'post';
-		return new Promise((resolve, reject) => {
-			form.submit(method, url)
-					.then(data => {
-						resolve(data);
-					})
-					.catch(error => {
-						reject(error);
-					})
-		})
-	}
 
-	static edit(id) {
-		let url = this.editUrl(id);
-
-		return new Promise((resolve, reject) => {
-			 axios.get(url)
-				  .then(response => {
-						resolve(response.data);
-				  })
-				  .catch(error => {
-						reject(error);
-				  })
-
-		})
-	}
+	
 
 	static update(id,form){
 		let url = this.updateUrl(id);
@@ -103,7 +52,6 @@ class Manage {
 
 
 	static remove(id) {
-		
 		let url = this.deleteUrl(id);
 		
 		return new Promise((resolve, reject) => {
@@ -125,4 +73,4 @@ class Manage {
 }
 
 
-export default Manage;
+export default PostReview;

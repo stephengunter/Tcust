@@ -40,7 +40,7 @@
 			<div class="form-group">
 				<label class="col-md-2 control-label">分類</label>
 				<div class="col-md-10">
-					<drop-down :items="categories" :selected="form.post.categoryId"
+					<drop-down :items="categoryOptions" :selected="form.post.categoryId"
 					  @selected="onCategorySelected">
 					</drop-down>
 				</div>
@@ -81,6 +81,14 @@
 				<div class="col-md-10">
 					<media-edit :post="form.post" ref="mediaEdit"></media-edit>
 				</div>
+				
+         </div>
+			<div v-if="canReview" v-show="!isCreate" class="form-group">
+				<label class="col-md-2 control-label">狀態</label>
+				<div class="col-md-10">
+					<input type="hidden" v-model="form.post.reviewed"  >
+               <toggle :items="reviewedOptions"   :default_val="form.post.reviewed" @selected="setReviewed"></toggle>
+				</div>
          </div>
 			<div class="form-group">
 				<label class="col-md-2 control-label"></label>
@@ -120,10 +128,6 @@ export default {
 			type:Object,
 			default:null
 		},
-		categories:{
-			type:Array,
-			default:null
-		},
 		id:{
 			type:Number,
 			default:0
@@ -133,6 +137,12 @@ export default {
 		return {
 			loaded:false,
 			title:'',
+
+			canReview:0,
+
+			categoryOptions:[],
+
+			reviewedOptions:Post.reviewedOptions(),
 
 			textEditor:{
 				height:360,
@@ -181,11 +191,21 @@ export default {
 
 			getData.then(model => {
 			
+				
 				this.form = new Form({
-					...model
+					post:{
+						...model.post
+					}
 				});
 
-				if(this.isCreate) this.form.post.categoryId=this.category.value;
+				this.canReview=model.canReview;
+
+				this.categoryOptions=model.categoryOptions.slice(0);
+
+				if(this.isCreate){
+					if(parseInt(this.category.value))  this.form.post.categoryId=this.category.value;
+					else this.form.post.categoryId=model.categoryOptions[0].value;
+				} 
 				
 
 				this.loaded=true;
@@ -197,14 +217,17 @@ export default {
 			})
 		},
 		onCategorySelected(category){
-			this.form.post.categoryId=category.value
+			this.form.post.categoryId=category.value;
 		},
 		setDate(val){
 			this.form.post.date=val;
 		},
+		setReviewed(val) {
+         this.form.post.reviewed = val;
+      },
 		setContent(val){
-			this.form.post.content=val
-			this.onSubmit()
+			this.form.post.content=val;
+			this.onSubmit();
       },
 		onSubmit(){
 			this.submitting=true;

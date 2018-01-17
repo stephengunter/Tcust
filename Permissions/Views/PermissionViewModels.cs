@@ -8,6 +8,8 @@ namespace Permissions.Views
 {
 	public class UserViewModel
 	{
+		public int id { get; set; }
+
 		[Required(ErrorMessage = "請填寫Email")]
 		public string email { get; set; }
 

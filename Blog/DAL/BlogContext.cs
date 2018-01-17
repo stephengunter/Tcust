@@ -20,6 +20,7 @@ namespace Blog.DAL
 
 		public DbSet<Category> Categories { get; set; }
 		public DbSet<Post> Posts { get; set; }
+		public DbSet<Click> Clicks { get; set; }
 		public DbSet<UploadFile> UploadFiles { get; set; }
 		public DbSet<PostCategory> PostsCategories { get; set; }
 

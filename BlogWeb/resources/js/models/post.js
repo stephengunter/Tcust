@@ -48,7 +48,15 @@ class Post {
 	}
 
 	
-   
+   static reviewedOptions() {
+		return [{
+			 text: '已審核',
+			 value: true
+		}, {
+			 text: '未審核',
+			 value: false
+		}]
+  }
    
 
    

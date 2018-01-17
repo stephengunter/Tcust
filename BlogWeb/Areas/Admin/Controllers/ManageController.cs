@@ -1,4 +1,4 @@
-﻿using Blog.Services;
+﻿
 using System;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -10,22 +10,17 @@ using ApplicationCore.Helpers;
 using Permissions.Services;
 using Permissions.Models;
 using Permissions.Views;
-using System.Net.Http;
-using Microsoft.AspNetCore.Authentication;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using System.Text;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	//[Authorize(Policy = "MANAGE_USERS")]
+	[Authorize(Policy = "MANAGE_USERS")]
 	public class ManageController : BaseAdminController
 	{
-		private readonly IPermissionService permissionService;
-
-		public ManageController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService) : base(environment, settings)
+		public ManageController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService) : base(environment, settings, permissionService)
 		{
-			this.permissionService = permissionService;
+			
 		}
 
 		public async Task<IActionResult> Index(int permission = 0, string keyword = "", int page = 1, int pageSize = 10)
@@ -60,7 +55,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 			ViewData["token"] = token;
 
 			bool edit = false;
-			var permissionsOptions = await permissionService.GetPermissionOptionsAsync(edit);
+			var permissionsOptions = await GetPermissionOptions(edit);
+
+			permissionsOptions.Insert(0, new PermissionOption { text = "----------", value = 0 });
 
 			ViewData["permissions"] = this.ToJsonString(permissionsOptions);
 
@@ -81,11 +78,16 @@ namespace BlogWeb.Areas.Admin.Controllers
 			};
 
 			bool edit = true;
-			bool isDev = CurrentUserIsDev;
-			var permissionOptions = await permissionService.GetPermissionOptionsAsync(edit, isDev);
-			model.permissionOptions= permissionOptions.ToList();
+			model.permissionOptions=await GetPermissionOptions(edit);
 
 			return new ObjectResult(model);
+		}
+
+		private async Task<List<PermissionOption>> GetPermissionOptions(bool edit)
+		{
+			bool isDev = CurrentUserIsDev;
+			var permissionOptions = await permissionService.GetPermissionOptionsAsync(edit, isDev);
+			return permissionOptions.ToList();
 		}
 
 		[HttpPost("[area]/[controller]")]
@@ -104,19 +106,12 @@ namespace BlogWeb.Areas.Admin.Controllers
 			var user = model.user.MapToEntity(CurrentUserId);
 			user.CreatedAt = DateTime.Now;
 			user.SetUpdated(CurrentUserId);
-
-			var permissionIds = model.user.permissionIds;
 			
-			foreach (var permissionId in permissionIds)
+
+			var permissions = await GetPermissionsToGrant(model.user.permissionIds);
+			foreach (var item in permissions)
 			{
-				var permission = await permissionService.GetPermissionByIdAsync(permissionId);
-				if (permission.AdminOnly && !CurrentUserIsDev)
-				{
-					throw new Exception("無權授予此權限. Permission=" + permission.Name);
-				}
-
-				user.Permissions.Add(permission);
-
+				user.Permissions.Add(item);
 			}
 
 			user = await permissionService.CreateAppUserAsync(user);
@@ -125,6 +120,79 @@ namespace BlogWeb.Areas.Admin.Controllers
 			return new ObjectResult(user);
 
 
+		}
+
+		[HttpGet("[area]/[controller]/{id}/edit")]
+		public async Task<IActionResult> Edit(int id)
+		{
+			var user =await permissionService.GetAppUserByIdAsync(id);
+			if (user == null) return NotFound();
+
+			var model = new UserEditForm();
+			bool edit = true;
+			model.permissionOptions = await GetPermissionOptions(edit);
+
+			var permissions = await permissionService.GetUserPermissionsAsync(user);
+
+			var userModel = PermissionViewService.MapUserViewModel(user, permissions.ToList());
+			userModel.permissionIds = permissions.Select(p => p.Id).ToArray();
+
+			
+
+			model.user = userModel;
+
+			return new ObjectResult(model);
+		}
+		[HttpPut("[area]/[controller]/{id}")]
+		public async Task<IActionResult> Update(int id, [FromBody] UserEditForm model)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			var user = await permissionService.GetAppUserByIdAsync(id);
+			if (user == null) return NotFound();
+
+			user = model.user.MapToEntity(CurrentUserId, user);
+
+			
+			var permissions = await GetPermissionsToGrant(model.user.permissionIds);
+			
+
+			await permissionService.UpdateAppUserAsync(user, model.user.permissionIds);
+
+
+			return new NoContentResult();
+
+
+		}
+
+		[HttpDelete]
+		public async Task<IActionResult> Delete(int id)
+		{
+			await permissionService.DeleteAppUserAsync(id);
+
+			return new NoContentResult();
+
+		}
+
+		private async Task<List<Permission>>  GetPermissionsToGrant(IList<int> permissionIds)
+		{
+			var permissions = new List<Permission>();
+			foreach (var permissionId in permissionIds)
+			{
+				var permission = await permissionService.GetPermissionByIdAsync(permissionId);
+				if (permission.AdminOnly && !CurrentUserIsDev)
+				{
+					throw new Exception("無權授予此權限. Permission=" + permission.Name);
+				}
+
+				permissions.Add(permission);
+
+			}
+
+			return permissions;
 		}
 	}
 }

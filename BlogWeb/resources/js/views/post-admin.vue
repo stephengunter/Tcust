@@ -36,7 +36,7 @@
          </post-table>
 
       </div>
-      <post-edit v-if="editting"  :id="selected" :category="category"  :categories="categories"
+      <post-edit v-if="editting"  :id="selected" :category="category"  
          @saved="onIndex" @cancel="onIndex">
       </post-edit>
       

@@ -59,6 +59,12 @@ namespace ApplicationCore.Helpers
 			return (str.ToLower() == "true");
 		}
 
+		public static int ToInt(this bool val)
+		{
+			if (val) return 1;
+			return 0;
+		}
+
 		public static DateTime? ToDatetimeOrNull(this string str)
 		{
 			DateTime dateValue;

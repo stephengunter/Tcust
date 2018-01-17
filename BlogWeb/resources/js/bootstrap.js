@@ -46,12 +46,16 @@ import Manage from './models/manage';
 import Identity from './models/identity';
 import Post from './models/post';
 import PostAdmin from './models/postAdmin';
+import PostReview from './models/review';
+import Clicks from './models/clicks';
 import Attachment from './models/attachment';
 
 window.Manage=Manage;
 window.Identity = Identity;
 window.Post = Post;
 window.PostAdmin = PostAdmin;
+window.PostReview=PostReview;
+window.Clicks = Clicks;
 window.Attachment = Attachment;
 
 

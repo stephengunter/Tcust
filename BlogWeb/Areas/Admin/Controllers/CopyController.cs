@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Permissions.Services;
 
 using Blog.Models;
 using Blog.Services;
@@ -19,7 +20,7 @@ using System.Data;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	//[Authorize(Policy = "DEV_ONLY")]
+	[Authorize(Policy = "DEV_ONLY")]
 	public class CopyController : BaseAdminController
 	{
 		class PostViewModel
@@ -135,8 +136,8 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		
 
-		public CopyController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPostService postService) 
-			: base(environment, settings)
+		public CopyController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService, IPostService postService) 
+			: base(environment, settings, permissionService)
 		{
 			this.postService = postService;
 			

@@ -1,0 +1,37 @@
+﻿<clicks :init_model="model" :periods="periods"></clicks>
+
+
+
+@section scripts{
+	<script>
+		$("#linkClicks").addClass("active");
+
+		new Vue({
+			el: '#main',
+			data() {
+				return {
+					model: {},
+					periods:[]
+					
+				}
+			},
+			beforeMount() {
+				this.model =@Html.Raw(ViewData["list"]);
+
+				let periodList =@Html.Raw(ViewData["periods"]);
+				this.periods = periodList;
+			},
+			methods: {
+
+			}
+
+		});
+
+
+
+	</script>
+
+}
+
+
+

@@ -16,15 +16,18 @@ using Microsoft.AspNetCore.Hosting;
 using System.Drawing;
 using System.Diagnostics;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authorization;
+using Permissions.Services;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-
+	[Authorize(Policy = "EDIT_POSTS")]
 	public class UploadsController : BaseAdminController
 	{
 		private readonly IAttachmentService attachmentService;
 
-		public UploadsController(IHostingEnvironment environment, IOptions<AppSettings> settings, IAttachmentService attachmentService) : base(environment, settings)
+		public UploadsController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService, IAttachmentService attachmentService) 
+			: base(environment, settings, permissionService)
 		{
 
 			this.attachmentService = attachmentService;

@@ -11,9 +11,10 @@ using System;
 namespace Blog.Migrations
 {
     [DbContext(typeof(BlogContext))]
-    partial class BlogContextModelSnapshot : ModelSnapshot
+    [Migration("20180117034616_addClick")]
+    partial class addClick
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -78,8 +79,6 @@ namespace Blog.Migrations
                     b.Property<string>("Number");
 
                     b.Property<bool>("Removed");
-
-                    b.Property<bool>("Reviewed");
 
                     b.Property<string>("Summary");
 

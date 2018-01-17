@@ -5,10 +5,10 @@
             <thead>
                <tr>
                   
-                  <th style="width:25%">Email</th>
-                  <th style="width:25%">Name</th>
-                  <th style="width:10%">PS</th>
-						<th style="width:10%">最後更新</th>
+                  <th style="width:30%">Email</th>
+                  <th style="width:10%">Name</th>
+                  <th style="width:20%">權限</th>
+                  <th style="width:20%">PS</th>
                   <th style="width:10%"></th>
                </tr>
             </thead>
@@ -17,9 +17,10 @@
                  
                   <td>{{ user.email }}</td>
                   <td>{{ user.name }}</td>
+                  <td v-text="permissionNames(user)"></td>
                   <td>{{ user.ps }}</td>
-						<td>{{ user.lastUpdated }}</td>
-                  <td>{{ user.date }}</td>
+						
+                  
                   <td>
                      <button class="btn btn-sm btn-primary" @click.prevent="edit(user.id)">
                         <i class="fa fa-pencil" aria-hidden="true"></i>
@@ -48,7 +49,7 @@ export default {
       model: {
          type: Object,
          default: null
-      },
+      }
    },
    methods:{
       edit(id){
@@ -56,7 +57,16 @@ export default {
       },
       remove(user){
          this.$emit('remove',user);
-      }
+      },
+      permissionNames(user){
+         let names=user.permissionViews.map((item)=>{
+            return item.title;
+         });
+        
+         return   names.join();
+        
+         
+      },
    }
 }
 </script>

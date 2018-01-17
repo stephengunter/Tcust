@@ -11,8 +11,9 @@ namespace Permissions.Views
 			{
 				permissionViews =new List<PermissionViewModel>()
 			};
-
-			
+			model.id = user.Id;
+			model.email = user.Email;
+			model.name = user.Name;
 			model.userId = user.UserId;
 			model.updatedAt = user.LastUpdated.ToString();
 			model.updatedBy = user.UpdatedBy;

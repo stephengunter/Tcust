@@ -12,6 +12,8 @@ namespace ApplicationCore.Entities
 
 		public string Content { get; set; }
 
+		public bool Reviewed { get; set; }
+
 		public bool Removed { get; set; }
 
 		public bool Down { get; set; }

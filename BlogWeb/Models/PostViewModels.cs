@@ -5,6 +5,8 @@ using Blog.Models;
 using ApplicationCore.Helpers;
 using System.ComponentModel.DataAnnotations;
 
+using ApplicationCore.Views;
+
 namespace BlogWeb.Models
 {
 	
@@ -33,6 +35,8 @@ namespace BlogWeb.Models
 
 		public string date { get; set; }
 
+		public bool reviewed { get; set; }
+
 
 		public DateTime createdAt { get; set; }
 
@@ -40,9 +44,13 @@ namespace BlogWeb.Models
 
 		public string url { get; set; }
 
+		public int clickCount { get; set; }  
+
 		public MediaViewModel cover { get; set; }
 
 		public List<MediaViewModel> medias { get; set; }
+
+		
 
 		public static string GetDefaultSummary(Post post)
 		{
@@ -65,9 +73,8 @@ namespace BlogWeb.Models
 			post.TermNumber = termNumber.Trim();
 
 			post.Author = author;
-
+			post.Reviewed = reviewed;
 			post.Number = number;
-
 
 			post.Date = date.ToDatetimeOrDefault(DateTime.Now);
 
@@ -91,7 +98,11 @@ namespace BlogWeb.Models
 
 	public class PostEditForm
 	{
+		public int canReview { get; set; }
+
 		public PostViewModel post { get; set; }
+
+		public List<BaseOption> categoryOptions { get; set; }
 	}
 
 
