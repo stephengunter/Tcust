@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Blog.Models;
 using Blog.Services;
 using ApplicationCore.Helpers;
-using BlogWeb.Models;
+using Blog.Views;
 using ApplicationCore.Paging;
 
 using Microsoft.AspNetCore.Http;
@@ -32,12 +32,16 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 			this.attachmentService = attachmentService;
 		}
+		[HttpGet("[area]/[controller]/{id}")]
+		public ActionResult test(int id)
+		{
+			return Content(id.ToString());
+		}
 		
 
 		[HttpPost("[area]/[controller]")]
 		public async Task<IActionResult> Store(UploadForm form)
 		{
-
 			foreach (var file in form.files)
 			{
 				if (file.Length > 0)
@@ -127,10 +131,8 @@ namespace BlogWeb.Areas.Admin.Controllers
 			return entity;
 		}
 
-		private void test()
-		{
-
-		}
+		
+	
 		//截取影片預覽圖
 		public void SaveVideoImage(string videoPath , string imgPath)
 		{

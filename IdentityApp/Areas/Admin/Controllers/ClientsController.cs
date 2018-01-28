@@ -154,8 +154,9 @@ namespace IdentityApp.Areas.Admin.Controllers
 			string secret = model.client.secret;
 			string redirectUri = model.client.redirectUri;
 			string postLogoutRedirectUri = model.client.postLogoutRedirectUri;
+			string frontChannelLogoutUri = model.client.frontChannelLogoutUri;
 
-			await identityConfigService.UpdateClientAsync(client, clientId, title, secret, redirectUri, postLogoutRedirectUri);
+			await identityConfigService.UpdateClientAsync(client, clientId, title, secret, redirectUri, postLogoutRedirectUri, frontChannelLogoutUri);
 
 			return new NoContentResult();
 

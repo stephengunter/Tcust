@@ -1,0 +1,222 @@
+﻿
+@{
+	ViewData["Title"] = "榮譽榜";
+}
+
+
+
+
+@section styles{
+	<link href="~/css/reset.css" rel="stylesheet" />
+	<link href="~/css/tzuchi.css" rel="stylesheet" />
+
+
+
+
+	<style type="text/css">
+		#keyDiv1 {
+			position: absolute;
+			width: 308px;
+			height: 52px;
+			z-index: 99;
+			left: 1565px;
+			top: 25px;
+		}
+
+		.rightbox {
+			float: left;
+			display: block;
+			width: 50px;
+			height: 1080px;
+			padding: 0px 50px 0px 0px;
+			margin: 0px 0px 0px 0px;
+		}
+
+		.btnIcon a {
+			float: left;
+			display: block;
+			cursor: pointer;
+			width: 200px;
+			height: 250px;
+			background-image: url(../../images/inform/btn3.png);
+			background-position: 0px 0px;
+			position: relative;
+			margin: 720px 0px 0px 200px;
+			padding: 0px 0px 0px 0px;
+		}
+
+
+		.arrowL {
+			position: absolute;
+			left: 100px;
+			top: 100px;
+			z-index: 999;
+		}
+
+		.arrowR {
+			position: absolute;
+			margin: 0px 0px 0px 0px;
+			width: 50px;
+			height: 50px;
+			left: 1000px;
+			top: 100px;
+			z-index: 32767;
+		}
+
+		.NewImg {
+			background-color: white;
+		}
+	</style>
+
+
+	<style id="detailStyles" type="text/css">
+		.draggable {
+			width: 423px !important;
+		}
+
+		.inTxt2 {
+			font-size: 22px;
+			line-height: 35px;
+		}
+	</style>
+}
+
+
+<honor-search v-show="!details_model" :init_keyword="keyword" v-on:loaded="fetchData"
+			  v-on:selected="onSelected" v-on:back="onBack">
+
+</honor-search>
+
+<honor-details v-if="details_model" :year="details_model.year" :id="details_model.id" :posts="details_model.posts"
+			   v-on:cancel="backToIndex">
+
+</honor-details>
+
+@section scripts{
+
+
+	<script src="~/lib/slick_old/slick_v_HonorList.js"></script>
+
+	<script>
+
+
+		new Vue({
+			el: '#app',
+			data() {
+				return {
+
+					keyword: '',
+					honorsModels: [],
+					famerModel: null,
+
+					details_model: null,
+
+					index_url:'@Url.Action("Honors", "Posts", new { Area = "Expo" })'
+
+				}
+			},
+			beforeMount() {
+
+				this.keyword ='@Html.Raw(ViewData["keyword"])';
+			},
+			methods: {
+				fetchData() {
+
+					let fetchFamers = Api.getFamerList();
+					let fetchHonors = Api.getHonorList();
+					Promise.all([fetchFamers, fetchHonors]).then(values => {
+						this.famerModel = { ...values[0] };
+						this.honorsModels = values[1].slice();
+
+
+					});
+				},
+				onSelected(id) {
+
+					let isFamer = this.isPostInFamers(id);
+					isFamer.then((result) => {
+						if (result) {
+							this.details_model = {
+								year: 3000,
+								id: id,
+								posts: this.famerModel.viewList.slice()
+
+							};
+
+						} else {
+							let findYearIndex = this.findHonorYearIndex(id);
+							findYearIndex.then((index) => {
+								let model = this.honorsModels[index];
+								this.details_model = {
+									year: model.year,
+									id: id,
+									posts: model.posts.slice()
+
+								};
+
+							})
+
+
+						}
+
+					})
+
+				},
+				isPostInFamers(id) {
+					return new Promise((resolve, reject) => {
+						let index = this.famerModel.viewList.findIndex(item => {
+							return item.id == id;
+						});
+
+						resolve(index >= 0);
+
+					})
+
+
+				},
+				findHonorYearIndex(id) {
+					return new Promise((resolve, reject) => {
+						for (let i = 0; i < this.honorsModels.length; i++) {
+							let index = this.honorsModels[i].posts.findIndex(item => {
+								return item.id == id;
+							});
+
+							if (index >= 0) {
+
+								resolve(index);
+								return
+							}
+
+						}
+					})
+
+
+				},
+				backToIndex() {
+					this.details_model = null;
+
+				},
+				onBack() {
+
+					window.location = this.index_url;
+				}
+
+			}
+
+		});
+
+
+
+	</script>
+
+
+}
+
+
+
+
+
+
+
+
+

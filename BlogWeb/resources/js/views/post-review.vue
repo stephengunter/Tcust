@@ -23,7 +23,8 @@
 
          <hr/>
 
-         <post-table ref="postTable" :model="model" @edit="onEdit" @remove="onDelete" @check-changed="onCheckChanged">
+         <post-table ref="postTable" :model="model" :can_check="true"
+						@edit="onEdit"	 @remove="onDelete" @check-changed="onCheckChanged">
           
 			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"

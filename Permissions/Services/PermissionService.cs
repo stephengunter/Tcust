@@ -95,10 +95,11 @@ namespace Permissions.Services
 		public async Task<List<PermissionOption>> GetPermissionOptionsAsync(bool edit, bool isDev=false)
 		{
 			var permissions = await permissionRepository.ListAllAsync();
-			
+			permissions = permissions.OrderByDescending(p => p.Order).ToList();
+
 			if (edit)
 			{
-				if (!isDev) permissions = permissions.Where(p => p.AdminOnly).ToList();  
+				if (!isDev) permissions = permissions.Where(p => !p.AdminOnly).ToList();  
 			}
 
 			var options = new List<PermissionOption>();
@@ -127,7 +128,7 @@ namespace Permissions.Services
 			var permissionIds =await GetPermissionIdsInUser(user);
 
 			var filter = new PermissionFilterSpecification(permissionIds);
-			return  permissionRepository.List(filter);
+			return  permissionRepository.List(filter).OrderByDescending(p=>p.Order);
 			
 		}
 		public async Task DeleteAppUserAsync(int id)

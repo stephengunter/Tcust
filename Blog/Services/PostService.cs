@@ -15,12 +15,15 @@ namespace Blog.Services
 	{
 		Task<Post> CreateAsync(Post post);
 		Task UpdateAsync(Post post, List<int> categoryIds);
+
+		Task UpdateAsync(Post post);
+
 		Task DeleteAsync(int id, string updatedBy);
 
 		Post GetById(int id);
 		IEnumerable<Post> ListByIds(IList<int> ids);
 
-		Task<IEnumerable<Post>> FetchPosts(Category category = null, string keyword = "");
+		Task<IEnumerable<Post>> FetchPosts(Category category = null, bool reviewed = true, string keyword = "");
 
 		Task ReviewPosts(IList<int> ids);
 
@@ -42,6 +45,7 @@ namespace Blog.Services
 
 		Task<IEnumerable<Category>> GetCategoriesAsync(bool excludeDefault = false);
 		Task<Category> GetCategoryByIdAsync(int id, bool returnDefault = false);
+		Category GetCategoryByCode(string code);
 		Task<IList<int>> GetCategoryIdsAsync(int postId);
 		Task<IEnumerable<Category>> GetPostCategoriesAsync(Post post);
 
@@ -75,7 +79,7 @@ namespace Blog.Services
 
 		}
 
-		public async Task<IEnumerable<Post>> FetchPosts(Category category = null, string keyword = "")
+		public async Task<IEnumerable<Post>> FetchPosts(Category category = null, bool reviewed = true, string keyword = "")
 		{
 			Task<IEnumerable<Post>> getPostsTask;
 			if (String.IsNullOrEmpty(keyword))
@@ -91,12 +95,12 @@ namespace Blog.Services
 
 			if (category!=null)
 			{
-				var idsInCategory = await GetPostIdsInCategory(category); 
-				return posts.Where(p => idsInCategory.Contains(p.Id));
+				var idsInCategory = await GetPostIdsInCategory(category);
+				posts = posts.Where(p => idsInCategory.Contains(p.Id));
 
 			}
 
-			return posts;
+			return posts.Where(p=>p.Reviewed== reviewed);
 
 
 
@@ -166,6 +170,11 @@ namespace Blog.Services
 			await SyncPostCategories(post, categoryIds);
 
 		}
+		public async Task UpdateAsync(Post post)
+		{
+			await postRepository.UpdateAsync(post);
+
+		}
 
 		public async Task ReviewPosts(IList<int> ids)
 		{
@@ -202,7 +211,8 @@ namespace Blog.Services
 		public List<PostClickModel> GroupPostByClicksInPeriod(DateTime begin , DateTime end, bool desc = true )
 		{
 			
-			var result = clickRepository.DbSet.Where(c=>c.DateTime.Date >= begin.Date && c.DateTime.Date <= end.Date)
+			var result = clickRepository.DbSet.Where(c => !c.Post.Removed)
+								.Where(c=>c.DateTime.Date >= begin.Date && c.DateTime.Date <= end.Date)
 								.GroupBy(p => new { PostId = p.PostId })
 								.Select(d => new { postId = d.Key.PostId, count = d.Count() });
 
@@ -217,8 +227,9 @@ namespace Blog.Services
 		}
 		public List<PostClickModel> GroupPostByClicks(bool desc=true)
 		{
-			var result = clickRepository.DbSet.GroupBy(p => new { PostId = p.PostId })
-								.Select(d => new { postId = d.Key.PostId, count = d.Count() });
+			var result = clickRepository.DbSet.Where(c=>!c.Post.Removed)
+												.GroupBy(p => new { PostId = p.PostId })
+												.Select(d => new { postId = d.Key.PostId, count = d.Count() });
 								
 
 			if(desc) result= result.OrderByDescending(g => g.count);
@@ -236,7 +247,7 @@ namespace Blog.Services
 
 		public async Task<IEnumerable<Category>> GetCategoriesAsync(bool excludeDefault=false)
 		{
-			var filter = new CategoryFilterSpecification();
+			var filter = new BaseCategoryFilterSpecification();
 			var categories= await categoryRepository.ListAsync(filter);
 
 			if (excludeDefault) categories = categories.Where(c => c.Code != "diary").ToList();
@@ -252,8 +263,15 @@ namespace Blog.Services
 			if (!returnDefault) return category;
 
 			var  categories = await GetCategoriesAsync();
-			return categories.FirstOrDefault();
+			return categories.OrderByDescending(c=>c.Order).FirstOrDefault();
 		}
+
+		public Category GetCategoryByCode(string code)
+		{
+			var filter =  new CategoryFilterSpecification(code);
+			return  categoryRepository.GetSingleBySpec(filter);
+		}
+
 
 		public async Task<IList<int>> GetCategoryIdsAsync(int postId)
 		{
@@ -262,6 +280,7 @@ namespace Blog.Services
 			return await GetCategoryIdsInPost(post);
 		}
 
+		
 		public async Task<IEnumerable<Category>> GetPostCategoriesAsync(Post post)
 		{
 			var categoryIds= await GetCategoryIdsInPost(post);

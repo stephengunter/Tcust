@@ -22,6 +22,7 @@ using Permissions.DAL;
 using ApplicationCore.Helpers;
 using BlogWeb.Authorization;
 using Permissions.Services;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace BlogWeb
 {
@@ -41,6 +42,7 @@ namespace BlogWeb
 			
 
 			services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
 
 			JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -183,6 +185,8 @@ namespace BlogWeb
 					name: "default",
 					template: "{controller=Posts}/{action=Index}/{id?}");
 			});
+
+			
 
 
 

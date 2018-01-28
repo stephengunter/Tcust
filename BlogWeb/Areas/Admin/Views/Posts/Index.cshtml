@@ -1,4 +1,4 @@
-﻿<post-admin :init_model="model" :categories="categories"></post-admin>
+﻿<post-admin :init_model="model" :can_delete="can_delete" :categories="categories"></post-admin>
 
 
 
@@ -11,11 +11,15 @@
 			data() {
 				return {
 					model: {},
+					can_delete:0,
 					categories: []
 				}
 			},
 			beforeMount() {
 				this.model =@Html.Raw(ViewData["list"]);
+
+				let can_delete=@Html.Raw(ViewData["can_delete"]);
+				this.can_delete = Helper.isTrue(can_delete);
 
 				let categoryList =@Html.Raw(ViewData["categories"]);
 				this.categories = categoryList;
@@ -27,7 +31,7 @@
 		});
 
 
-		
+
 	</script>
 
 }

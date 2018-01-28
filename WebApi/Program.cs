@@ -15,36 +15,16 @@ namespace WebApi
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
+		public static void Main(string[] args)
+		{
 			var host = BuildWebHost(args);
 
-			//SeedData(host);
+			TcustContextSeed.SeedData(host.Services);
 
 			host.Run();
-
-			
-        }
-
-		static void SeedData(IWebHost host)
-		{
-			using (var scope = host.Services.CreateScope())
-			{
-				var services = scope.ServiceProvider;
-
-				var blogContext = services.GetRequiredService<BlogContext>();
-				//BlogContextSeed.Seed(blogContext);
-			}
-
-
-			using (var scope = host.Services.CreateScope())
-			{
-				var services = scope.ServiceProvider;
-
-				var tcustContext = services.GetRequiredService<TcustContext>();
-				TcustContextSeed.Seed(tcustContext);
-			}
 		}
+
+		
 
 		public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)

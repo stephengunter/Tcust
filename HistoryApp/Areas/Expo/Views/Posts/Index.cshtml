@@ -1,0 +1,41 @@
+﻿@{
+	ViewData["Title"] = "資訊查詢";
+}
+
+
+@section styles{
+
+	<link rel="stylesheet" href="~/css/reset_inform.css" />
+	<link rel="stylesheet" href="~/css/tzuchi_inform.css" />
+
+	<style type="text/css">
+		body {
+			-moz-user-select: none;
+			-webkit-user-select: none;
+		}
+	</style>
+
+	
+
+}
+
+<div class="wbox">
+	<div class="leftbox" style="width:320px;">
+		<img src="/images/inform/title_s.png">
+	</div>
+
+	<div class="btnIcon4">
+		<a href="@Url.Action("News", "Posts", new { Area = "Expo" })"></a>
+	</div>
+	<div class="btnIcon3">
+		<a href="http://203.64.34.2:8088/ClassBook/GetClassBookList"></a></div>
+	<div class="btnIcon2">
+		<a href="http://203.64.34.2:8088/SchoolMap/SchoolMapList"></a>
+	</div>
+	<div class="btnIcon1">
+		<a href="@Url.Action("Diaries", "Posts", new { Area = "Expo" })"></a>
+	</div>
+
+</div>
+
+

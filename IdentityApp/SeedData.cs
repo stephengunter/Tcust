@@ -23,6 +23,8 @@ namespace IdentityApp
 			{
 				scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
 
+				scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
+
 				var context = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
 				
 				context.Database.Migrate();
@@ -119,43 +121,54 @@ namespace IdentityApp
 
 		private static async Task SeedUsers(UserManager<ApplicationUser> userManager)
 		{
-			string email = "traders.com.tw@gmail.com";			
+			string username = "ss355";
+			string fullname = "何金水";
 			string role = "Dev";
 			string password = "secret";
 
-			await CreateUserIfNotExist(userManager, email, role, password);
+			await CreateUserIfNotExist(userManager, username, fullname, role, password);
 
-			
 
-			email = "secac11@tcust.edu.tw";
+
+			username = "ss123";
+			fullname = "何金銀";
 			role = "Staff";
-			password = "secac11@tcust.edu.tw";
+		
 
-			await CreateUserIfNotExist(userManager, email, role, password);
+			await CreateUserIfNotExist(userManager, username, fullname, role, password);
+
+			username = "ss888";
+			fullname = "高小琴";
+			role = "Student";
+		
+
+			await CreateUserIfNotExist(userManager, username, fullname, role, password);
 
 		}
 
 
-		private static async Task CreateUserIfNotExist(UserManager<ApplicationUser> userManager, string email, string role, string password)
+		private static async Task CreateUserIfNotExist(UserManager<ApplicationUser> userManager, string username, string fullname, string role, string password)
 		{
-			var user = await userManager.FindByEmailAsync(email);
+
+			var user = await userManager.FindByNameAsync(username);
 			if (user == null)
 			{
+				
 				var newUser = new ApplicationUser
 				{
-					UserName = email,
-					Email = email,
+					UserName = username,
+					Email = String.Format("{0}@tcust.edu.tw", username),
 
 					CreatedAt = DateTime.Now,
 					LastUpdated = DateTime.Now,
 					SecurityStamp = Guid.NewGuid().ToString(),
-					UpdatedBy = email,
 
+					
 					Profile = new Profile
 					{
-						Fullname="何金水",
+						Fullname= fullname,
 						CreatedAt = DateTime.Now,
-						DOB = new DateTime(1979,1,1),
+						DOB = new DateTime(1980,1,1),
 						LastUpdated= DateTime.Now,
 						Gender=true,
 						  

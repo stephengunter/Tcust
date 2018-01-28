@@ -10,7 +10,16 @@ namespace Tcust.DAL
 	{
 		public TcustContext(DbContextOptions<TcustContext> options) : base(options)
 		{
+
 		}
+
+		public TcustContext(string connectionString):base(new DbContextOptionsBuilder<TcustContext>().UseSqlServer(connectionString).Options)
+		{
+
+		}
+
+		public DbSet<TermYear> TermYears { get; set; }
+		public DbSet<Term> Terms { get; set; }
 
 		public DbSet<CountryArea> CountryAreas { get; set; }
 		public DbSet<Department> Departments { get; set; }

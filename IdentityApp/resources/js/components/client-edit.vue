@@ -62,7 +62,14 @@
 				
 				</div>
          </div>
-        
+         <div class="form-group">
+				<label class="col-md-2 control-label">FrontChannelLogoutUri</label>
+				<div class="col-md-10">
+					<input name="client.frontChannelLogoutUri" v-model="form.client.frontChannelLogoutUri" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('client.frontChannelLogoutUri')" v-text="form.errors.get('client.frontChannelLogoutUri')"></small>
+				
+				</div>
+         </div>
 			<div class="form-group">
 				<label class="col-md-2 control-label"></label>
 				

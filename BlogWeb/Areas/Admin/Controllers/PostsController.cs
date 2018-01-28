@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Blog.Models;
 using Blog.Services;
 using ApplicationCore.Helpers;
-using BlogWeb.Models;
+using Blog.Views;
 using ApplicationCore.Paging;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
-using BlogWeb.Helpers;
+using Blog.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using ApplicationCore.Views;
 using Permissions.Services;
@@ -19,7 +19,7 @@ using Permissions.Services;
 namespace BlogWeb.Areas.Admin.Controllers
 {
 	[Authorize(Policy = "EDIT_POSTS")]
-	public class PostsController: BaseAdminController
+	public class PostsController : BaseAdminController
 	{
 		private readonly IPostService postService;
 		private readonly ViewService viewService;
@@ -34,25 +34,36 @@ namespace BlogWeb.Areas.Admin.Controllers
 			this.viewService = new ViewService(this.Settings, this.postService); 
 		}
 
-		
+		public IActionResult test()
+		{
+			return View();
+		}
 
-		
+
+
 		[HttpGet]
-		public async Task<IActionResult> Index(int category=0 ,string keyword="" ,int page = 1, int pageSize=10 )
+		public async Task<IActionResult> Index(int category=0 , bool reviewed=true , string terms="" ,string keyword="" ,int page = 1, int pageSize=10 )
 		{
 			Category selectedCategory = null;
 			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
 			if (selectedCategory == null) category = 0;
 
-			var posts = await postService.FetchPosts(selectedCategory, keyword);
+			var posts = await postService.FetchPosts(selectedCategory, reviewed, keyword);
 
-			posts = posts.Where(p=>p.Reviewed)
-					     .OrderByDescending(p=>p.Date).ThenByDescending(p=>p.LastUpdated);
+			if (!String.IsNullOrEmpty(terms))
+			{
+				var termNumbers= terms.Split(',').ToList().Select(int.Parse).ToList();
+				posts = posts.Where(p => termNumbers.Contains(p.TermNumber));
+			}
+
+
+
+			posts = viewService.OrderPosts(posts);
 
 			bool withCategories = true;
 			var pageList = await viewService.GetPostPagedList(posts, page, pageSize, withCategories);
-			
 
+			
 			if (Request.IsAjaxRequest())
 			{
 				return new ObjectResult(pageList);
@@ -62,12 +73,16 @@ namespace BlogWeb.Areas.Admin.Controllers
 			var categoryOptions = await GetCategoryOptions(edit);
 
 			ViewData["categories"] = this.ToJsonString(categoryOptions);
-			
+
 
 			ViewData["list"]= this.ToJsonString(pageList);
 
+			ViewData["can_delete"] = CanReviewPost().ToInt();
+
 			return View();
 		}
+
+		
 
 		[HttpGet]
 		public async Task<IActionResult> Create()
@@ -75,7 +90,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			bool canReviewPost = CanReviewPost();
 			var post = new PostViewModel()
 			{
-				termNumber = DefaultTermNumber(),
+				//termNumber = DefaultTermNumber(),
 				reviewed= canReviewPost
 			};
 
@@ -193,12 +208,13 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		}
 
-		
 
 
+		[Authorize(Policy = "REVIEW_POSTS")]
 		[HttpDelete]
 		public async Task<IActionResult> Delete(int id)
 		{
+			
 			await postService.DeleteAsync(id, CurrentUserId);
 
 			return new NoContentResult();

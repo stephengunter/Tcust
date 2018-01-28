@@ -98,9 +98,15 @@ namespace IdentityApp.Controllers
             if (ModelState.IsValid)
             {
 				bool rememberMe = false;
+				var existUser =await  _userManager.FindByEmailAsync(model.Email);
+				if (existUser == null)
+				{
+					ModelState.AddModelError(string.Empty, "登入失敗.");
+					return View(model);
+				}
 				// This doesn't count login failures towards account lockout
 				// To enable password failures to trigger account lockout, set lockoutOnFailure: true
-				var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, rememberMe, lockoutOnFailure: false);
+				var result = await _signInManager.PasswordSignInAsync(existUser.UserName, model.Password, rememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");

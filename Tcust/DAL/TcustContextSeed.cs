@@ -1,4 +1,6 @@
 ﻿using ApplicationCore.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,17 +11,98 @@ namespace Tcust.DAL
 {
 	public class TcustContextSeed
 	{
-		public static void Seed(TcustContext context)
+		public static void SeedData(IServiceProvider serviceProvider)
 		{
-			//seedCountries(context);
-			//seedPartitions(context);
-			//setTaiwanAreas(context);
+			using (var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
+			{
+				var context = scope.ServiceProvider.GetRequiredService<TcustContext>();
+				context.Database.Migrate();
 
-			//seedPartners(context);
 
-			//seedTypes(context);
+				SeedTermYears(context);
+				SeedTerms(context);
 
-			//seedDepartments(context);
+				//seedCountries(context);
+				//seedPartitions(context);
+				//setTaiwanAreas(context);
+
+				//seedPartners(context);
+
+				//seedTypes(context);
+
+				//seedDepartments(context);
+			}
+
+
+
+		}
+		
+		static void SeedTermYears(TcustContext context)
+		{
+			var before = new TermYear
+			{
+				Year = 77,
+				Active = false,
+				Title = "籌備階段"
+			};
+			CreateTermYear(before, context);
+
+			for (int year = 78; year <= 106; year++)
+			{
+				var item = new TermYear
+				{
+					Year = year,
+					Active = false,
+					Title = String.Format("{0}學年度",year) 
+				};
+
+				CreateTermYear(item, context);
+			}
+		}
+		static void CreateTermYear(TermYear termYear, TcustContext context)
+		{
+			var exist = context.TermYears.Where(c => c.Year == termYear.Year).FirstOrDefault();
+			if (exist == null)
+			{
+				context.TermYears.Add(termYear);
+				context.SaveChanges();
+			}
+		}
+
+
+		static void SeedTerms(TcustContext context)
+		{
+			for (int year = 78; year <= 106; year++)
+			{
+				var first = new Term
+				{
+					Number = Convert.ToInt16(String.Format("{0}{1}", year, "1")),
+					Active = false,
+					Title = "第一學期"
+				};
+				CreateTerm(first, context);
+
+				var second = new Term
+				{
+					Number = Convert.ToInt16(String.Format("{0}{1}", year,"2")),
+					Active = false,
+					Title = "第二學期"
+				};
+
+				CreateTerm(second, context);
+			}
+			
+		}
+		static void CreateTerm(Term term, TcustContext context)
+		{
+			var exist = context.Terms.Where(c => c.Number == term.Number).FirstOrDefault();
+			if (exist == null)
+			{
+
+				term.TermYearId = context.TermYears.Where(c => c.Year == term.Year).FirstOrDefault().Id;
+				context.Terms.Add(term);
+				context.SaveChanges();
+			}
 		}
 		static void seedCountries(TcustContext context)
 		{

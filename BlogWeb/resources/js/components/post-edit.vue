@@ -76,6 +76,13 @@
 					<datetime-picker :date="form.post.date" @selected="setDate"></datetime-picker>
 				</div>
          </div>
+			<div v-if="canReview" class="form-group">
+				<label class="col-md-2 control-label">置頂文章</label>
+				<div class="col-md-10">
+					<input type="hidden" v-model="form.post.top"  >
+               <toggle :items="topOptions"   :default_val="form.post.top" @selected="setTop"></toggle>
+				</div>
+         </div>
 			<div class="form-group">
 				<label class="col-md-2 control-label">圖片/影片</label>
 				<div class="col-md-10">
@@ -141,6 +148,8 @@ export default {
 			canReview:0,
 
 			categoryOptions:[],
+
+			topOptions:Post.topOptions(),
 
 			reviewedOptions:Post.reviewedOptions(),
 
@@ -224,6 +233,9 @@ export default {
 		},
 		setReviewed(val) {
          this.form.post.reviewed = val;
+		},
+		setTop(val) {
+         this.form.post.top = val;
       },
 		setContent(val){
 			this.form.post.content=val;
@@ -268,6 +280,7 @@ export default {
 			
 		},
 		submitMedias(){
+			
 			let save=this.$refs.mediaEdit.submit();	
 			save.then(result => {
 					this.submitting=false;

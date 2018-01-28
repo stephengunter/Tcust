@@ -11,7 +11,7 @@ namespace Permissions.Models
 	{
 		public string Name { get; set; }
 		public string Title { get; set; }
-
+		public int Order { get; set; }
 		public bool AdminOnly { get; set; }
 
 

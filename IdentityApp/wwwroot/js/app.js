@@ -33446,6 +33446,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
    name: 'ClientTable',
@@ -33493,7 +33494,7 @@ var render = function() {
                 _vm._v(" "),
                 _c("td", [_vm._v(_vm._s(client.postLogoutRedirectUri))]),
                 _vm._v(" "),
-                _c("td"),
+                _c("td", [_vm._v(_vm._s(client.frontChannelLogoutUri))]),
                 _vm._v(" "),
                 _c("td", [
                   _c(
@@ -33539,8 +33540,12 @@ var staticRenderFns = [
         _vm._v(" "),
         _c("th", { staticStyle: { width: "20%" } }, [_vm._v("RedirectUri")]),
         _vm._v(" "),
-        _c("th", { staticStyle: { width: "25%" } }, [
+        _c("th", { staticStyle: { width: "20%" } }, [
           _vm._v("PostRedirectUri")
+        ]),
+        _vm._v(" "),
+        _c("th", { staticStyle: { width: "20%" } }, [
+          _vm._v("FrontChannelLogoutUri")
         ]),
         _vm._v(" "),
         _c("th", { staticStyle: { width: "10%" } })
@@ -33612,6 +33617,13 @@ module.exports = Component.exports
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -34073,6 +34085,51 @@ var render = function() {
                       domProps: {
                         textContent: _vm._s(
                           _vm.form.errors.get("client.postLogoutRedirectUri")
+                        )
+                      }
+                    })
+                  : _vm._e()
+              ])
+            ]),
+            _vm._v(" "),
+            _c("div", { staticClass: "form-group" }, [
+              _c("label", { staticClass: "col-md-2 control-label" }, [
+                _vm._v("FrontChannelLogoutUri")
+              ]),
+              _vm._v(" "),
+              _c("div", { staticClass: "col-md-10" }, [
+                _c("input", {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.form.client.frontChannelLogoutUri,
+                      expression: "form.client.frontChannelLogoutUri"
+                    }
+                  ],
+                  staticClass: "form-control",
+                  attrs: { name: "client.frontChannelLogoutUri" },
+                  domProps: { value: _vm.form.client.frontChannelLogoutUri },
+                  on: {
+                    input: function($event) {
+                      if ($event.target.composing) {
+                        return
+                      }
+                      _vm.$set(
+                        _vm.form.client,
+                        "frontChannelLogoutUri",
+                        $event.target.value
+                      )
+                    }
+                  }
+                }),
+                _vm._v(" "),
+                _vm.form.errors.has("client.frontChannelLogoutUri")
+                  ? _c("small", {
+                      staticClass: "text-danger",
+                      domProps: {
+                        textContent: _vm._s(
+                          _vm.form.errors.get("client.frontChannelLogoutUri")
                         )
                       }
                     })

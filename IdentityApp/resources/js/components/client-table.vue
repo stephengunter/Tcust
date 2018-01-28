@@ -7,7 +7,8 @@
                   <th style="width:15%">名稱</th>
                   <th style="width:15%">ClientId</th>
                   <th style="width:20%">RedirectUri</th>
-                  <th style="width:25%">PostRedirectUri</th>
+                  <th style="width:20%">PostRedirectUri</th>
+                  <th style="width:20%">FrontChannelLogoutUri</th>
                   <th style="width:10%"></th>
                </tr>
             </thead>
@@ -18,7 +19,7 @@
                   <td>{{ client.clientId }}</td>
                   <td>{{ client.redirectUri }}</td>
                   <td>{{ client.postLogoutRedirectUri }}</td>
-                  <td></td>
+                  <td>{{ client.frontChannelLogoutUri }}</td>
                   <td>
                      <button class="btn btn-sm btn-primary" @click.prevent="edit(client.id)">
                         <i class="fa fa-pencil" aria-hidden="true"></i>

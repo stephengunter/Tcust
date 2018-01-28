@@ -15,6 +15,7 @@ namespace IdentityApp.Areas.Admin.Helper
 			model.title = client.ClientName;
 			model.clientId = client.ClientId;
 			model.uri = client.ClientUri;
+			model.frontChannelLogoutUri = client.FrontChannelLogoutUri;
 
 			if (!client.RedirectUris.IsNullOrEmpty())
 			{

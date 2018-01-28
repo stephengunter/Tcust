@@ -5,6 +5,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\uploads\**" />
+    <Content Remove="wwwroot\uploads\**" />
+    <EmbeddedResource Remove="wwwroot\uploads\**" />
+    <None Remove="wwwroot\uploads\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Helpers\ViewService.cs" />
+    <Compile Remove="Models\MediaViewModels.cs" />
+    <Compile Remove="Models\MenuItem.cs" />
+    <Compile Remove="Models\PostViewModels.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CoreCompat.System.Drawing" Version="1.0.0-beta006" />
     <PackageReference Include="CsvHelper" Version="6.1.0" />
     <PackageReference Include="IdentityModel" Version="3.0.0" />
@@ -30,11 +44,11 @@
   <ItemGroup>
     <Folder Include="Areas\Admin\Helper\" />
     <Folder Include="Areas\Admin\Models\" />
+    <Folder Include="Models\" />
     <Folder Include="resources\" />
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\js\" />
     <Folder Include="wwwroot\libs\" />
-    <Folder Include="wwwroot\uploads\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JSONSchema="http://json.schemastore.org/chrome-manifest" /></VisualStudio></ProjectExtensions>

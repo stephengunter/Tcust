@@ -1,0 +1,92 @@
+﻿
+@{
+	ViewData["Title"] = "榮譽榜";
+}
+
+
+
+
+@section styles{
+	<link href="~/css/reset.css" rel="stylesheet" />
+	<link href="~/css/tzuchi.css" rel="stylesheet" />
+
+
+	<style type="text/css">
+		.picWhite {
+			margin: 893px 0 0 0;
+			position: absolute;
+		}
+
+		.slick-dots {
+			margin-top: -50px;
+			position: initial;
+		}
+
+		.slick-dots li button {
+			color: #ffffff;
+			text-shadow: 0px 0px 16px #666666;
+			line-height: 20px;
+		}
+
+		.slick-dots li button:before {
+			color: white;
+			font-size: 45px;
+		}
+
+		.slick-dots li.slick-active button:before {
+			color: white;
+			opacity: 0.75;
+		}
+	</style>
+
+
+}
+
+<honor-top v-on:selected="onSelected"></honor-top>
+
+
+
+@section scripts{
+
+	
+
+
+	<script>
+
+
+		new Vue({
+			el: '#app',
+			data() {
+				return {
+
+					
+				}
+			},
+			beforeMount() {
+
+			},
+			methods: {
+				onSelected() {
+					window.location = '@Url.Action("Honors", "Posts", new { Area = "Expo" })';
+				}
+
+
+			}
+
+		});
+
+
+
+	</script>
+
+
+}
+
+
+
+
+
+
+
+
+

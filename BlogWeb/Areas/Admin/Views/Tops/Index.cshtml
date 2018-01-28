@@ -1,0 +1,36 @@
+﻿<top-posts-admin :init_model="model"  :categories="categories"></top-posts-admin>
+
+
+
+@section scripts{
+	<script>
+		$("#linkTops").addClass("active");
+
+		new Vue({
+			el: '#main',
+			data() {
+				return {
+					model: {},
+					categories: []
+				}
+			},
+			beforeMount() {
+				this.model =@Html.Raw(ViewData["list"]);
+
+				let categoryList =@Html.Raw(ViewData["categories"]);
+				this.categories = categoryList;
+			},
+			methods: {
+
+			}
+
+		});
+
+
+
+	</script>
+
+}
+
+
+

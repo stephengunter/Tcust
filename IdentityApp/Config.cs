@@ -71,7 +71,7 @@ namespace IdentityApp
 					// where to redirect to after logout
 					PostLogoutRedirectUris = { "http://localhost:50002/signout-callback-oidc" },
 
-					
+					FrontChannelLogoutUri="http://localhost:50002/account/logout",
 
 					AllowedScopes =
 					{

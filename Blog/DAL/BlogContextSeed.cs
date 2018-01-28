@@ -17,7 +17,12 @@ namespace Blog.DAL
 		{
 			using (var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
 			{
+				scope.ServiceProvider.GetRequiredService<PermissionContext>().Database.Migrate();
+
 				var context = scope.ServiceProvider.GetRequiredService<BlogContext>();
+				context.Database.Migrate();
+				
+
 				SeedCategories(context);
 
 				var permissionContext = scope.ServiceProvider.GetRequiredService<PermissionContext>();
@@ -29,6 +34,7 @@ namespace Blog.DAL
 		
 
 		}
+		
 
 		static void SeedCategories(BlogContext context)
 		{
@@ -40,21 +46,28 @@ namespace Blog.DAL
 					Active = true,
 					Name = "榮譽榜",
 					Code = "honor",
-					Order = 3
+					Order = 7
 				},
 				new  Category
 				{
 					Active = true,
 					Name = "校園日誌",
 					Code = "diary",
-					Order = 5
+					Order = 9
 				},
 				new  Category
 				{
 					Active = true,
 					Name = "傑出校友",
 					Code = "famer",
-					Order = 1
+					Order = 5
+				},
+				new  Category
+				{
+					Active = true,
+					Name = "大愛新聞",
+					Code = "da-ai",
+					Order = 3
 				},
 			};
 
@@ -80,25 +93,29 @@ namespace Blog.DAL
 		{
 			var permissions = new List<Permission>
 			{
-
 				new  Permission
 				{
-					Name = "EDIT_POSTS",
-					Title = "編輯文章",
-					AdminOnly=false
+					Name = "MANAGE_USERS",
+					Title = "使用者管理",
+					AdminOnly=true,
+					Order=88
 				},
 				new  Permission
 				{
 					Name = "REVIEW_POSTS",
 					Title = "文章審核",
-					AdminOnly=false
+					AdminOnly=false,
+					Order=66
 				},
+
 				new  Permission
 				{
-					Name = "MANAGE_USERS",
-					Title = "使用者管理",
-					AdminOnly=true
-				}
+					Name = "EDIT_POSTS",
+					Title = "編輯文章",
+					AdminOnly=false,
+					Order=22
+				},
+				
 
 			};
 

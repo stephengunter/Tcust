@@ -6,16 +6,28 @@ using System.Text;
 
 namespace Blog.Specifications
 {
-    public class CategoryFilterSpecification : BaseSpecification<Category>
+	public class BaseCategoryFilterSpecification : BaseSpecification<Category>
 	{
-		public CategoryFilterSpecification() 
+		public BaseCategoryFilterSpecification()
 		{
 			Criteria = c => c.Active;
+
+		}
+	}
+
+
+	public class CategoryFilterSpecification : BaseCategoryFilterSpecification
+	{
+		public CategoryFilterSpecification(string code) 
+		{
+			var compiled = Criteria.Compile();
+			Criteria = c => compiled(c) &&  c.Code==code;
 		}
 
 		public CategoryFilterSpecification(IList<int> ids)
 		{
-			Criteria = c => ids.Contains(c.Id);
+			var compiled = Criteria.Compile();
+			Criteria = c => compiled(c) && ids.Contains(c.Id);
 		}
 	}
 

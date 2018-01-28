@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Blog.Models;
 using Blog.Services;
 using ApplicationCore.Helpers;
-using BlogWeb.Models;
+using Blog.Views;
 using ApplicationCore.Paging;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
-using BlogWeb.Helpers;
+using Blog.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using ApplicationCore.Views;
 using Permissions.Services;
@@ -38,11 +38,11 @@ namespace BlogWeb.Areas.Admin.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
 		{
-			
-			var posts = await postService.FetchPosts();
+			bool reviewed = false;
+			var posts = await postService.FetchPosts(null, reviewed);
 
-			posts = posts.Where(p => !p.Reviewed)
-						 .OrderByDescending(p => p.Date).ThenByDescending(p => p.LastUpdated);
+			posts = viewService.OrderPosts(posts);
+
 
 			bool withCategories = true;
 			var pageList = await viewService.GetPostPagedList(posts, page, pageSize, withCategories);
@@ -64,11 +64,6 @@ namespace BlogWeb.Areas.Admin.Controllers
 			if(model.postIds.IsNullOrEmpty()) return BadRequest();
 
 			await postService.ReviewPosts(model.postIds);
-			foreach (var id in model.postIds)
-			{
-				var post =await postService.GetByIdAsync(id);
-				post.Reviewed = true;
-			}
 
 			return new NoContentResult();
 

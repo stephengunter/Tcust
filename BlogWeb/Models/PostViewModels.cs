@@ -23,7 +23,7 @@ namespace BlogWeb.Models
 		public string title { get; set; }
 
 		[Required(ErrorMessage = "請填寫學年標題")]
-		public string termNumber { get; set; }
+		public int termNumber { get; set; }
 
 		public string number { get; set; }
 		public string author { get; set; }
@@ -72,7 +72,7 @@ namespace BlogWeb.Models
 
 			post.Title = title;
 			post.Content = content;
-			post.TermNumber = termNumber.Trim();
+			post.TermNumber = termNumber;
 
 			post.Author = author;
 			post.Reviewed = reviewed;

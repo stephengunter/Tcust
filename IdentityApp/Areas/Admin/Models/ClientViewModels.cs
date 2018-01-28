@@ -23,6 +23,8 @@ namespace IdentityApp.Areas.Admin.Models
 
 		public string postLogoutRedirectUri { get; set; }
 
+		public string frontChannelLogoutUri { get; set; }
+
 
 
 		public Client MapToEntity()

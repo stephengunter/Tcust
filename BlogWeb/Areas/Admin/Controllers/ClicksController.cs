@@ -8,11 +8,11 @@ using Permissions.Services;
 using Blog.Models;
 using Blog.Services;
 using ApplicationCore.Helpers;
-using BlogWeb.Models;
+using Blog.Views;
 using ApplicationCore.Paging;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
-using BlogWeb.Helpers;
+using Blog.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using ApplicationCore.Views;
 

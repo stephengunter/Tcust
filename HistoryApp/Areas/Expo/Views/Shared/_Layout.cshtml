@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - 慈濟科技大學 校史館</title>
+
+	<link rel="stylesheet" href="~/css/app.css" />
+
+	
+
+    @RenderSection("styles", required: false)
+</head>
+<body>
+	
+	<div id="app">
+
+		@RenderBody()
+
+	</div>
+
+	<footer id="footer" class="container" style="margin-top:1.5em">
+		<p>&copy; 2017 - 慈濟科技大學</p>
+		<alert v-show="showAlert" :show="showAlert" :type="alertSetting.type"
+			   width="400px" placement="top-right" :duration=alertSetting.duration
+			   v-on:closed="closeAlert">
+			<i :class="alertSetting.class" aria-hidden="true"></i>
+			<strong v-text="alertSetting.title"></strong>
+			<p v-text="alertSetting.text"></p>
+		</alert>
+	</footer>
+
+
+	<script src="~/js/app.js"></script>
+
+	<script  src="~/js/imgDragforbidden.js"></script>
+	<script src="~/lib/hammer.js-master/hammer.js"></script>
+	<script src="~/js/jquery.hammer.js"></script>
+	<script src="~/js/modernizr.custom.79639.js"></script>
+
+	@RenderSection("scripts", required: false)
+</body>
+</html>

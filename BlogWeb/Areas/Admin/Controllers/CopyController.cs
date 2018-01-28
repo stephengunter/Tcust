@@ -11,7 +11,7 @@ using Blog.Services;
 using ApplicationCore.Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
-using BlogWeb.Helpers;
+using Blog.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 using CsvHelper;
@@ -20,15 +20,15 @@ using System.Data;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	[Authorize(Policy = "DEV_ONLY")]
-	public class CopyController : BaseAdminController
+	//[Authorize(Policy = "DEV_ONLY")]
+	public class CopyController  : BlogWeb.Controllers.BaseController//BaseAdminController
 	{
 		class PostViewModel
 		{
 
 			public string id { get; set; }
 			public string title { get; set; }
-			public string termNumber { get; set; }
+			public int termNumber { get; set; }
 			public string number { get; set; }
 			public string author { get; set; }
 			public string content { get; set; }
@@ -56,7 +56,10 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 				post.Title = title;
 				post.Content = content;
-				post.TermNumber = termNumber.Trim();
+
+				
+			    post.TermNumber = termNumber;
+
 
 				post.Author = author;
 
@@ -136,8 +139,8 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 		
 
-		public CopyController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService, IPostService postService) 
-			: base(environment, settings, permissionService)
+		public CopyController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPostService postService)//IPermissionService permissionService, ) 
+			: base(environment, settings)//, permissionService)
 		{
 			this.postService = postService;
 			
@@ -167,7 +170,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 			string savePath= Path.Combine(folderPath, fileName);
 
-			System.IO.File.Copy(oleFilePath, savePath);
+			System.IO.File.Copy(oleFilePath, savePath,true);
 
 			return String.Format("{0}/{1}" , folderName, fileName);
 
@@ -232,7 +235,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			{
 
 				var post = model.MapToEntity();
-				
+				post.Reviewed = true;
 
 				if (post.Date.Year == 3000)
 				{

@@ -56,7 +56,17 @@ class Post {
 			 text: '未審核',
 			 value: false
 		}]
-  }
+	}
+	
+	static topOptions() {
+		return [{
+			 text: '是',
+			 value: true
+		}, {
+			 text: '否',
+			 value: false
+		}]
+   }
    
 
    

@@ -26,6 +26,7 @@ namespace Blog.DAL
 
 		
 
+
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 

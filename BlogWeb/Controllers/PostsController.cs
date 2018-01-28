@@ -8,12 +8,12 @@ using Microsoft.AspNetCore.Mvc;
 using Blog.Models;
 using Blog.Services;
 using ApplicationCore.Helpers;
-using BlogWeb.Models;
+using Blog.Views;
 using ApplicationCore.Paging;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
-using BlogWeb.Helpers;
+using Blog.Helpers;
 
 namespace BlogWeb.Controllers
 {
@@ -39,10 +39,8 @@ namespace BlogWeb.Controllers
 			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
 			if (selectedCategory == null) category = 0;
 
-
-			var posts = await postService.FetchPosts(selectedCategory, keyword);
-
-			posts = posts.Where(p => p.Reviewed);
+			bool reviewed = true;
+			var posts = await postService.FetchPosts(selectedCategory, reviewed, keyword);
 						
 
 			if (!Request.IsAjaxRequest())
@@ -106,10 +104,14 @@ namespace BlogWeb.Controllers
 			await postService.AddClick(id);
 
 			bool allMedias = true;
-			var model = new PostEditForm
-			{
-				post = viewService.MapPostViewModel(post, allMedias)
-			};
+			
+			
+
+			var postViewModel = viewService.MapPostViewModel(post, allMedias);
+			postViewModel.clickCount = await postService.GetPostClickCount(post.Id);
+
+			var model = new PostEditForm() {  post= postViewModel  };
+
 
 			var categoryIds = await postService.GetCategoryIdsAsync(id);
 

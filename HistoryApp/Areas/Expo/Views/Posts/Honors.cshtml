@@ -1,0 +1,165 @@
+﻿
+@{
+	ViewData["Title"] = "榮譽榜";
+}
+
+
+
+
+@section styles{
+	<link href="~/css/reset.css" rel="stylesheet" />
+	<link href="~/css/tzuchi.css" rel="stylesheet" />
+
+
+	<link href="~/lib/Swiper_Swiper3D/idangerous.swiper.css" rel="stylesheet" />
+	<link href="~/lib/Swiper_Swiper3D/idangerous.swiper.3dflow.css" rel="stylesheet" />
+
+	<style type="text/css">
+		#keyDiv1 {
+			position: absolute;
+			width: 308px;
+			height: 52px;
+			z-index: 99;
+			left: 1565px;
+			top: 25px;
+		}
+
+		.btnright {
+		}
+
+		.arrowL {
+			position: absolute;
+			left: 100px;
+			top: 100px;
+			z-index: 999;
+		}
+
+		.arrowR {
+			position: absolute;
+			margin: 0px 0px 0px 0px;
+			width: 50px;
+			height: 50px;
+			left: 1000px;
+			top: 100px;
+			z-index: 32767;
+		}
+
+		.NewImg {
+			background-color: white;
+		}
+
+		#flowerDiv1 {
+			position: absolute;
+			display: block;
+			width: 645px;
+			height: 600px;
+			z-index: 1; /*顯示階層最低下*/
+			left: 1275px;
+			top: 450px; /*調整上下*/
+		}
+	</style>
+
+	<style id="detailStyles" type="text/css">
+		.draggable {
+			width: 423px !important;
+		}
+
+		.inTxt2 {
+			font-size: 22px;
+			line-height: 35px;
+		}
+	</style>
+
+}
+
+
+
+<honor-view ref="honorView" v-show="!details_model" v-on:search="onSearch" v-on:selected="onSelected">
+
+</honor-view>
+
+<honor-details v-if="details_model" :year="details_model.year" :id="details_model.id" :posts="details_model.posts"
+			   v-on:cancel="backToIndex">
+
+</honor-details>
+
+@section scripts{
+
+	<script src="http://code.createjs.com/easeljs-0.6.0.min.js"></script>
+	<script src="http://code.createjs.com/tweenjs-0.4.0.min.js"></script>
+	<script src="http://code.createjs.com/movieclip-0.6.0.min.js"></script>
+	<script src="http://code.createjs.com/preloadjs-0.3.0.min.js"></script>
+	<script src="~/js/honourList.js"></script>
+	<script src="~/js/flower.js"></script>
+
+	<script src="~/lib/Swiper_Swiper3D/idangerous.swiper.js"></script>
+	<script src="~/lib/Swiper_Swiper3D/idangerous.swiper.3dflow.js"></script>
+
+	<script src="~/lib/slick_old/slick_v_HonorList.js"></script>
+
+	<script>
+
+		$(function () {
+			initAnimate();  //花動畫
+		});
+	</script>
+
+
+
+	<script>
+
+
+		new Vue({
+			el: '#app',
+			data() {
+				return {
+
+					details_model: null,
+
+					search_url:'@Url.Action("HonorSearch", "Posts", new { Area = "Expo" })'
+				}
+			},
+			beforeMount() {
+
+			},
+			methods: {
+
+				onSearch(keyword) {
+					window.location = `${this.search_url}?keyword=${keyword}`;
+				},
+				onSelected(year, id) {
+					let getPosts = this.$refs.honorView.getPostsByYear(year);
+					getPosts.then(posts => {
+						this.details_model = {
+							year: year,
+							id: id,
+							posts: posts.slice()
+
+						};
+					});
+
+				},
+				backToIndex() {
+					this.details_model = null;
+
+				},
+
+			}
+
+		});
+
+
+
+	</script>
+
+
+}
+
+
+
+
+
+
+
+
+

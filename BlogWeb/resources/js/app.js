@@ -20,6 +20,7 @@ Vue.component('post-details', require('./views/post-details'));
 
 //Admin
 Vue.component('post-admin', require('./views/post-admin'));
+Vue.component('top-posts-admin', require('./views/top-posts'));
 Vue.component('post-review', require('./views/post-review'));
 Vue.component('clicks', require('./views/clicks'));
 Vue.component('manage', require('./views/manage'));

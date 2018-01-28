@@ -27,10 +27,10 @@ namespace BlogWeb.Authorization
 				return Task.CompletedTask;
 			}
 
-			string username = context.CurrentUserName();
+			string userId = context.CurrentUserId();
 			string permissionName = requirement.PermissionName;
 
-			bool hasPermission = permissionService.IsUserHasPermission(username, permissionName);
+			bool hasPermission = permissionService.IsUserHasPermission(userId, permissionName);
 
 			if (hasPermission) context.Succeed(requirement);
 			else context.Fail();

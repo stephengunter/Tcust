@@ -22,7 +22,7 @@
 
          <hr/>
 
-         <post-table :model="model" :desc="desc" :can_edit="can_edit" @sort="onSort">
+         <post-table :clicks="true" :model="model" :desc="desc" :can_edit="can_edit" @sort="onSort">
           
 			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"

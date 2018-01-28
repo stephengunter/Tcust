@@ -4,13 +4,13 @@
          <table class="table table-striped">
             <thead>
                <tr>
-						<th style="width:5%">
+						<th v-if="can_check" style="width:5%">
 							<check-box :value="0" :default="checkAll"
 							 @selected="onCheckAll" @unselected="unCheckAll">
 							 </check-box>
 						</th>
                   <th style="width:8%">&nbsp;</th>
-                  <th style="width:8%" v-if="!can_edit">
+                  <th style="width:8%" v-if="clicks">
                      <a href="#" @click.prevent="onSort">
                      點擊數
                        <i v-if="desc" class="fa fa-sort-desc" aria-hidden="true"></i>
@@ -21,36 +21,54 @@
                   <th style="width:10%">編號</th>
                   <th style="width:20%">標題</th>
                   <th style="width:20%">作者</th>
-                  <th style="width:8%">日期</th>
+                  <th style="width:10%">日期</th>
                   <th style="width:8%" v-if="can_edit"></th>
+						<th style="width:8%" v-if="top">
+							重要性 &nbsp;
+							
+							<button v-show="canSubmitOrders" @click.prevent="submitOrders" class="btn btn-xs btn-success">
+								<i class="fa fa-floppy-o" aria-hidden="true"></i>
+								
+							</button>
+						</th>
                </tr>
             </thead>
             <tbody>
                <tr v-for="(post,index) in model.viewList" :key="index">
-						<td>
+						<td v-if="can_check">
 							<check-box :value="post.id" :default="beenChecked(post.id)"
 								@selected="onChecked" @unselected="unChecked">
 							</check-box>
 						</td>
                   <td>
+							
                      <img v-if="post.cover" class="thumbnail" style="max-width:60px" :src="post.cover.previewPath" />
                      
                   </td>
-                  <td v-if="!can_edit">
-                        {{ post.clickCount }} 
+                  <td v-if="clicks">
+                     {{ post.clickCount }} 
                   </td>
 						<td>{{ post.categoryName }}</td>
                   <td>{{ post.number }}</td>
-                  <td>{{ post.title }}</td>
+                  <td>
+							<span v-if="post.top" style="color:#f4d742">
+								<i class="fa fa-star" aria-hidden="true"></i>
+							</span>
+							{{ post.title }}
+						</td>
                   <td>{{ post.author }}</td>
                   <td>{{ post.date }}</td>
                   <td v-if="can_edit">
                      <button class="btn btn-sm btn-primary" @click.prevent="edit(post.id)">
                         <i class="fa fa-pencil" aria-hidden="true"></i>
                      </button>
-                     <button class="btn btn-sm btn-danger" @click.prevent="remove(post)">
+                     <button v-if="can_delete" class="btn btn-sm btn-danger" @click.prevent="remove(post)">
                         <i class="fa fa-trash-o" aria-hidden="true"></i>
                      </button>    
+
+                  </td>
+						<td v-if="top">
+                     <input class="form-control" type="text" v-model="post.order">	  
 
                   </td>
                </tr>
@@ -76,6 +94,22 @@ export default {
       can_edit:{
          type: Boolean,
          default: true
+		},
+		can_delete:{
+			type:Boolean,
+			default:false
+		},
+		can_check:{
+			type:Boolean,
+			default:false
+		},
+		clicks:{
+         type: Boolean,
+         default: false
+      },
+		top:{
+         type: Boolean,
+         default: false
       },
       desc:{
          type: Boolean,
@@ -88,6 +122,13 @@ export default {
 			checkAll: false
 		};
 	},
+	computed:{
+		canSubmitOrders(){
+			let posts=this.getPostList();
+			if(!posts) return false;
+			return posts.length > 0;
+		}
+   }, 
 	watch: {
 		checked_ids() {
 			this.$emit('check-changed',this.checked_ids);
@@ -121,6 +162,8 @@ export default {
 				
 		},
 		onCheckAll(){
+			this.checkAll=true;
+			
 			let postList = this.getPostList();
 			if(!postList)  return false;
 
@@ -129,8 +172,13 @@ export default {
 			});
 		},
 		unCheckAll(){
+			this.checkAll=false;
 			this.checked_ids=[];
 		},
+		submitOrders(){
+			
+			this.$emit('submit-orders');
+		}
    }
 }
 </script>

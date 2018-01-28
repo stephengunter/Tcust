@@ -184,7 +184,7 @@ export default {
 			} 
 
 			this.submitting=true;
-			let find=Identity.getUserByEmail(email);
+			let find= Api.getUserByEmail(email);
 			find.then(user => {
 			   this.submit(user);
 			})

@@ -146,15 +146,17 @@ export default {
 			submit(){
 				return new Promise((resolve, reject) => {
 					const files=this.$refs.fileUpload.getFiles();
-					
+
 					if(!files.length){
 						resolve(true);
 						return;
 					} 
 
+					
+
 					let form = new FormData();
 					form.append('postId', this.post.id);
-					
+
 					for (let i = 0; i < files.length; i++) {
 						form.append('files', files[i]); 
 					} 
@@ -166,6 +168,7 @@ export default {
 					.catch(error => {
 						reject(error);
 					})
+					
 
 				})
 				

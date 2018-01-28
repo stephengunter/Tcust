@@ -53,6 +53,8 @@ namespace Permissions.Migrations
 
                     b.Property<string>("Name");
 
+                    b.Property<int>("Order");
+
                     b.Property<string>("Title");
 
                     b.HasKey("Id");

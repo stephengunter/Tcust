@@ -41,18 +41,19 @@ window.Helper = Helper;
 import Form from './utilities/form';
 window.Form = Form;
 
-
+import Api from './models/api';
 import Manage from './models/manage';
-import Identity from './models/identity';
 import Post from './models/post';
 import PostAdmin from './models/postAdmin';
+import TopAdmin from './models/topAdmin';
 import PostReview from './models/review';
 import Clicks from './models/clicks';
 import Attachment from './models/attachment';
 
 window.Manage=Manage;
-window.Identity = Identity;
+window.Api = Api;
 window.Post = Post;
+window.TopAdmin = TopAdmin;
 window.PostAdmin = PostAdmin;
 window.PostReview=PostReview;
 window.Clicks = Clicks;

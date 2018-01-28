@@ -152,6 +152,42 @@ namespace Tcust.Migrations
                     b.ToTable("PartnerContract");
                 });
 
+            modelBuilder.Entity("Tcust.Models.Term", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<bool>("Active");
+
+                    b.Property<int>("Number");
+
+                    b.Property<int>("TermYearId");
+
+                    b.Property<string>("Title");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TermYearId");
+
+                    b.ToTable("Terms");
+                });
+
+            modelBuilder.Entity("Tcust.Models.TermYear", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<bool>("Active");
+
+                    b.Property<string>("Title");
+
+                    b.Property<int>("Year");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TermYears");
+                });
+
             modelBuilder.Entity("Tcust.Models.Type", b =>
                 {
                     b.Property<int>("Id")
@@ -206,6 +242,14 @@ namespace Tcust.Migrations
                     b.HasOne("Tcust.Models.Partner", "Partner")
                         .WithMany("PartnerContracts")
                         .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Tcust.Models.Term", b =>
+                {
+                    b.HasOne("Tcust.Models.TermYear", "TermYear")
+                        .WithMany("Terms")
+                        .HasForeignKey("TermYearId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618

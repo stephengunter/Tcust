@@ -10,7 +10,7 @@ class Attachment {
 		return '/admin/uploads';
    }
 	
-	static storeUrl() {
+	static storeUrl(id) {
 		return this.source();
 	}
 

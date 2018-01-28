@@ -1,0 +1,77 @@
+﻿@{
+	ViewData["Title"] = "校園日誌";
+}
+
+
+@section styles{
+
+	<link rel="stylesheet" href="~/css/reset_inform.css" />
+	<link rel="stylesheet" href="~/css/style_inform.css" />
+	<link rel="stylesheet" href="~/css/tzuchi_inform.css" />
+
+	<style type="text/css">
+		body {
+			-moz-user-select: none;
+			-webkit-user-select: none;
+		}
+	</style>
+
+	<style id="slideStyles" type="text/css">
+		.slick-track {
+			margin-top: -300px;
+		}
+	</style>
+
+}
+
+
+
+
+
+
+
+
+<diary-view title_img_path="/images/inform/title_s1.png"
+			search_img_path="/images/inform/righttitle.png"
+			v-on:leave="onLeave">
+
+</diary-view>
+
+@section scripts{
+
+
+
+
+
+	<script>
+
+
+		new Vue({
+			el: '#app',
+			data() {
+				return {
+
+
+
+
+				}
+			},
+			beforeMount() {
+
+			},
+			methods: {
+				onLeave() {
+					window.location = '@Url.Action("Index", "Posts", new { Area = "Expo" })';
+				}
+
+			}
+
+		});
+
+
+
+	</script>
+
+
+
+}

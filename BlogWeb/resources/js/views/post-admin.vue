@@ -2,19 +2,24 @@
    <div>
       <div v-if="model" v-show="indexMode">
          <div class="row">
-            <div class="col-sm-3" style="margin-top: 20px;">
-					<drop-down :items="categories" :selected="category.value"
-					  @selected="onCategorySelected">
-					</drop-down>
-            </div>
-            <div class="col-sm-3">
-               
-            </div>
+				<div class="col-sm-7 form-inline" style="margin-top: 20px;">
+					<div class="form-group">
+						<drop-down :items="categories" :selected="category.value"
+							@selected="onCategorySelected">
+						</drop-down>
+					</div>
+					<div class="form-group" style="padding-left:1cm;">
+						<toggle :items="reviewedOptions"   :default_val="params.reviewed" @selected="setReviewed"></toggle>
+					</div>
+					<year-term-filter @changed="onYearTermChanged"></year-term-filter>
+					
+				</div>
+
             <div class="col-sm-3" style="margin-top: 20px;">
                <searcher @search="onSearch">
 					</searcher>
             </div>
-            <div class="col-sm-3" style="margin-top: 20px;">
+            <div class="col-sm-2" style="margin-top: 20px;">
 
                <a @click.prevent="onCreate" href="#" class="btn btn-primary pull-right title-controll">
                   <i class="fa fa-plus" aria-hidden="true"></i>
@@ -25,7 +30,7 @@
 
          <hr/>
 
-         <post-table :model="model"  @edit="onEdit" @remove="onDelete" >
+         <post-table :model="model" :can_delete="can_delete"  @edit="onEdit" @remove="onDelete" >
           
 			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"
@@ -48,13 +53,15 @@
 
 
 <script>
+	import YearTermFilter from '../components/year-term-filter';
    import Searcher from '../components/searcher';
    import PostTable from '../components/post-table';
    import PostEdit from '../components/post-edit';
    export default {
       name:'PostAdminView',
       components: {
-         Searcher,
+			'year-term-filter':YearTermFilter,
+         'searcher':Searcher,
          'post-table':PostTable,
          'post-edit':PostEdit
       },
@@ -66,21 +73,33 @@
 			categories:{
 				type:Array,
 				default:null
+			},
+			can_delete:{
+				type:Boolean,
+				default:false
 			}
       },
       data(){
          return {
+				loaded:false,
+
 				model:null,
 				
             selected:0,
 				create:false,
+
+				
 				
 				params:{
+					terms:'',
 					category:0,
+					reviewed:true,
 					keyword:'',
 					page:1,
 					pageSize:10
 				},
+
+				reviewedOptions:Post.reviewedOptions(),
 				
 				category:null,
 
@@ -103,6 +122,8 @@
 				
 			}	
 
+			
+
 		},
       computed:{
          editting(){
@@ -112,7 +133,7 @@
          indexMode(){
             if(this.editting) return false;
             return true;
-         }
+			}
       }, 
       methods:{
          onIndex(){
@@ -120,7 +141,7 @@
 
             this.selected=0;
             this.create=false;
-         },
+			},
          onCreate(){
             this.create=true;
          },
@@ -154,6 +175,11 @@
 				this.category=category;
 				this.params.category=category.value;
 			},
+			
+			setReviewed(val) {
+        	   this.params.reviewed = val;
+				this.fetchData();
+         },
 			onPageChanged(page){
 				this.params.page=page;
 				this.fetchData();
@@ -161,6 +187,11 @@
 			},
 			onSearch(keyword){
 				this.params.keyword=keyword;
+				this.fetchData();
+			},
+			onYearTermChanged(terms){
+				
+				this.params.terms=terms;
 				this.fetchData();
 			},
          fetchData() {

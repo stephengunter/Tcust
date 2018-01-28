@@ -83,7 +83,7 @@ namespace Blog.Migrations
 
                     b.Property<string>("Summary");
 
-                    b.Property<string>("TermNumber");
+                    b.Property<int>("TermNumber");
 
                     b.Property<string>("Title");
 

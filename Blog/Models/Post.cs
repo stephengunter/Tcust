@@ -11,7 +11,7 @@ namespace Blog.Models
 
 	public class Post: BasePost
 	{
-		public string TermNumber { get; set; }
+		public int TermNumber { get; set; }
 
 		public string Number { get; set; }
 
