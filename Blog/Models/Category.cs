@@ -17,5 +17,6 @@ namespace Blog.Models
 		public ICollection<Post> Posts { get; }
 
 		private ICollection<PostCategory> PostCategories { get; } = new List<PostCategory>();
+		
 	}
 }

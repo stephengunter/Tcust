@@ -35,12 +35,17 @@ namespace BlogWeb.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Index(int category = 0,int year=0 , string keyword = "", int page = 1, int pageSize = 10)
 		{
-			Category selectedCategory = null;
-			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
-			if (selectedCategory == null) category = 0;
+			bool returnDefault = true; 
+			var selectedCategory = await postService.GetCategoryByIdAsync(category, returnDefault); 
+			category = selectedCategory.Id;
 
 			bool reviewed = true;
 			var posts = await postService.FetchPosts(selectedCategory, reviewed, keyword);
+
+			if (selectedCategory.IsDiary())
+			{
+				posts = posts.Where(p => p.Year >= 2013);
+			}
 						
 
 			if (!Request.IsAjaxRequest())
@@ -155,6 +160,8 @@ namespace BlogWeb.Controllers
 
 			foreach (var singleYear in years)
 			{
+				
+				
 				int year = singleYear.Year;
 				int count = singleYear.count;
 				var item = new MenuItem();

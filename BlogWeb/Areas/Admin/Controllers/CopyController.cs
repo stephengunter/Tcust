@@ -251,13 +251,22 @@ namespace BlogWeb.Areas.Admin.Controllers
 				var mediaViewModels = mediaViewModelList.Where(m => m.contentId == model.id);
 				foreach (var item in mediaViewModels)
 				{
-					item.path = CopyFile(item.path);
-					if (!String.IsNullOrEmpty(item.previewPath))
+					try
 					{
-						item.previewPath = CopyFile(item.previewPath);
+						item.path = CopyFile(item.path);
+						if (!String.IsNullOrEmpty(item.previewPath))
+						{
+							item.previewPath = CopyFile(item.previewPath);
+						}
+						var media = item.MapToEntity();
+						post.Attachments.Add(media);
 					}
-					var media = item.MapToEntity();
-					post.Attachments.Add(media);
+					catch (Exception )
+					{
+
+						
+					}
+					
 				}
 
 				post = await postService.CreateAsync(post);

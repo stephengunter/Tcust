@@ -33,7 +33,7 @@ namespace WebApi
 			services.AddAuthentication("Bearer")
 			.AddIdentityServerAuthentication(options =>
 			{
-				options.Authority = "http://localhost:50000";
+				options.Authority = Configuration["Settings:AuthUrl"]; //"http://localhost:50000";
 				options.RequireHttpsMetadata = false;
 
 				options.ApiName = "apiApp";

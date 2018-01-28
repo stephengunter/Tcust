@@ -1,0 +1,40 @@
+﻿
+@{
+	ViewData["Title"] = "學期管理";
+}
+
+
+<terms-admin ></terms-admin>
+
+
+
+@section scripts{
+	<script>
+
+
+		new Vue({
+			el: '#main',
+			data() {
+				return {
+					model: null,
+
+
+				}
+			},
+			beforeMount() {
+				//this.model = @Html.Raw(ViewData["list"]);
+			},
+			methods: {
+
+			}
+
+		});
+
+
+
+	</script>
+
+}
+
+
+

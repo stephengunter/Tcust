@@ -12,16 +12,7 @@ Vue.component('check-box', require('./packages/components/Checkbox'));
 Vue.component('check-box-list', require('./packages/components/CheckboxList'));
 
 
-Vue.component('diary-view', require('./views/diary/view'));
-Vue.component('honor-top', require('./views/honor/top'));
-Vue.component('honor-view', require('./views/honor/view'));
-Vue.component('honor-search', require('./views/honor/search'));
-Vue.component('honor-details', require('./views/honor/details'));
-Vue.component('daai-view', require('./views/daai/view'));
-
-Vue.component('test', require('./views/test'));
-
-
+Vue.component('terms-admin', require('./views/terms-admin'));
 
 import ErrorHandler from './utilities/error-handler';
 

@@ -13,7 +13,7 @@ namespace Blog.Specifications
 	{
 		public BasePostFilterSpecification()
 		{
-			Criteria = p => !p.Removed && p.Year >= 2013;
+			Criteria = p => !p.Removed;// && p.Year >= 2013;
 
 			AddInclude(p => p.Attachments);
 			

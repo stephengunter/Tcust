@@ -63,6 +63,8 @@ namespace BlogWeb
 			});
 
 			services.AddScoped<IAuthorizationHandler, HasPermissionHandler>();
+			
+			
 
 			services.AddAuthentication(options =>
 			{
@@ -73,9 +75,8 @@ namespace BlogWeb
 			.AddOpenIdConnect("oidc", options =>
 			{
 				options.SignInScheme = "Cookies";
-					
 
-				options.Authority = "http://localhost:50000";
+				options.Authority = Configuration["AppSettings:AuthUrl"];
 				options.RequireHttpsMetadata = false;
 
 				options.ClientId = "blog-mvc";

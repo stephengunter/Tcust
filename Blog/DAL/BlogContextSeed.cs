@@ -17,11 +17,13 @@ namespace Blog.DAL
 		{
 			using (var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
 			{
-				scope.ServiceProvider.GetRequiredService<PermissionContext>().Database.Migrate();
+			
 
 				var context = scope.ServiceProvider.GetRequiredService<BlogContext>();
 				context.Database.Migrate();
-				
+
+				scope.ServiceProvider.GetRequiredService<PermissionContext>().Database.Migrate();
+
 
 				SeedCategories(context);
 
