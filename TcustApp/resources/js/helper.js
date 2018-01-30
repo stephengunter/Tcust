@@ -81,6 +81,29 @@ class Helper {
 		}
 		return url.substr(0, url.length - 1);
 
+	}
+	static numberOptions(min, max, desc) {
+        let options = []
+        if (desc) {
+            for (var i = max; i >= min; i--) {
+                let option = {
+                    text: i,
+                    value: i
+                }
+                options.push(option)
+            }
+        } else {
+            for (var i = min; i <= max; i++) {
+                let option = {
+                    text: i,
+                    value: i
+                }
+                options.push(option)
+            }
+        }
+
+
+        return options
     }
 }
 

@@ -7,12 +7,7 @@ namespace WebApi.Controllers
 	public class BaseApiController : Controller
 	{
 		
-		[HttpGet("api/[controller]/{id}")]
-		public virtual async Task<IActionResult> Details(int id)
-		{
-
-			return NotFound();
-		}
+		
 
 	}
 }

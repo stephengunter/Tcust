@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Tcust.DAL;
 using Microsoft.EntityFrameworkCore;
+using Tcust.Services;
 
 namespace TcustApp
 {
@@ -40,6 +41,10 @@ namespace TcustApp
 					var message = ex.Message;
 				}
 			});
+
+			services.AddScoped(typeof(ITcustRepository<>), typeof(TcustRepository<>));
+
+			services.AddScoped<ITermService, TermService>();
 
 
 		}

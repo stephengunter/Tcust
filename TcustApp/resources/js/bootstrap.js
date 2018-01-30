@@ -26,6 +26,11 @@ window.Helper = Helper;
 import Form from './utilities/form';
 window.Form = Form;
 
+import YearAdmin from './models/yearAdmin';
+import TermAdmin from './models/termAdmin';
+window.YearAdmin = YearAdmin;
+window.TermAdmin = TermAdmin;
+
 
 
 

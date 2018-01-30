@@ -6,13 +6,25 @@ using Tcust.Models;
 
 namespace Tcust.Specifications
 {
-    public class BaseTermYearFilterSpecifications : BaseSpecification<TermYear>
+	public class BaseTermFilterSpecifications : BaseSpecification<Term>
 	{
-		public BaseTermYearFilterSpecifications()
+		public BaseTermFilterSpecifications()
 		{
 			Criteria = t => t.Id > 0;
 
-			AddInclude(t => t.Terms);
+			AddInclude(t => t.TermYear);
 		}
 	}
+
+	public class TermNumberFilterSpecifications:BaseTermFilterSpecifications
+	{
+		public TermNumberFilterSpecifications(int number)
+		{
+			var compiled = Criteria.Compile();
+			Criteria = t => compiled(t) && t.Number == number;
+		}
+
+	}
+
+
 }

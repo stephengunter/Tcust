@@ -274,6 +274,7 @@ export default {
 				})
 				.catch(error => {
 					Helper.BusEmitError(error,'存檔失敗');
+					this.submitting=false;
 				})
 
 

@@ -20,16 +20,16 @@ namespace WebApi.Tcust
 			this.termService = termService;
 		}
 
-		public async Task<IEnumerable<TermYear>> Index()
-		{
+		//public async Task<IEnumerable<TermYear>> Index()
+		//{
 
-			var termYears = await termService.GeTermYearsAsync();
+		//	var termYears = await termService.GeTermYearsAsync();
 
-			return termYears.OrderByDescending(t=>t.Active);
+		//	return termYears.OrderByDescending(t=>t.Active);
 
 			
 
-		}
+		//}
 
 
 	}

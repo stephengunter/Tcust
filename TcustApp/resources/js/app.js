@@ -3,6 +3,7 @@ import './bootstrap';
 
 
 Vue.component('alert', require('./packages/components/Alert'));
+Vue.component('page-controll', require('./components/page-controll'));
 Vue.component('modal', require('./packages/components/Modal'));
 Vue.component('toggle', require('./packages/components/Toggle'));
 Vue.component('delete-confirm', require('./packages/components/DeleteConfirm'));
@@ -13,6 +14,7 @@ Vue.component('check-box-list', require('./packages/components/CheckboxList'));
 
 
 Vue.component('terms-admin', require('./views/terms-admin'));
+Vue.component('years-admin', require('./views/years-admin'));
 
 import ErrorHandler from './utilities/error-handler';
 

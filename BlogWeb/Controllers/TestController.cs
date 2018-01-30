@@ -20,25 +20,8 @@ namespace BlogWeb.Controllers
 		}
 		public IActionResult Index(int number)
 		{
-			
-			string strNumber = number.ToString();
 
-			int year = 0;
-			if (strNumber.Length == 3)
-			{
-				year= Convert.ToInt16(strNumber.Substring(0, 2));
-				return Content(year.ToString());
-			}
-			else if(strNumber.Length == 4)
-			{
-				year = Convert.ToInt16(strNumber.Substring(0, 3));
-				return Content(year.ToString());
-			}
-
-			throw new Exception();
-			//var id = (from p in HttpContext.User.Claims where p.Type == "sub" select p.Value).First();
-		
-			//return Content(User.IsInRole("Dev").ToString());
+			return View();
 		}
 
 		[Authorize]

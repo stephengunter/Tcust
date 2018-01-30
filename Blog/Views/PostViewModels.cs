@@ -61,7 +61,7 @@ namespace Blog.Views
 		public static string GetDefaultSummary(Post post)
 		{
 			string str = post.Content.RemoveHtmlTags().Trim();
-			return str.Substring(0, Math.Min(str.Length, 100)) + " ...";
+			return str.Substring(0, Math.Min(str.Length, 160)) + " ...";
 		}
 
 
