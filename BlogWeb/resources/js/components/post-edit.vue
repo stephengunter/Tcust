@@ -193,9 +193,9 @@ export default {
 			
 		},
 		fetchData(){
-			let getData=null
+			let getData=null;
 
-			if(this.isCreate)   getData=PostAdmin.create();                  
+			if(this.isCreate) getData=PostAdmin.create();         
 			else  getData=PostAdmin.edit(this.id);  
 
 			getData.then(model => {
@@ -214,6 +214,8 @@ export default {
 				if(this.isCreate){
 					if(parseInt(this.category.value))  this.form.post.categoryId=this.category.value;
 					else this.form.post.categoryId=model.categoryOptions[0].value;
+
+					this.getActiveTerm();
 				} 
 				
 
@@ -223,6 +225,17 @@ export default {
 			.catch(error=> {
 				Helper.BusEmitError(error);                   
 				this.loaded=false;
+			})
+		},
+		getActiveTerm(){
+			let getData=Api.getActiveTerm();
+			getData.then(term => {
+
+				this.form.post.termNumber=term.number;
+				
+			})
+			.catch(error=> {
+				
 			})
 		},
 		onCategorySelected(category){

@@ -16,7 +16,7 @@ namespace Tcust.Services
 		TermYear GetTermYearById(int id);
 		Task UpdateTermYearAsync(TermYear termYear);
 
-		Task<IEnumerable<TermYear>> GetAllTermYearsAsync();
+		Task<IEnumerable<TermYear>> GetAllTermYearsAsync(bool withTerms = false);
 		TermYear GetActiveTermYear();
 
 		TermYear GetTermYear(int year);
@@ -26,6 +26,7 @@ namespace Tcust.Services
 		Task UpdateAsync(Term term);
 		Task<IEnumerable<Term>> GetAllTermAsync();
 		Term GetTermByNumber(int number);
+		Term GetActiveTerm();
 
 	}
 
@@ -50,8 +51,14 @@ namespace Tcust.Services
 			await termYearRepository.UpdateAsync(termYear);
 		}
 
-		public async Task<IEnumerable<TermYear>> GetAllTermYearsAsync()
+		public async Task<IEnumerable<TermYear>> GetAllTermYearsAsync(bool withTerms=false)
 		{
+			if (withTerms)
+			{
+				var spec = new BaseYearFilterSpecifications();
+				return await termYearRepository.ListAsync(spec);
+			}
+
 			return await termYearRepository.ListAllAsync();
 		}
 
@@ -106,6 +113,13 @@ namespace Tcust.Services
 		{
 			var spec = new TermNumberFilterSpecifications(number);
 			return  termRepository.GetSingleBySpec(spec);
+		}
+
+		public Term GetActiveTerm()
+		{
+			bool active = true;
+			var spec = new TermNumberFilterSpecifications(active);
+			return termRepository.GetSingleBySpec(spec);
 		}
 
 

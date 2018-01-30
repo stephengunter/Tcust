@@ -124,8 +124,8 @@ namespace WebApi
 
 				routes.MapRoute(
 					name: "default",
-					template: "api/{controller}/{action=Index}/{id?}");
-			});
+					template: "{controller=Posts}/{action=Index}/{id?}");
+				});
 		}
 	}
 

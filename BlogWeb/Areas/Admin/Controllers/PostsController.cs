@@ -90,7 +90,6 @@ namespace BlogWeb.Areas.Admin.Controllers
 			bool canReviewPost = CanReviewPost();
 			var post = new PostViewModel()
 			{
-				//termNumber = DefaultTermNumber(),
 				reviewed= canReviewPost
 			};
 

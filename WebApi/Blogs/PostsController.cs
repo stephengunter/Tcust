@@ -12,6 +12,14 @@ using Blog.Views;
 
 namespace WebApi.Blogs
 {
+	public enum CategoryKeys
+	{
+		Dairy,
+		Honor,
+		Famer,
+		DaAi
+	}
+
     public class PostsController : BaseApiController
 	{
 		private readonly IPostService postService;
@@ -24,6 +32,27 @@ namespace WebApi.Blogs
 			this.postService = postService;
 
 			this.viewService = new ViewService(settings, this.postService);
+		}
+
+		Category GetCategory(CategoryKeys key)
+		{
+			string code = "diary";
+			switch (key)
+			{
+				case CategoryKeys.Honor:
+					code = "honor";
+					break;
+				case CategoryKeys.Famer:
+					code = "famer";
+					break;
+				case CategoryKeys.DaAi:
+					code = "da-ai";
+					break;
+				
+			}
+
+			return postService.GetCategoryByCode(code);
+
 		}
 
 		
@@ -43,13 +72,33 @@ namespace WebApi.Blogs
 			return new ObjectResult(pageList);
 		}
 
+		[HttpGet]   //首頁輪播 , 排除大愛新聞
+		public async Task<IActionResult> Tops(int pageSize = 12)
+		{
+			bool reviewed = true;
+			Category selectedCategory = null;
+			string keyword = "";
+			int page = 1;
 
-		[HttpGet("api/[controller]/[action]")]
+			var posts = await postService.FetchPosts(selectedCategory, reviewed, keyword);
+
+			Category exeptCategory = GetCategory(CategoryKeys.DaAi);
+
+			posts = await postService.ExceptFromCategoryAsync(posts, exeptCategory);
+
+			posts = viewService.OrderPosts(posts);
+
+			var pageList = await viewService.GetPostPagedList(posts, page, pageSize);
+
+			return new ObjectResult(pageList);
+		}
+
+
+		
 		public async Task<IActionResult> GetDiaryList(string terms = "", string keyword = "", int page = 1, int pageSize = 10)
 		{
-			string code = "diary";
-			Category diaryCategory = postService.GetCategoryByCode(code);
-			
+		
+			Category diaryCategory = GetCategory(CategoryKeys.Dairy);  
 
 			bool reviewed = true;
 			var posts = await postService.FetchPosts(diaryCategory, reviewed, keyword);
@@ -70,17 +119,16 @@ namespace WebApi.Blogs
 
 		}
 
-		[HttpGet("api/[controller]/[action]")] //校史館使用 GroupByYear
+		//校史館使用 GroupByYear
 		public async Task<IEnumerable<PostsGroupByYearForm>> GetHonorList(string keyword = "")
 		{
 			var result = new List<PostsGroupByYearForm>();
-
-			string code = "honor";
-			Category diaryCategory = postService.GetCategoryByCode(code);
+			
+			Category category = GetCategory(CategoryKeys.Honor);
 
 
 			bool reviewed = true;
-			var posts = await postService.FetchPosts(diaryCategory, reviewed, keyword);
+			var posts = await postService.FetchPosts(category, reviewed, keyword);
 
 			var years = posts.Select(p => p.Year).Distinct();
 
@@ -107,16 +155,15 @@ namespace WebApi.Blogs
 
 		}
 
-		[HttpGet("api/[controller]/[action]")] //校史館使用 GroupByYear
+		//校史館使用 GroupByYear
 		public async Task<IActionResult> GetFamerList(string keyword = "", int page = 1, int pageSize=99)
 		{
-
-			string code = "famer";
-			Category diaryCategory = postService.GetCategoryByCode(code);
+			
+			Category category = GetCategory(CategoryKeys.Famer);
 
 
 			bool reviewed = true;
-			var posts = await postService.FetchPosts(diaryCategory, reviewed, keyword);
+			var posts = await postService.FetchPosts(category, reviewed, keyword);
 
 			posts = posts.OrderByDescending(p => p.Date).ThenByDescending(p => p.LastUpdated);
 
@@ -126,15 +173,15 @@ namespace WebApi.Blogs
 			return Ok(pageList);
 		}
 
-		[HttpGet("api/[controller]/[action]")] //校史館使用 
+		//校史館使用 
 		public async Task<IActionResult> GetDaAiNews(string keyword = "", int year=0, int month=0, int page = 1, int pageSize = 99)
 		{
-			string code = "da-ai";
-			Category diaryCategory = postService.GetCategoryByCode(code);
+			
+			Category category = GetCategory(CategoryKeys.DaAi);
 
 
 			bool reviewed = true;
-			var posts = await postService.FetchPosts(diaryCategory, reviewed, keyword);
+			var posts = await postService.FetchPosts(category, reviewed, keyword);
 
 			if (year > 0) posts = posts.Where(p => p.Year == year);
 			if (month > 0) posts = posts.Where(p => p.Month == month);
@@ -147,14 +194,14 @@ namespace WebApi.Blogs
 			return Ok(pageList);
 		}
 
-		[HttpGet("api/[controller]/[action]")] //校史館使用 
+		//校史館使用 
 		public async Task<IEnumerable<int>> GetDaAiNewsYears()
 		{
-			string code = "da-ai";
-			Category diaryCategory = postService.GetCategoryByCode(code);
+			
+			Category category = GetCategory(CategoryKeys.DaAi);
 
 			bool reviewed = true;
-			var posts = await postService.FetchPosts(diaryCategory, reviewed);
+			var posts = await postService.FetchPosts(category, reviewed);
 
 			var years = posts.Select(p => p.Year).Distinct();
 
@@ -164,8 +211,8 @@ namespace WebApi.Blogs
 
 		}
 
-
-		public override async Task<IActionResult> Details(int id)
+		[HttpGet("api/[controller]/{id}")]
+		public  async Task<IActionResult> Details(int id)
 		{
 			var post = postService.GetById(id);
 			if (post == null) return NotFound();

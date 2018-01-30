@@ -24,6 +24,12 @@ namespace Tcust.Specifications
 			Criteria = t => compiled(t) && t.Number == number;
 		}
 
+		public TermNumberFilterSpecifications(bool active)
+		{
+			var compiled = Criteria.Compile();
+			Criteria = t => compiled(t) && t.Active == active;
+		}
+
 	}
 
 

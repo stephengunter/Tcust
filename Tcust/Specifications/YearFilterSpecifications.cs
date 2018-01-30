@@ -5,10 +5,11 @@ using System.Text;
 using Tcust.Models;
 namespace Tcust.Specifications
 {
-	public abstract class BaseYearFilterSpecifications : BaseSpecification<TermYear>
+	public  class BaseYearFilterSpecifications : BaseSpecification<TermYear>
 	{
 		public BaseYearFilterSpecifications()
 		{
+			Criteria = t => t.Id > 0 ;
 			AddInclude(t => t.Terms);
 		}
 	}
@@ -19,7 +20,9 @@ namespace Tcust.Specifications
 		
 		public YearIdFilterSpecifications(int id)
 		{
-			Criteria = t => t.Id == id;
+			var compiled = Criteria.Compile();
+			Criteria = t => compiled(t) && t.Id == id;
+			
 		}
 	}
 
@@ -27,12 +30,14 @@ namespace Tcust.Specifications
 	{
 		public YearFilterSpecifications(bool active)
 		{
-			Criteria = t => t.Active == active;
+			var compiled = Criteria.Compile();
+			Criteria = t => compiled(t) && t.Active == active;
 		}
 
 		public YearFilterSpecifications(int year)
 		{
-			Criteria = t => t.Year == year;
+			var compiled = Criteria.Compile();
+			Criteria = t => compiled(t) && t.Year == year;
 		}
 	}
 }

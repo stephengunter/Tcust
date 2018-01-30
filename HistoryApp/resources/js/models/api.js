@@ -1,6 +1,6 @@
 class Api {
    static source() {
-		return 'http://localhost:50001/api';
+		return 'http://localhost:50001';
    }
    
    static getTermYears(){

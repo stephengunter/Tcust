@@ -23,6 +23,8 @@ namespace Blog.Services
 		Post GetById(int id);
 		IEnumerable<Post> ListByIds(IList<int> ids);
 
+		Task<IEnumerable<Post>> ExceptFromCategoryAsync(IEnumerable<Post> posts, Category category);
+
 		Task<IEnumerable<Post>> FetchPosts(Category category = null, bool reviewed = true, string keyword = "");
 
 		Task ReviewPosts(IList<int> ids);
@@ -95,7 +97,7 @@ namespace Blog.Services
 
 			if (category!=null)
 			{
-				var idsInCategory = await GetPostIdsInCategory(category);
+				var idsInCategory = await GetPostIdsInCategoryAsync(category);
 				posts = posts.Where(p => idsInCategory.Contains(p.Id));
 
 			}
@@ -125,7 +127,11 @@ namespace Blog.Services
 			return postRepository.List(filter);
 		}
 
-
+		public async Task<IEnumerable<Post>> ExceptFromCategoryAsync(IEnumerable<Post> posts, Category category)
+		{
+			var postIds = await GetPostIdsInCategoryAsync(category);
+			return posts.Where(p => !postIds.Contains(p.Id));
+		}
 
 		public async Task<Post> GetByIdAsync(int id) => await postRepository.GetByIdAsync(id);
 		
@@ -277,13 +283,13 @@ namespace Blog.Services
 		{
 			var post = await GetByIdAsync(postId);
 			
-			return await GetCategoryIdsInPost(post);
+			return await GetCategoryIdsInPostAsync(post);
 		}
 
 		
 		public async Task<IEnumerable<Category>> GetPostCategoriesAsync(Post post)
 		{
-			var categoryIds= await GetCategoryIdsInPost(post);
+			var categoryIds= await GetCategoryIdsInPostAsync(post);
 			var filter = new CategoryFilterSpecification(categoryIds);
 			return await categoryRepository.ListAsync(filter);
 		}
@@ -292,7 +298,7 @@ namespace Blog.Services
 		private async Task SyncPostCategories(Post post, IList<int> categoryIds)
 		{
 			
-			var current = await GetCategoryIdsInPost(post);
+			var current = await GetCategoryIdsInPostAsync(post);
 
 			var needRemoveIds = current.Where(i => !categoryIds.Contains(i));
 			if (!needRemoveIds.IsNullOrEmpty())
@@ -316,7 +322,7 @@ namespace Blog.Services
 		}
 
 
-		private async Task<IList<int>> GetPostIdsInCategory(Category category)
+		private async Task<IList<int>> GetPostIdsInCategoryAsync(Category category)
 		{
 			var filter = new PostCategoryFilterSpecification(category);
 
@@ -327,7 +333,7 @@ namespace Blog.Services
 
 		}
 
-		private async Task<IList<int>> GetCategoryIdsInPost(Post post)
+		private async Task<IList<int>> GetCategoryIdsInPostAsync(Post post)
 		{
 			var filter = new PostCategoryFilterSpecification(post);
 

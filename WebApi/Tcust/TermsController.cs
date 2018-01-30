@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using WebApi.Controllers;
 using Tcust.Services;
 using Tcust.Models;
+using Tcust.Views;
+using Tcust.Helpers;
 
 namespace WebApi.Tcust
 {
@@ -20,16 +22,29 @@ namespace WebApi.Tcust
 			this.termService = termService;
 		}
 
-		//public async Task<IEnumerable<TermYear>> Index()
-		//{
+		public async Task<IEnumerable<TermYear>> Index()
+		{
+			bool withTerms = true;
+			var termYears = await termService.GetAllTermYearsAsync(withTerms);
 
-		//	var termYears = await termService.GeTermYearsAsync();
+			termYears = termYears.GetOrdered();
 
-		//	return termYears.OrderByDescending(t=>t.Active);
+			return termYears;
 
-			
+		}
 
-		//}
+
+		public IActionResult GetActiveTerm()
+		{
+			var term = termService.GetActiveTerm();
+
+			var model = term.MapTermViewModel();
+
+
+			return Ok(model);
+
+
+		}
 
 
 	}
