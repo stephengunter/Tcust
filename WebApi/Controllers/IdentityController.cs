@@ -13,7 +13,7 @@ namespace WebApi.Controllers
 	public class IdentityController : BaseApiController
 	{
 		[HttpGet]
-		public IActionResult Get()
+		public IActionResult Index()
 		{
 			return new JsonResult(from c in User.Claims select new { c.Type, c.Value });
 		}

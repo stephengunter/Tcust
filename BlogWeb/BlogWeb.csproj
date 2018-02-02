@@ -48,9 +48,6 @@
   <ItemGroup>
     <Folder Include="Areas\Admin\Helper\" />
     <Folder Include="Areas\Admin\Models\" />
-    <Folder Include="Areas\Api\Data\" />
-    <Folder Include="Areas\Api\Models\" />
-    <Folder Include="Areas\Api\Views\" />
     <Folder Include="Models\" />
     <Folder Include="resources\" />
     <Folder Include="wwwroot\images\" />

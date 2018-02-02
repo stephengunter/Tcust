@@ -3,10 +3,12 @@
       <div v-if="model" v-show="indexMode">
          <div class="row">
             <div class="col-sm-3" >
-					<h2>Clients</h2>
+					<h2>使用者管理</h2>
             </div>
-            <div class="col-sm-3">
-               
+            <div class="col-sm-3" style="margin-top: 20px;">
+               <drop-down :items="roles" :selected="role.value"
+						@selected="onRoleSelected">
+					</drop-down>
             </div>
             <div class="col-sm-3" style="margin-top: 20px;">
                <searcher @search="onSearch">
@@ -15,14 +17,14 @@
             <div class="col-sm-3" style="margin-top: 20px;">
                 <a @click.prevent="onCreate" href="#" class="btn btn-primary pull-right title-controll">
                   <i class="fa fa-plus" aria-hidden="true"></i>
-                  新增Client
+                  新增使用者
                </a>
             </div>
          </div>
 
          <hr/>
 
-         <client-table  :model="model"  @edit="onEdit" @remove="onDelete" >
+         <user-table  :model="model"  @edit="onEdit" @remove="onDelete" >
           
 			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"
@@ -30,15 +32,15 @@
 					</page-controll>
             
             </div>
-         </client-table>
+         </user-table>
 
       </div>
-      <client-edit v-if="editting"  :id="selected" 
+      <user-edit v-if="editting"  :id="selected" 
          @saved="onIndex" @cancel="onIndex">
-      </client-edit>
+      </user-edit>
       
       <delete-confirm :showing="deleteConfirm.showing" :message="deleteConfirm.message"
-        @close="deleteConfirm.showing=false" @confirmed="deleteClient">
+        @close="deleteConfirm.showing=false" @confirmed="deleteuser">
       </delete-confirm>
    </div> 
 </template>
@@ -46,24 +48,24 @@
 
 <script>
    import Searcher from '../components/searcher';
-   import ClientTable from '../components/client-table';
-   import ClientEdit from '../components/client-edit';
+   import UserTable from '../components/user-table';
+   import UserEdit from '../components/user-edit';
    export default {
-      name:'ClientAdminView',
+      name:'userAdminView',
       components: {
          Searcher,
-         'client-table':ClientTable,
-         'client-edit':ClientEdit
+         'user-table':UserTable,
+         'user-edit':UserEdit
       },
       props: {
          init_model: {
             type: Object,
             default: null
 			},
-			categories:{
+			roles:{
 				type:Array,
 				default:null
-			}
+			},
       },
       data(){
          return {
@@ -71,15 +73,15 @@
 				
             selected:0,
 				create:false,
+
+				role:null,
 				
 				params:{
-					category:0,
+					role:'',
 					keyword:'',
 					page:1,
 					pageSize:10
 				},
-				
-				category:null,
 
             deleteConfirm:{
                id:0,
@@ -95,6 +97,11 @@
 				this.params.page=this.init_model.pageNumber;
 				this.params.pageSize=this.init_model.pageSize;
 			}
+
+			if(this.roles){
+				this.setRole(this.roles[0]);
+				
+			}	
 
 		},
       computed:{
@@ -115,7 +122,7 @@
             this.create=false;
          },
          onCreate(){
-             this.create=true;
+            this.create=true;
          },
          onDetails(id){
             alert(id);
@@ -123,13 +130,13 @@
          onEdit(id){
             this.selected=id;
          },
-         onDelete(client){
-            this.deleteConfirm.id=client.id;
-            this.deleteConfirm.message='確定要刪除 ' + client.clientId + ' 嗎?';
+         onDelete(user){
+            this.deleteConfirm.id=user.id;
+            this.deleteConfirm.message='確定要刪除 ' + user.userId + ' 嗎?';
             this.deleteConfirm.showing=true;
          },
-         deleteClient(){
-				let remove=ClientAdmin.remove(this.deleteConfirm.id);
+         deleteuser(){
+				let remove=userAdmin.remove(this.deleteConfirm.id);
 				
 				remove.then(() => {
 					this.fetchData();
@@ -142,6 +149,14 @@
 				
 				this.deleteConfirm.showing=false;
 			},
+			onRoleSelected(role){
+				this.setRole(role);
+				this.fetchData();
+			},
+			setRole(role){
+				this.role=role;
+				this.params.role=role.value;
+			},
 			onPageChanged(page){
 				this.params.page=page;
 				this.fetchData();
@@ -153,7 +168,7 @@
 			},
          fetchData() {
 				
-            let getData = ClientAdmin.index(this.params);
+            let getData = UserAdmin.index(this.params);
 
             getData.then(model => {
 

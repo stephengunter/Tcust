@@ -20,7 +20,16 @@
 			</div>
 		</div>
       <hr/>
+	
       <form @submit.prevent="onSubmit" @keydown="clearErrorMsg($event.target.name)" class="form-horizontal">
+			<div v-if="isCreate" class="form-group">
+				<label class="col-md-2 control-label">Type</label>
+				<div class="col-md-10">
+					<select  v-model="form.type" @change="onTypeChanged" class="form-control"  style="max-width:180px">
+						<option v-for="(item,index) in typeOptions" :key="index" :value="item.value" v-text="item.text"></option>
+					</select>
+				</div>
+         </div>
 			<div class="form-group">
 				<label class="col-md-2 control-label">ClientId</label>
 				<div class="col-md-10">
@@ -45,31 +54,43 @@
 				
 				</div>
          </div>
-			<div class="form-group">
-				<label class="col-md-2 control-label">RedirectUri</label>
-				<div class="col-md-10">
-					<input name="client.redirectUri" v-model="form.client.redirectUri" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('client.redirectUri')" v-text="form.errors.get('client.redirectUri')"></small>
-				
+			<div v-if="isCreate">
+				<div class="form-group">
+					<label class="col-md-2 control-label">Uri</label>
+					<div class="col-md-10">
+						<input name="client.uri" v-model="form.client.uri" class="form-control" />
+						<small class="text-danger" v-if="form.errors.has('client.uri')" v-text="form.errors.get('client.uri')"></small>
+					
+					</div>
 				</div>
-         </div>
+			</div>
+			<div v-else>
+				<div class="form-group">
+					<label class="col-md-2 control-label">RedirectUri</label>
+					<div class="col-md-10">
+						<input name="client.redirectUri" v-model="form.client.redirectUri" class="form-control" />
+						<small class="text-danger" v-if="form.errors.has('client.redirectUri')" v-text="form.errors.get('client.redirectUri')"></small>
+					
+					</div>
+				</div>
 
-			<div class="form-group">
-				<label class="col-md-2 control-label">PostRedirectUri</label>
-				<div class="col-md-10">
-					<input name="client.postLogoutRedirectUri" v-model="form.client.postLogoutRedirectUri" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('client.postLogoutRedirectUri')" v-text="form.errors.get('client.postLogoutRedirectUri')"></small>
-				
+				<div class="form-group">
+					<label class="col-md-2 control-label">PostRedirectUri</label>
+					<div class="col-md-10">
+						<input name="client.postLogoutRedirectUri" v-model="form.client.postLogoutRedirectUri" class="form-control" />
+						<small class="text-danger" v-if="form.errors.has('client.postLogoutRedirectUri')" v-text="form.errors.get('client.postLogoutRedirectUri')"></small>
+					
+					</div>
 				</div>
-         </div>
-         <div class="form-group">
-				<label class="col-md-2 control-label">FrontChannelLogoutUri</label>
-				<div class="col-md-10">
-					<input name="client.frontChannelLogoutUri" v-model="form.client.frontChannelLogoutUri" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('client.frontChannelLogoutUri')" v-text="form.errors.get('client.frontChannelLogoutUri')"></small>
-				
+				<div class="form-group">
+					<label class="col-md-2 control-label">FrontChannelLogoutUri</label>
+					<div class="col-md-10">
+						<input name="client.frontChannelLogoutUri" v-model="form.client.frontChannelLogoutUri" class="form-control" />
+						<small class="text-danger" v-if="form.errors.has('client.frontChannelLogoutUri')" v-text="form.errors.get('client.frontChannelLogoutUri')"></small>
+					
+					</div>
 				</div>
-         </div>
+			</div>
 			<div class="form-group">
 				<label class="col-md-2 control-label"></label>
 				
@@ -118,10 +139,7 @@ export default {
 			loaded:false,
 			title:'',
 
-			textEditor:{
-				height:360,
-            toolbar:[]
-         },
+			typeOptions:[],
 
 			form:{},
 			submitting:false
@@ -157,10 +175,27 @@ export default {
 			else  getData=ClientAdmin.edit(this.id);  
 
 			getData.then(model => {
-			
-				this.form = new Form({
-					...model
-				});
+
+				if(this.isCreate){
+					this.typeOptions=model.typeOptions.slice(0);
+					this.form = new Form({
+						type:model.type,
+						client:{
+							...model.client
+						}
+					});
+				}else{
+					this.form = new Form({
+					
+						client:{
+							...model.client
+						}
+					});
+
+				}
+
+				
+				
 
 				this.loaded=true;
 				
@@ -170,8 +205,8 @@ export default {
 				this.loaded=false;
 			})
 		},
-		onCategorySelected(category){
-			this.form.client.categoryId=category.value
+		onTypeChanged(){
+
 		},
 		onSubmit(){
 			this.submitting=true;

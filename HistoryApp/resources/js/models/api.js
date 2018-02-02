@@ -1,6 +1,6 @@
 class Api {
    static source() {
-		return 'http://localhost:50001';
+		return 'http://api.tcust.edu.tw';
    }
    
    static getTermYears(){

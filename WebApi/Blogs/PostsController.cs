@@ -19,8 +19,8 @@ namespace WebApi.Blogs
 		Famer,
 		DaAi
 	}
-
-    public class PostsController : BaseApiController
+	
+	public class PostsController : BaseApiController
 	{
 		private readonly IPostService postService;
 
@@ -72,7 +72,7 @@ namespace WebApi.Blogs
 			return new ObjectResult(pageList);
 		}
 
-		[HttpGet]   //首頁輪播 , 排除大愛新聞
+		[HttpGet("[controller]/[action]")]  //首頁輪播 , 排除大愛新聞
 		public async Task<IActionResult> Tops(int pageSize = 12)
 		{
 			bool reviewed = true;
@@ -94,7 +94,7 @@ namespace WebApi.Blogs
 		}
 
 
-		
+		[HttpGet("[controller]/[action]")]
 		public async Task<IActionResult> GetDiaryList(string terms = "", string keyword = "", int page = 1, int pageSize = 10)
 		{
 		
@@ -119,7 +119,7 @@ namespace WebApi.Blogs
 
 		}
 
-		//校史館使用 GroupByYear
+		[HttpGet("[controller]/[action]")] //校史館使用 GroupByYear
 		public async Task<IEnumerable<PostsGroupByYearForm>> GetHonorList(string keyword = "")
 		{
 			var result = new List<PostsGroupByYearForm>();
@@ -155,7 +155,7 @@ namespace WebApi.Blogs
 
 		}
 
-		//校史館使用 GroupByYear
+		[HttpGet("[controller]/[action]")] //校史館使用 GroupByYear
 		public async Task<IActionResult> GetFamerList(string keyword = "", int page = 1, int pageSize=99)
 		{
 			
@@ -173,7 +173,7 @@ namespace WebApi.Blogs
 			return Ok(pageList);
 		}
 
-		//校史館使用 
+		[HttpGet("[controller]/[action]")] //校史館使用 
 		public async Task<IActionResult> GetDaAiNews(string keyword = "", int year=0, int month=0, int page = 1, int pageSize = 99)
 		{
 			
@@ -194,7 +194,7 @@ namespace WebApi.Blogs
 			return Ok(pageList);
 		}
 
-		//校史館使用 
+		[HttpGet("[controller]/[action]")] //校史館使用 
 		public async Task<IEnumerable<int>> GetDaAiNewsYears()
 		{
 			
@@ -211,7 +211,7 @@ namespace WebApi.Blogs
 
 		}
 
-		[HttpGet("api/[controller]/{id}")]
+		[HttpGet("[controller]/{id}")]
 		public  async Task<IActionResult> Details(int id)
 		{
 			var post = postService.GetById(id);

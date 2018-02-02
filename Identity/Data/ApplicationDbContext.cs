@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using IdentityApp.Models;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace IdentityApp.Data
 {
@@ -9,7 +10,7 @@ namespace IdentityApp.Data
 		public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
 			: base(options)
 		{
-
+			
 		}
 
 		public DbSet<Profile> Profiles { get; set; }
@@ -20,11 +21,17 @@ namespace IdentityApp.Data
 		{
 			base.OnModelCreating(builder);
 
+			
+
 			builder.Entity<ApplicationUser>()
 						.HasOne(u => u.Profile)
 						.WithOne(p => p.User)
 						.HasForeignKey<Profile>(p => p.UserId);
 
 		}
+
+		
+
+		
 	}
 }

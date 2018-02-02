@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using ApplicationCore.Helpers;
+using Microsoft.AspNetCore.Identity;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IdentityApp.Models
 {
@@ -11,11 +14,14 @@ namespace IdentityApp.Models
 		public DateTime LastUpdated { get; set; }
 		public string UpdatedBy { get; set; }
 
-
+	
 		public void SetUpdated(string updatedBy)
 		{
 			this.UpdatedBy = updatedBy;
 			this.LastUpdated = DateTime.Now;
 		}
+
+		
+		
 	}
 }

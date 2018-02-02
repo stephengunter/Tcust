@@ -65965,7 +65965,7 @@ var Api = function () {
 		_createClass(Api, null, [{
 				key: 'source',
 				value: function source() {
-						return 'http://localhost:50001/api';
+						return 'http://api.tcust.edu.tw';
 				}
 		}, {
 				key: 'getTermYears',

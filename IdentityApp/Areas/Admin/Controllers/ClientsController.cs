@@ -12,6 +12,7 @@ using ApplicationCore.Paging;
 using IdentityApp.Areas.Admin.Helper;
 using Microsoft.EntityFrameworkCore;
 using IdentityApp.Areas.Admin.Services;
+using IdentityServer4.EntityFramework.Mappers;
 
 namespace IdentityApp.Areas.Admin.Controllers
 {
@@ -19,13 +20,10 @@ namespace IdentityApp.Areas.Admin.Controllers
 	public class ClientsController : BaseAdminController
 	{
 		private readonly IIdentityConfigService identityConfigService;
-		private readonly ViewService viewService;
 
 		public ClientsController(IIdentityConfigService identityConfigService)
 		{
 			this.identityConfigService = identityConfigService;
-
-			this.viewService=new ViewService();
 		}
 		
 
@@ -39,7 +37,7 @@ namespace IdentityApp.Areas.Admin.Controllers
 			foreach (var item in pageList.List)
 			{
 				
-				pageList.ViewList.Add(viewService.MapClientViewModel(item));
+				pageList.ViewList.Add(ViewService.MapClientViewModel(item));
 			}
 
 			pageList.List = null;
@@ -47,7 +45,7 @@ namespace IdentityApp.Areas.Admin.Controllers
 
 			if (Request.IsAjaxRequest())
 			{
-				return new ObjectResult(pageList);
+				return Ok(pageList);
 			}
 
 
@@ -56,73 +54,47 @@ namespace IdentityApp.Areas.Admin.Controllers
 			return View();
 		}
 
-		//[HttpGet]
-		//public IActionResult Create()
-		//{
-		//	if (!Request.IsAjaxRequest()) return NotFound();
+		[HttpGet]
+		public IActionResult Create()
+		{
+			if (!Request.IsAjaxRequest()) return NotFound();
 
 
-		//	var client = new ClientViewModel()
-		//	{
-		//		 clientId = Guid.NewGuid().ToString(),
-		//		 secret = Guid.NewGuid().ToString()
-		//	};
-			
-		//	var model = new ClientEditForm
-		//	{
-		//		client = client
-		//	};
+			var client = new ClientViewModel()
+			{
+				secret = Guid.NewGuid().ToString()
+			};
 
-		//	return new ObjectResult(model);
-		//}
-
-		//[HttpPost("[area]/[controller]")]
-		//public async Task<IActionResult> Store([FromBody] ClientEditForm model)
-		//{
-
-		//	if (!ModelState.IsValid)
-		//	{
-		//		return BadRequest(ModelState);
-		//	}
-
-		//	var client = model.client.MapToEntity();
-
-		//	var secret = new Secret(model.client.secret.Sha256());
-		//	client.ClientSecrets.Add(secret) ;
-
-		//	client.AllowedGrantTypes = GrantTypes.HybridAndClientCredentials;
-			
-
-		//	client.RequireConsent = false;
-		//	client.AllowOfflineAccess = true;
-		//	client.AlwaysSendClientClaims = true;
-		//	client.AlwaysIncludeUserClaimsInIdToken = true;
-
-		//	client.AllowedScopes = new List<string>()
-		//	{
-		//		IdentityServerConstants.StandardScopes.OpenId,
-		//		IdentityServerConstants.StandardScopes.Profile
-		//	};
-
-		//	client.RedirectUris = new List<string>()
-		//	{
-		//		String.Format("{0}/signin-oidc",client.ClientUri)
+			var model = new ClientEditForm
+			{
+				client = client,
+				typeOptions = ViewService.GetClientTypeOptions(),
 				
-		//	};
-		//	client.PostLogoutRedirectUris = new List<string>()
-		//	{
-		//		String.Format("{0}/signout-callback-oidc",client.ClientUri)
+			};
 
-		//	};
+			model.type = model.typeOptions.FirstOrDefault().value;
 
-			
-		//	await configurationDbContext.Clients.AddAsync(client.ToEntity());
-		//	await configurationDbContext.SaveChangesAsync();
+			return  Ok(model);
+		}
 
-		//	return new ObjectResult(client);
+		[HttpPost("[area]/[controller]")]
+		public async Task<IActionResult> Store([FromBody] ClientEditForm model)
+		{
+
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			var client = model.client.MapToCreateEntity(model.type).ToEntity();
 
 
-		//}
+			client = await identityConfigService.CreateClientAsync(client);
+
+			return Ok(client);
+
+
+		}
 
 		[HttpGet("[area]/[controller]/{id}/edit")]
 		public IActionResult Edit(int id)
@@ -132,10 +104,10 @@ namespace IdentityApp.Areas.Admin.Controllers
 
 			var model = new ClientEditForm
 			{
-				client = viewService.MapClientViewModel(client)
+				client = ViewService.MapClientViewModel(client)
 			};
 
-			return new ObjectResult(model);
+			return  Ok(model);
 		}
 
 		[HttpPut("[area]/[controller]/{id}")]
@@ -158,12 +130,19 @@ namespace IdentityApp.Areas.Admin.Controllers
 
 			await identityConfigService.UpdateClientAsync(client, clientId, title, secret, redirectUri, postLogoutRedirectUri, frontChannelLogoutUri);
 
-			return new NoContentResult();
+			return Ok();
 
 
 		}
 
-		
+		[HttpDelete]
+		public async Task<IActionResult> Delete(int id)
+		{
+			await identityConfigService.DeleteClientAsync(id);
+
+			return Ok();
+
+		}
 
 	}
 }

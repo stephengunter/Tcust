@@ -33,7 +33,10 @@ import Form from './utilities/Form';
 window.Form = Form;
 
 import ClientAdmin from './models/clientAdmin';
+import UserAdmin from './models/userAdmin';
+
 window.ClientAdmin = ClientAdmin;
+window.UserAdmin = UserAdmin;
 
 
 window.Bus = new Vue({});

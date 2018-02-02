@@ -24,9 +24,9 @@
                      <button class="btn btn-sm btn-primary" @click.prevent="edit(client.id)">
                         <i class="fa fa-pencil" aria-hidden="true"></i>
                      </button>
-                     <!-- <button class="btn btn-sm btn-danger" @click.prevent="remove(client)">
+                     <button class="btn btn-sm btn-danger" @click.prevent="remove(client)">
                         <i class="fa fa-trash-o" aria-hidden="true"></i>
-                     </button>     -->
+                     </button>    
 
                   </td>
                </tr>
@@ -54,7 +54,7 @@ export default {
       edit(id){
          this.$emit('edit',id);
       },
-      remove(user){
+      remove(client){
          this.$emit('remove',client);
       }
    }

@@ -1,25 +1,21 @@
-﻿html * {
-	font-family: "微軟正黑體", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-.site-nav {
-	font-size: 1.75em;
+﻿.site-nav {
+    font-size: 1.75em;
 }
 
 .search-box {
-	min-width: 200px;
+    min-width: 200px;
 }
 
 .summary-img {
-	width: 180px;
+    width: 180px;
 }
 
 .author-text {
-	font-size: 0.85em
+    font-size: 0.85em
 }
 
 .summary-text {
-	font-size: 0.85em
+    font-size: 0.85em
 }
 
 
@@ -28,26 +24,26 @@
 }*/
 
 .navbar-toggler-icon {
-	display: inline-block;
-	width: 1.5em;
-	height: 1.5em;
-	vertical-align: middle;
-	content: "";
-	background: no-repeat center center;
-	background-size: 100% 100%;
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    vertical-align: middle;
+    content: "";
+    background: no-repeat center center;
+    background-size: 100% 100%;
 }
 
 .stylish-input-group .input-group-addon {
-	background: white !important;
+    background: white !important;
 }
 
 .stylish-input-group .form-control {
-	border-right: 0;
-	box-shadow: 0 0 0;
-	border-color: #ccc;
+    border-right: 0;
+    box-shadow: 0 0 0;
+    border-color: #ccc;
 }
 
 .stylish-input-group button {
-	border: 0;
-	background: transparent;
+    border: 0;
+    background: transparent;
 }

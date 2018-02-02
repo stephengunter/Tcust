@@ -14,7 +14,10 @@ namespace IdentityApp.Areas.Admin.Services
 	{
 		Task<IEnumerable<Client>> FetchClients(string keyword = "");
 		Client GetClientById(int id);
+		Task<Client> CreateClientAsync(Client client);
 		Task UpdateClientAsync(Client client, string clientId, string title, string secret, string redirectUri, string postLogoutRedirectUri,string frontChannelLogoutUri);
+		Task DeleteClientAsync(int id);
+
 	}
 
 	public class IdentityConfigService: IIdentityConfigService
@@ -73,6 +76,11 @@ namespace IdentityApp.Areas.Admin.Services
 			return  clientRepository.GetSingleBySpec(spec);
 		}
 
+		public async Task<Client> CreateClientAsync(Client client)
+		{
+			return await clientRepository.AddAsync(client);
+		}
+
 		public async Task UpdateClientAsync(Client client, string  clientId ,string title, string secret, string redirectUri, string postLogoutRedirectUri, string frontChannelLogoutUri)
 		{
 			if (!String.IsNullOrEmpty(clientId)) client.ClientId = clientId;
@@ -109,6 +117,12 @@ namespace IdentityApp.Areas.Admin.Services
 			client.FrontChannelLogoutUri = frontChannelLogoutUri;
 
 			await clientRepository.UpdateAsync(client);
+		}
+
+		public async Task DeleteClientAsync(int id)
+		{
+			var entity =await clientRepository.GetByIdAsync(id);
+			await clientRepository.DeleteAsync(entity);
 		}
 
 

@@ -1,0 +1,36 @@
+﻿<user-admin :init_model="model" :roles="roles"></user-admin>
+
+
+
+@section scripts{
+	<script>
+		$("#linkUsers").addClass("active");
+
+		new Vue({
+			el: '#main',
+			data() {
+				return {
+					model: {},
+					roles: []
+				}
+			},
+			beforeMount() {
+				this.model =@Html.Raw(ViewData["list"]);
+
+				let roleList =@Html.Raw(ViewData["roles"]);
+				this.roles = roleList;
+			},
+			methods: {
+
+			}
+
+		});
+
+
+
+	</script>
+
+}
+
+
+

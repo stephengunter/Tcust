@@ -7,10 +7,11 @@ using Microsoft.AspNetCore.Authorization;
 using WebApi.Controllers;
 using IdentityApp.Services;
 using IdentityApp.Views;
+using IdentityApp.Helper;
 
 namespace WebApi.Identity
 {
-
+	[Authorize]
 	public class UsersController : BaseApiController
 	{
 		private readonly IUserService userService;
@@ -20,17 +21,17 @@ namespace WebApi.Identity
 			this.userService = userService;
 		}
 
-		
+		[HttpGet("[controller]/[action]")]
 		public IActionResult GetUserByEmail(string email)
 		{
 			var user= userService.GetUserByEmail(email);
 
 			if (user == null) return NotFound();
 
-			var model = IdentityViewService.MapUserViewModel(user);
+			var model = user.MapIdentityUserViewModel();
 			
 
-			return new ObjectResult(model);
+			return Ok(model);
 		}
 
 

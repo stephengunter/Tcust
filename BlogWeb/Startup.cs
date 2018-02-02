@@ -79,8 +79,8 @@ namespace BlogWeb
 				options.Authority = Configuration["AppSettings:AuthUrl"];
 				options.RequireHttpsMetadata = false;
 
-				options.ClientId = "blog-mvc";
-				options.ClientSecret = "secret";
+				options.ClientId = Configuration["AppSettings:AuthId"];
+				options.ClientSecret = Configuration["AppSettings:AuthSecret"]; ;
 				options.ResponseType = "code id_token";
 
 				options.SaveTokens = true;

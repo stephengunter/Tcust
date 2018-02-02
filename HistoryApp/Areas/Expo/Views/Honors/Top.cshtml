@@ -22,21 +22,21 @@
 			position: initial;
 		}
 
-		.slick-dots li button {
-			color: #ffffff;
-			text-shadow: 0px 0px 16px #666666;
-			line-height: 20px;
-		}
+			.slick-dots li button {
+				color: #ffffff;
+				text-shadow: 0px 0px 16px #666666;
+				line-height: 20px;
+			}
 
-		.slick-dots li button:before {
-			color: white;
-			font-size: 45px;
-		}
+				.slick-dots li button:before {
+					color: white;
+					font-size: 45px;
+				}
 
-		.slick-dots li.slick-active button:before {
-			color: white;
-			opacity: 0.75;
-		}
+			.slick-dots li.slick-active button:before {
+				color: white;
+				opacity: 0.75;
+			}
 	</style>
 
 
@@ -48,7 +48,7 @@
 
 @section scripts{
 
-	
+
 
 
 	<script>
@@ -59,7 +59,7 @@
 			data() {
 				return {
 
-					
+
 				}
 			},
 			beforeMount() {
@@ -67,7 +67,7 @@
 			},
 			methods: {
 				onSelected() {
-					window.location = '@Url.Action("Honors", "Posts", new { Area = "Expo" })';
+					window.location = '@Url.Action("List", "Honors", new { Area = "Expo" })';
 				}
 
 

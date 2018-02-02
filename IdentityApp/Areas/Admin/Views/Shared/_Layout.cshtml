@@ -30,10 +30,12 @@
 				</div>
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
-						<li id="linkPosts" style="font-size:1.8em">
-							<a href="/admin/clients">Clients</a>
+						<li id="linkClients" style="font-size:1.2em">
+							<a href="@Url.Action("Index", "clients", new { Area = "Admin" })">Clients</a>
 						</li>
-
+						<li id="linkUsers" style="font-size:1.2em">
+							<a href="@Url.Action("Index", "Users", new { Area = "Admin" })">使用者管理</a>
+						</li>
 						
 						
 					</ul>

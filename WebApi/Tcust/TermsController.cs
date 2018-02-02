@@ -33,7 +33,7 @@ namespace WebApi.Tcust
 
 		}
 
-
+		[HttpGet("[controller]/[action]")]
 		public IActionResult GetActiveTerm()
 		{
 			var term = termService.GetActiveTerm();

@@ -6,22 +6,23 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HistoryApp.Areas.Expo.Controllers
 {
-    public class PostsController : BaseExpoController
+	public class HonorsController : BaseExpoController
 	{
-		
-
 		public IActionResult Index()
-        {
-            return View();
-        }
-		public IActionResult Diaries()
+		{
+			return View("Top");
+		}
+
+		public IActionResult List()
 		{
 			return View();
 		}
-		
-		public IActionResult News()
+
+		public IActionResult Search()
 		{
 			return View();
+
 		}
+
 	}
 }
