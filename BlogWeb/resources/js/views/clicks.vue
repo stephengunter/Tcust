@@ -22,7 +22,7 @@
 
          <hr/>
 
-         <post-table :clicks="true" :model="model" :desc="desc" :can_edit="can_edit" @sort="onSort">
+         <post-table :type="type" :clicks="true" :model="model" :desc="desc" :sortby="params.sortby"  :can_edit="can_edit" @sort="onSort">
           
 			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"
@@ -57,12 +57,14 @@
       },
       data(){
          return {
+				type:'clicks',
 				model:null,
             can_edit:false,
             
 				params:{
                period:'',
 					sort:'desc',
+					sortby:'clicks',
 					page:1,
 					pageSize:10
 				},

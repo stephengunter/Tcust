@@ -42,7 +42,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 
 		[HttpGet]
-		public async Task<IActionResult> Index(int category=0 , bool reviewed=true , string terms="" ,string keyword="" ,int page = 1, int pageSize=10 )
+		public async Task<IActionResult> Index(int category=0 , bool reviewed=true , string terms="" ,string keyword="" , string sortby = "date", string sort = "desc", int page = 1, int pageSize=10 )
 		{
 			Category selectedCategory = null;
 			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
@@ -56,9 +56,20 @@ namespace BlogWeb.Areas.Admin.Controllers
 				posts = posts.Where(p => termNumbers.Contains(p.TermNumber));
 			}
 
+			if (sortby == "date")
+			{
+				sort = "desc";
+				posts = viewService.OrderPosts(posts);
+			}
+			else
+			{
+				bool desc = sort != "asc";
 
+				if (desc) posts = posts.OrderByDescending(p => p.Number);
+				else posts = posts.OrderBy(p => p.Number);
 
-			posts = viewService.OrderPosts(posts);
+			}
+			
 
 			bool withCategories = true;
 			var pageList = await viewService.GetPostPagedList(posts, page, pageSize, withCategories);

@@ -30,7 +30,8 @@
 
          <hr/>
 
-         <post-table :model="model" :can_delete="can_delete"  @edit="onEdit" @remove="onDelete" >
+         <post-table :model="model" :can_delete="can_delete" :desc="desc" :sortby="params.sortby" 
+				@edit="onEdit" @remove="onDelete" @sort="onSort">
           
 			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"
@@ -94,6 +95,8 @@
 					terms:'',
 					category:0,
 					reviewed:true,
+					sort:'desc',
+					sortby:'',
 					keyword:'',
 					page:1,
 					pageSize:10
@@ -133,7 +136,10 @@
          indexMode(){
             if(this.editting) return false;
             return true;
-			}
+			},
+			desc(){
+            return this.params.sort=='desc';
+         }
       }, 
       methods:{
          onIndex(){
@@ -193,6 +199,26 @@
 				
 				this.params.terms=terms;
 				this.fetchData();
+			},
+			onSort(key){
+				
+				if(key=='date'){
+					this.params.sort='desc';
+					this.params.sortby=key;
+				}else{
+					if(this.params.sortby!=key){
+
+						this.params.sortby=key;
+						
+					}else{
+						if(this.desc) this.params.sort='asc';
+            		else  this.params.sort='desc';
+					}
+					
+				}
+				
+
+            this.fetchData();
 			},
          fetchData() {
 				

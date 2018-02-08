@@ -23,7 +23,7 @@
 
          <hr/>
 
-         <post-table :top="true" :can_edit="false" :model="model"  @submit-orders="onSubmit">
+         <post-table :type="type" :top="true" :can_edit="false" :model="model"  @submit-orders="onSubmit">
           
 			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"
@@ -57,6 +57,7 @@
       },
       data(){
          return {
+				type:'tops',
 				model:null,
 				
 				params:{

@@ -23,7 +23,7 @@
 
          <hr/>
 
-         <post-table ref="postTable" :model="model" :can_check="true"
+         <post-table :type="type" ref="postTable" :model="model" :can_check="true"
 						@edit="onEdit"	 @remove="onDelete" @check-changed="onCheckChanged">
           
 			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
@@ -63,6 +63,7 @@
       },
       data(){
          return {
+				type:'review',
 				model:null,
 				selected:0,
 				params:{

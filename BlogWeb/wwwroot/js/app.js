@@ -37437,7 +37437,7 @@ var Api = function () {
 		_createClass(Api, null, [{
 				key: 'source',
 				value: function source() {
-						return 'http://localhost:50001';
+						return 'http://api.tcust.edu.tw';
 				}
 		}, {
 				key: 'setToken',
@@ -44608,6 +44608,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 //
 //
 //
+//
 
 
 
@@ -44648,6 +44649,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 												terms: '',
 												category: 0,
 												reviewed: true,
+												sort: 'desc',
+												sortby: '',
 												keyword: '',
 												page: 1,
 												pageSize: 10
@@ -44684,6 +44687,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 						indexMode: function indexMode() {
 									if (this.editting) return false;
 									return true;
+						},
+						desc: function desc() {
+									return this.params.sort == 'desc';
 						}
 			},
 			methods: {
@@ -44741,6 +44747,22 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 						onYearTermChanged: function onYearTermChanged(terms) {
 
 									this.params.terms = terms;
+									this.fetchData();
+						},
+						onSort: function onSort(key) {
+
+									if (key == 'date') {
+												this.params.sort = 'desc';
+												this.params.sortby = key;
+									} else {
+												if (this.params.sortby != key) {
+
+															this.params.sortby = key;
+												} else {
+															if (this.desc) this.params.sort = 'asc';else this.params.sort = 'desc';
+												}
+									}
+
 									this.fetchData();
 						},
 						fetchData: function fetchData() {
@@ -45224,6 +45246,28 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
 	name: 'PostTable',
@@ -45231,6 +45275,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 		model: {
 			type: Object,
 			default: null
+		},
+		type: {
+			type: String,
+			default: 'posts'
 		},
 		can_edit: {
 			type: Boolean,
@@ -45255,7 +45303,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 		desc: {
 			type: Boolean,
 			default: true
+		},
+		sortby: {
+			type: String,
+			default: ''
 		}
+
 	},
 	data: function data() {
 		return {
@@ -45269,6 +45322,15 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			var posts = this.getPostList();
 			if (!posts) return false;
 			return posts.length > 0;
+		},
+		sortByNumber: function sortByNumber() {
+			return this.sortby == 'number';
+		},
+		sortByClicks: function sortByClicks() {
+			return this.sortby == 'clicks';
+		},
+		isDefaultMode: function isDefaultMode() {
+			return this.type == 'posts';
 		}
 	},
 	watch: {
@@ -45283,8 +45345,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 		remove: function remove(post) {
 			this.$emit('remove', post);
 		},
-		onSort: function onSort() {
-			this.$emit('sort');
+		onSort: function onSort(key) {
+			this.$emit('sort', key);
 		},
 		getPostList: function getPostList() {
 			if (this.model) return this.model.viewList;
@@ -45319,7 +45381,6 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			this.checked_ids = [];
 		},
 		submitOrders: function submitOrders() {
-
 			this.$emit('submit-orders');
 		}
 	}
@@ -45369,23 +45430,38 @@ var render = function() {
                         on: {
                           click: function($event) {
                             $event.preventDefault()
-                            _vm.onSort($event)
+                            _vm.onSort("clicks")
                           }
                         }
                       },
                       [
                         _vm._v(
-                          "\n                     點擊數\n                       "
+                          "\n                     \t點擊數\n\t\t\t\t\t\t\t\t"
                         ),
-                        _vm.desc
-                          ? _c("i", {
-                              staticClass: "fa fa-sort-desc",
-                              attrs: { "aria-hidden": "true" }
-                            })
-                          : _c("i", {
-                              staticClass: "fa fa-sort-asc",
-                              attrs: { "aria-hidden": "true" }
-                            })
+                        _c(
+                          "span",
+                          {
+                            directives: [
+                              {
+                                name: "show",
+                                rawName: "v-show",
+                                value: _vm.sortByClicks,
+                                expression: "sortByClicks"
+                              }
+                            ]
+                          },
+                          [
+                            _vm.desc
+                              ? _c("i", {
+                                  staticClass: "fa fa-sort-desc",
+                                  attrs: { "aria-hidden": "true" }
+                                })
+                              : _c("i", {
+                                  staticClass: "fa fa-sort-asc",
+                                  attrs: { "aria-hidden": "true" }
+                                })
+                          ]
+                        )
                       ]
                     )
                   ])
@@ -45393,13 +45469,96 @@ var render = function() {
               _vm._v(" "),
               _c("th", { staticStyle: { width: "10%" } }, [_vm._v("分類")]),
               _vm._v(" "),
-              _c("th", { staticStyle: { width: "10%" } }, [_vm._v("編號")]),
+              _c("th", { staticStyle: { width: "10%" } }, [
+                _vm.isDefaultMode
+                  ? _c(
+                      "a",
+                      {
+                        attrs: { href: "#" },
+                        on: {
+                          click: function($event) {
+                            $event.preventDefault()
+                            _vm.onSort("number")
+                          }
+                        }
+                      },
+                      [
+                        _vm._v(
+                          "\n                     \t編號\n                        "
+                        ),
+                        _c(
+                          "span",
+                          {
+                            directives: [
+                              {
+                                name: "show",
+                                rawName: "v-show",
+                                value: _vm.sortByNumber,
+                                expression: "sortByNumber"
+                              }
+                            ]
+                          },
+                          [
+                            _vm.desc
+                              ? _c("i", {
+                                  staticClass: "fa fa-sort-desc",
+                                  attrs: { "aria-hidden": "true" }
+                                })
+                              : _c("i", {
+                                  staticClass: "fa fa-sort-asc",
+                                  attrs: { "aria-hidden": "true" }
+                                })
+                          ]
+                        )
+                      ]
+                    )
+                  : _c("span", [_vm._v("編號")])
+              ]),
               _vm._v(" "),
               _c("th", { staticStyle: { width: "20%" } }, [_vm._v("標題")]),
               _vm._v(" "),
               _c("th", { staticStyle: { width: "20%" } }, [_vm._v("作者")]),
               _vm._v(" "),
-              _c("th", { staticStyle: { width: "10%" } }, [_vm._v("日期")]),
+              _c("th", { staticStyle: { width: "10%" } }, [
+                _vm.isDefaultMode
+                  ? _c(
+                      "a",
+                      {
+                        attrs: { href: "#" },
+                        on: {
+                          click: function($event) {
+                            $event.preventDefault()
+                            _vm.onSort("date")
+                          }
+                        }
+                      },
+                      [
+                        _vm._v(
+                          "\n                     \t日期\n\t\t\t\t\t\t\t\t"
+                        ),
+                        _c(
+                          "span",
+                          {
+                            directives: [
+                              {
+                                name: "show",
+                                rawName: "v-show",
+                                value: _vm.sortby == "date",
+                                expression: "sortby=='date'"
+                              }
+                            ]
+                          },
+                          [
+                            _c("i", {
+                              staticClass: "fa fa-sort-desc",
+                              attrs: { "aria-hidden": "true" }
+                            })
+                          ]
+                        )
+                      ]
+                    )
+                  : _c("span", [_vm._v("日期")])
+              ]),
               _vm._v(" "),
               _vm.can_edit
                 ? _c("th", { staticStyle: { width: "8%" } })
@@ -47358,8 +47517,17 @@ var render = function() {
               _c(
                 "post-table",
                 {
-                  attrs: { model: _vm.model, can_delete: _vm.can_delete },
-                  on: { edit: _vm.onEdit, remove: _vm.onDelete }
+                  attrs: {
+                    model: _vm.model,
+                    can_delete: _vm.can_delete,
+                    desc: _vm.desc,
+                    sortby: _vm.params.sortby
+                  },
+                  on: {
+                    edit: _vm.onEdit,
+                    remove: _vm.onDelete,
+                    sort: _vm.onSort
+                  }
                 },
                 [
                   _c(
@@ -47544,6 +47712,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 	},
 	data: function data() {
 		return {
+			type: 'tops',
 			model: null,
 
 			params: {
@@ -47680,7 +47849,12 @@ var render = function() {
             _c(
               "post-table",
               {
-                attrs: { top: true, can_edit: false, model: _vm.model },
+                attrs: {
+                  type: _vm.type,
+                  top: true,
+                  can_edit: false,
+                  model: _vm.model
+                },
                 on: { "submit-orders": _vm.onSubmit }
               },
               [
@@ -47871,6 +48045,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
    },
    data: function data() {
       return {
+         type: 'review',
          model: null,
          selected: 0,
          params: {
@@ -48043,7 +48218,7 @@ var render = function() {
                 "post-table",
                 {
                   ref: "postTable",
-                  attrs: { model: _vm.model, can_check: true },
+                  attrs: { type: _vm.type, model: _vm.model, can_check: true },
                   on: {
                     edit: _vm.onEdit,
                     remove: _vm.onDelete,
@@ -48242,12 +48417,14 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
    },
    data: function data() {
       return {
+         type: 'clicks',
          model: null,
          can_edit: false,
 
          params: {
             period: '',
             sort: 'desc',
+            sortby: 'clicks',
             page: 1,
             pageSize: 10
          },
@@ -48355,9 +48532,11 @@ var render = function() {
               "post-table",
               {
                 attrs: {
+                  type: _vm.type,
                   clicks: true,
                   model: _vm.model,
                   desc: _vm.desc,
+                  sortby: _vm.params.sortby,
                   can_edit: _vm.can_edit
                 },
                 on: { sort: _vm.onSort }

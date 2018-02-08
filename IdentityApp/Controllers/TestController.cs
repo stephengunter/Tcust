@@ -9,7 +9,13 @@ using System.IO;
 
 namespace IdentityApp.Controllers
 {
-    public class TestController : Controller
+	public class News
+	{
+		public string number { get; set; }
+		public int id { get; set; }
+	}
+
+	public class TestController : Controller
     {
 		private readonly IOptions<AppSettings> settings;
 		private readonly IHostingEnvironment _env;
@@ -21,9 +27,26 @@ namespace IdentityApp.Controllers
 
 		public IActionResult Index()
         {
-			
+			var lists = new List<News>
+			{
+				new News{  id=1  , number="news107009"},
 
-			return Content(GetForgotPasswordMailBody("阿水","http://google.com"));
+				new News{  id=2  , number="news107018"},
+
+				new News{  id=3  , number="news107110"},
+
+			};
+
+			lists = lists.OrderByDescending(n=>n.number).ToList();
+
+			string test = "";
+			for (int i = 0; i < lists.Count; i++)
+			{
+				test += lists[i].number + ",";
+			}
+
+			return Content(test);
+			//return Content(GetForgotPasswordMailBody("阿水","http://google.com"));
         }
 
 		private string GetForgotPasswordMailBody(string userName , string actionUrl)

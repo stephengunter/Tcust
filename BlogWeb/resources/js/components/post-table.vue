@@ -11,17 +11,39 @@
 						</th>
                   <th style="width:8%">&nbsp;</th>
                   <th style="width:8%" v-if="clicks">
-                     <a href="#" @click.prevent="onSort">
-                     點擊數
-                       <i v-if="desc" class="fa fa-sort-desc" aria-hidden="true"></i>
-                       <i v-else class="fa fa-sort-asc" aria-hidden="true"></i>
+                     <a href="#" @click.prevent="onSort('clicks')">
+                     	點擊數
+								<span v-show="sortByClicks">
+									<i v-if="desc" class="fa fa-sort-desc" aria-hidden="true"></i>
+									<i v-else class="fa fa-sort-asc" aria-hidden="true"></i>
+							   </span>
                      </a>
+							
                   </th>
 						<th style="width:10%">分類</th>
-                  <th style="width:10%">編號</th>
+                  <th style="width:10%">
+							
+							<a v-if="isDefaultMode" href="#" @click.prevent="onSort('number')">
+                     	編號
+                        <span v-show="sortByNumber">
+									<i v-if="desc" class="fa fa-sort-desc" aria-hidden="true"></i>
+									<i v-else class="fa fa-sort-asc" aria-hidden="true"></i>
+							   </span>
+                     </a>
+							<span  v-else >編號</span>
+						</th>
                   <th style="width:20%">標題</th>
                   <th style="width:20%">作者</th>
-                  <th style="width:10%">日期</th>
+                  <th style="width:10%">
+							
+							<a  v-if="isDefaultMode" href="#" @click.prevent="onSort('date')">
+                     	日期
+								<span v-show="sortby=='date'">
+									<i  class="fa fa-sort-desc" aria-hidden="true"></i>
+							   </span>
+                     </a>
+							<span v-else>日期</span>
+						</th>
                   <th style="width:8%" v-if="can_edit"></th>
 						<th style="width:8%" v-if="top">
 							重要性 &nbsp;
@@ -91,6 +113,10 @@ export default {
          type: Object,
          default: null
       },
+		type:{
+         type: String,
+         default: 'posts'
+      },
       can_edit:{
          type: Boolean,
          default: true
@@ -114,12 +140,17 @@ export default {
       desc:{
          type: Boolean,
          default: true
-      }
+      },
+		sortby:{
+			type: String,
+         default: ''
+		},
+		
 	},
 	data() {
 		return {
 			checked_ids:[],
-			checkAll: false
+			checkAll: false,
 		};
 	},
 	computed:{
@@ -127,7 +158,17 @@ export default {
 			let posts=this.getPostList();
 			if(!posts) return false;
 			return posts.length > 0;
+		},
+		sortByNumber(){
+			return this.sortby=='number';
+		},
+		sortByClicks(){
+			return this.sortby=='clicks';
+		},
+		isDefaultMode(){
+			return this.type=='posts';
 		}
+		
    }, 
 	watch: {
 		checked_ids() {
@@ -141,8 +182,8 @@ export default {
       remove(post){
          this.$emit('remove',post);
       },
-      onSort(){
-         this.$emit('sort');
+      onSort(key){
+         this.$emit('sort',key);
 		},
 		getPostList(){
 			if(this.model) return this.model.viewList;
@@ -176,7 +217,6 @@ export default {
 			this.checked_ids=[];
 		},
 		submitOrders(){
-			
 			this.$emit('submit-orders');
 		}
    }
