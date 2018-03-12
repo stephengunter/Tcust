@@ -42,7 +42,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 
 		[HttpGet]
-		public async Task<IActionResult> Index(int category=0 , bool reviewed=true , string terms="" ,string keyword="" , string sortby = "date", string sort = "desc", int page = 1, int pageSize=10 )
+		public async Task<IActionResult> Index(int category=0 , bool reviewed=true , string terms="" ,string keyword="" , string sortby = "", string sort = "", int page = 1, int pageSize=10 )
 		{
 			Category selectedCategory = null;
 			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
@@ -55,6 +55,10 @@ namespace BlogWeb.Areas.Admin.Controllers
 				var termNumbers= terms.Split(',').ToList().Select(int.Parse).ToList();
 				posts = posts.Where(p => termNumbers.Contains(p.TermNumber));
 			}
+
+			if (String.IsNullOrEmpty(sortby)) sortby = "date";
+
+			if (String.IsNullOrEmpty(sort)) sort = "desc";
 
 			if (sortby == "date")
 			{

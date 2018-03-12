@@ -99,8 +99,8 @@ export default {
 	data(){
 		return {
 			loaded:false,
-         title:'',
-         email:'',
+			title:'',
+			email:'',
 			emailError:'',
 			permissionError:'',
 			
@@ -199,7 +199,7 @@ export default {
 			
 
 			this.form.user.userId=user.id;
-			this.form.user.name=user.fullname;
+			this.form.user.name=user.profile.fullname;
 
 
 			let save=null;

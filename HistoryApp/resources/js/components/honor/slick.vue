@@ -51,7 +51,8 @@ export default {
          return this.getPhoto().previewPath;
       },
       lockWidth(){
-         return Photo.lockWidth(this.getPhoto());
+         
+        return Photo.lockWidth(this.getPhoto());
          
       },
    },

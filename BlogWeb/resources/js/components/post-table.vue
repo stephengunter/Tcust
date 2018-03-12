@@ -7,7 +7,7 @@
 						<th v-if="can_check" style="width:5%">
 							<check-box :value="0" :default="checkAll"
 							 @selected="onCheckAll" @unselected="unCheckAll">
-							 </check-box>
+							</check-box>
 						</th>
                   <th style="width:8%">&nbsp;</th>
                   <th style="width:8%" v-if="clicks">

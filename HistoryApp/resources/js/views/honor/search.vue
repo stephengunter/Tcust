@@ -6,12 +6,12 @@
          <search-list v-if="getPosts()" :posts="getPosts()" 
 				@selected="onSelected" @next-page="pageNext" >
          </search-list>
-         <div  class="rightbox">
-           <div v-show="loaded">
-             <ul class="btnIcon">
-               <a href="#" @click.prevent="onBack"></a>
-              </ul>
-           </div>
+         <div class="rightbox">
+            <div v-show="loaded">
+               <ul class="btnIcon">
+               	<a href="#" @click.prevent="onBack"></a>
+               </ul>
+            </div>
          </div> 
       </div>
    </div>
@@ -53,14 +53,14 @@ export default {
    },
    methods:{
       onSearch(keyword){
-			
-         this.params.keyword=keyword;
+			this.params.keyword=keyword;
+			this.model=null;
          this.searchPosts();
       },
       searchPosts(){
 			this.busy=true;
 
-         let getData = Api.getDiaryList(this.params);
+         let getData = Api.searchHonorList(this.params);
 
          getData.then(model => {
             if(this.model){
@@ -102,7 +102,6 @@ export default {
 			return null;
 		},
 		onSelected(id){
-			
 			this.$emit('selected',id);
 		},
 		onBack(){

@@ -13,6 +13,10 @@ using IdentityApp.Areas.Admin.Helper;
 using Microsoft.EntityFrameworkCore;
 using IdentityApp.Areas.Admin.Services;
 using IdentityServer4.EntityFramework.Mappers;
+using Microsoft.AspNetCore.Identity;
+using IdentityApp.Models;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Hosting;
 
 namespace IdentityApp.Areas.Admin.Controllers
 {
@@ -21,13 +25,17 @@ namespace IdentityApp.Areas.Admin.Controllers
 	{
 		private readonly IIdentityConfigService identityConfigService;
 
-		public ClientsController(IIdentityConfigService identityConfigService)
+		
+
+		public ClientsController(UserManager<ApplicationUser> UserManager, RoleManager<IdentityRole> roleManager,
+			IHostingEnvironment environment, IOptions<AppSettings> settings, IIdentityConfigService identityConfigService)
+			: base(UserManager, roleManager, environment, settings)
 		{
 			this.identityConfigService = identityConfigService;
 		}
-		
 
-			
+
+
 		public async Task<IActionResult> Index(string keyword = "", int page = 1, int pageSize = 10)
 		{
 			var clients =await identityConfigService.FetchClients(keyword);

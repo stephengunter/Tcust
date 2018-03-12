@@ -18,6 +18,8 @@ namespace Blog.Services
 
 		Task UpdateAsync(Post post);
 
+		void UpdateRange(IEnumerable<Post> posts);
+
 		Task DeleteAsync(int id, string updatedBy);
 
 		Post GetById(int id);
@@ -34,6 +36,8 @@ namespace Blog.Services
 		IEnumerable<Post> GetAll();
 
 		Task<Post> GetByIdAsync(int id);
+
+		Post GetByNumber(string number);
 
 		Task<IEnumerable<Post>> GetByKeywordAsync(string keyword);
 
@@ -134,9 +138,15 @@ namespace Blog.Services
 		}
 
 		public async Task<Post> GetByIdAsync(int id) => await postRepository.GetByIdAsync(id);
-		
 
-		
+		public Post GetByNumber(string number)
+		{
+			var filter = new PostNumberFilterSpecification(number);
+
+			return  postRepository.GetSingleBySpec(filter);
+		}
+
+
 
 		public async Task<IEnumerable<Post>> GetByKeywordAsync(string keyword)
 		{
@@ -180,6 +190,11 @@ namespace Blog.Services
 		{
 			await postRepository.UpdateAsync(post);
 
+		}
+
+		public void UpdateRange(IEnumerable<Post> posts)
+		{
+			postRepository.UpdateRange(posts);
 		}
 
 		public async Task ReviewPosts(IList<int> ids)
@@ -335,12 +350,15 @@ namespace Blog.Services
 
 		private async Task<IList<int>> GetCategoryIdsInPostAsync(Post post)
 		{
+			
 			var filter = new PostCategoryFilterSpecification(post);
 
 			var postCategories = await postsCategoriesRepository.ListAsync(filter);
 
 			return postCategories.Select(pc => pc.CategoryId).ToList();
 		}
+
+		
 
 		
 

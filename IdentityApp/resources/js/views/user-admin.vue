@@ -1,48 +1,48 @@
 <template>
    <div>
-      <div v-if="model" v-show="indexMode">
-         <div class="row">
-            <div class="col-sm-3" >
-					<h2>使用者管理</h2>
-            </div>
-            <div class="col-sm-3" style="margin-top: 20px;">
-               <drop-down :items="roles" :selected="role.value"
-						@selected="onRoleSelected">
-					</drop-down>
-            </div>
-            <div class="col-sm-3" style="margin-top: 20px;">
-               <searcher @search="onSearch">
-					</searcher>
-            </div>
-            <div class="col-sm-3" style="margin-top: 20px;">
-                <a @click.prevent="onCreate" href="#" class="btn btn-primary pull-right title-controll">
-                  <i class="fa fa-plus" aria-hidden="true"></i>
-                  新增使用者
-               </a>
-            </div>
-         </div>
+		<div v-if="model" v-show="indexMode">
+			<div class="row">
+				<div class="col-sm-3" >
+						<h2>使用者管理</h2>
+				</div>
+				<div class="col-sm-3" style="margin-top: 20px;">
+				<drop-down :items="roles" :selected="role.value"
+							@selected="onRoleSelected">
+						</drop-down>
+				</div>
+				<div class="col-sm-3" style="margin-top: 20px;">
+				<searcher @search="onSearch">
+						</searcher>
+				</div>
+				<div class="col-sm-3" style="margin-top: 20px;">
+					<a @click.prevent="onCreate" href="#" class="btn btn-primary pull-right title-controll">
+					<i class="fa fa-plus" aria-hidden="true"></i>
+					新增使用者
+				</a>
+				</div>
+			</div>
 
-         <hr/>
+			<hr/>
 
-         <user-table  :model="model"  @edit="onEdit" @remove="onDelete" >
-          
-			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
+			<user-table  :model="model"  @edit="onEdit" @remove="onDelete" >
+			
+				<div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"
 						@pagesize-changed="fetchData">
 					</page-controll>
-            
-            </div>
-         </user-table>
+				
+				</div>
+			</user-table>
 
-      </div>
-      <user-edit v-if="editting"  :id="selected" 
-         @saved="onIndex" @cancel="onIndex">
-      </user-edit>
-      
-      <delete-confirm :showing="deleteConfirm.showing" :message="deleteConfirm.message"
-        @close="deleteConfirm.showing=false" @confirmed="deleteuser">
-      </delete-confirm>
-   </div> 
+		</div>
+		<user-edit v-if="editting"  :id="selected" 
+			@saved="onIndex" @cancel="onIndex">
+		</user-edit>
+		
+		<delete-confirm :showing="deleteConfirm.showing" :message="deleteConfirm.message"
+			@close="deleteConfirm.showing=false" @confirmed="deleteuser">
+		</delete-confirm>
+	</div> 
 </template>
 
 
@@ -71,7 +71,7 @@
          return {
 				model:null,
 				
-            selected:0,
+            	selected:'',
 				create:false,
 
 				role:null,
@@ -84,7 +84,7 @@
 				},
 
             deleteConfirm:{
-               id:0,
+               id:'',
                showing:false,
                message:''
             }
@@ -118,7 +118,7 @@
          onIndex(){
             this.fetchData();
 
-            this.selected=0;
+            this.selected='';
             this.create=false;
          },
          onCreate(){

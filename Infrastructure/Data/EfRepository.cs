@@ -27,7 +27,12 @@ namespace Infrastructure.Data
 		}
 
 		public DbSet<T> DbSet { get { return _dbSet; } }
-		
+
+		public void Save()
+		{
+			_dbContext.SaveChanges();
+		}
+
 
 		public virtual T GetById(int id)
 		{
@@ -128,6 +133,13 @@ namespace Infrastructure.Data
 			await _dbContext.SaveChangesAsync();
 		}
 
+		public void UpdateRange(IEnumerable<T> entityList)
+		{
+			_dbSet.UpdateRange(entityList);
+			_dbContext.SaveChanges();
+
+		}
+
 		public void DeleteRange( IEnumerable<T> entityList)
 		{
 			_dbSet.RemoveRange(entityList);
@@ -154,5 +166,8 @@ namespace Infrastructure.Data
 			return await _dbSet.Where(criteria).ToListAsync();
 
 		}
+
+
+		
 	}
 }

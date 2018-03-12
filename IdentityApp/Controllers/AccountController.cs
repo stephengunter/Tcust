@@ -19,15 +19,19 @@ using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
+
 using IdentityApp.Data;
+using IdentityApp.Helper;
+using IdentityApp.Views;
+using ApplicationCore.Helpers;
 
 namespace IdentityApp.Controllers
 {
     [Authorize]
     [Route("[controller]/[action]")]
-    public class AccountController : Controller
-    {
-        private readonly UserManager<ApplicationUser> _userManager;
+    public class AccountController : BaseController
+	{
+       
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailSender _emailSender;
         private readonly ILogger _logger;
@@ -35,24 +39,20 @@ namespace IdentityApp.Controllers
         private readonly IIdentityServerInteractionService _interaction;
         private readonly AccountService _account;
 
-		private readonly IHostingEnvironment _env;
-		private readonly IOptions<AppSettings> settings;
+		
 
-		public AccountController(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
+		public AccountController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
+			IHostingEnvironment environment, IOptions<AppSettings> settings,
+			SignInManager<ApplicationUser> signInManager,
             IEmailSender emailSender,
             ILogger<AccountController> logger,
             IIdentityServerInteractionService interaction,
             IClientStore clientStore,
             IHttpContextAccessor httpContextAccessor,
-            IAuthenticationSchemeProvider schemeProvider,
-			IHostingEnvironment environment,
-			IOptions<AppSettings> settings
-
-		)
+            IAuthenticationSchemeProvider schemeProvider
+		) :base(userManager, roleManager, environment,settings)
         {
-            _userManager = userManager;
+           
             _signInManager = signInManager;
             _emailSender = emailSender;
             _logger = logger;
@@ -60,12 +60,14 @@ namespace IdentityApp.Controllers
             _interaction = interaction;
             _account = new AccountService(interaction, httpContextAccessor, schemeProvider, clientStore);
 
-			_env = environment;
-			this.settings = settings;
+		
 
 		}
 
-        [TempData]
+		
+
+
+		[TempData]
         public string ErrorMessage { get; set; }
 
         [HttpGet]
@@ -74,8 +76,8 @@ namespace IdentityApp.Controllers
         {
 
 			if (User.Identity.IsAuthenticated) return Redirect("/Manage/Index");
-			//var user =await _userManager.FindByEmailAsync("traders.com.tw@gmail.com");
-			//await _userManager.DeleteAsync(user);
+			//var user =await _UserManager.FindByEmailAsync("traders.com.tw@gmail.com");
+			//await _UserManager.DeleteAsync(user);
 
 			// Clear the existing external cookie to ensure a clean login process
 			await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -97,16 +99,10 @@ namespace IdentityApp.Controllers
             ViewData["ReturnUrl"] = returnUrl;
             if (ModelState.IsValid)
             {
-				bool rememberMe = false;
-				var existUser =await  _userManager.FindByEmailAsync(model.Email);
-				if (existUser == null)
-				{
-					ModelState.AddModelError(string.Empty, "登入失敗.");
-					return View(model);
-				}
+				
 				// This doesn't count login failures towards account lockout
 				// To enable password failures to trigger account lockout, set lockoutOnFailure: true
-				var result = await _signInManager.PasswordSignInAsync(existUser.UserName, model.Password, rememberMe, lockoutOnFailure: false);
+				var result = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
@@ -163,7 +159,7 @@ namespace IdentityApp.Controllers
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
             {
-                throw new ApplicationException($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                throw new ApplicationException($"Unable to load user with ID '{UserManager.GetUserId(User)}'.");
             }
 
             var authenticatorCode = model.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
@@ -266,12 +262,12 @@ namespace IdentityApp.Controllers
             if (ModelState.IsValid)
             {
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await _userManager.CreateAsync(user, model.Password);
+                var result = await UserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
 
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
                     var callbackUrl = Url.EmailConfirmationLink(user.Id, code, Request.Scheme);
                     await _emailSender.SendEmailConfirmationAsync(model.Email, callbackUrl);
 
@@ -390,10 +386,10 @@ namespace IdentityApp.Controllers
                     throw new ApplicationException("Error loading external login information during confirmation.");
                 }
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await _userManager.CreateAsync(user);
+                var result = await UserManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
-                    result = await _userManager.AddLoginAsync(user, info);
+                    result = await UserManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {
                         await _signInManager.SignInAsync(user, isPersistent: false);
@@ -416,12 +412,12 @@ namespace IdentityApp.Controllers
             {
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await UserManager.FindByIdAsync(userId);
             if (user == null)
             {
                 throw new ApplicationException($"Unable to load user with ID '{userId}'.");
             }
-            var result = await _userManager.ConfirmEmailAsync(user, code);
+            var result = await UserManager.ConfirmEmailAsync(user, code);
             return View(result.Succeeded ? "ConfirmEmail" : "Error");
         }
 
@@ -429,6 +425,7 @@ namespace IdentityApp.Controllers
         [AllowAnonymous]
         public IActionResult ForgotPassword()
         {
+			
             return View();
         }
 
@@ -439,7 +436,7 @@ namespace IdentityApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
+                var user = await UserManager.FindByEmailAsync(model.Email);
                 if (user == null)
                 {
                     // Don't reveal that the user does not exist or is not confirmed
@@ -448,14 +445,16 @@ namespace IdentityApp.Controllers
 
                 // For more information on how to enable account confirmation and password reset please
                 // visit https://go.microsoft.com/fwlink/?LinkID=532713
-                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var code = await UserManager.GeneratePasswordResetTokenAsync(user);
                 var callbackUrl = Url.ResetPasswordCallbackLink(user.Id, code, Request.Scheme);
 
 				string msgBody = GetForgotPasswordMailBody(user.UserName, callbackUrl);
 				string subject = "忘記密碼確認信";
 
 				await _emailSender.SendEmailAsync(model.Email, subject, msgBody);
-                return RedirectToAction(nameof(ForgotPasswordConfirmation));
+				
+
+				return RedirectToAction(nameof(ForgotPasswordConfirmation));
             }
 
             // If we got this far, something failed, redisplay form
@@ -464,9 +463,9 @@ namespace IdentityApp.Controllers
 
 		private string GetForgotPasswordMailBody(string userName, string actionUrl)
 		{
-			string appName = settings.Value.Title;
-			string footer = settings.Value.Maintain;
-			var pathToFile = Path.Combine(_env.WebRootPath, "templates", "forgotPasswordEmail.html");
+			string appName = Settings.Value.Title;
+			string footer = Settings.Value.Maintain;
+			var pathToFile = Path.Combine(Environment.WebRootPath, "templates", "forgotPasswordEmail.html");
 			if (!System.IO.File.Exists(pathToFile)) throw new Exception("File Not Exist: " + pathToFile);
 
 			string body = "";
@@ -509,13 +508,13 @@ namespace IdentityApp.Controllers
             {
                 return View(model);
             }
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await UserManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
                 // Don't reveal that the user does not exist
                 return RedirectToAction(nameof(ResetPasswordConfirmation));
             }
-            var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
+            var result = await UserManager.ResetPasswordAsync(user, model.Code, model.Password);
             if (result.Succeeded)
             {
                 return RedirectToAction(nameof(ResetPasswordConfirmation));

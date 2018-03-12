@@ -75,10 +75,20 @@ namespace WebApi.Blogs
 		[HttpGet("[controller]/[action]")]  //首頁輪播 , 排除大愛新聞
 		public async Task<IActionResult> Tops(int pageSize = 12)
 		{
-			bool reviewed = true;
-			Category selectedCategory = null;
 			string keyword = "";
 			int page = 1;
+
+			var posts = await LoadPostsExceptDaai(page,pageSize,keyword);
+
+			var pageList = await viewService.GetPostPagedList(posts, page, pageSize);
+
+			return Ok(pageList);
+		}
+
+		async Task<IEnumerable<Post>> LoadPostsExceptDaai(int page, int pageSize, string keyword)
+		{
+			bool reviewed = true;
+			Category selectedCategory = null;
 
 			var posts = await postService.FetchPosts(selectedCategory, reviewed, keyword);
 
@@ -86,28 +96,31 @@ namespace WebApi.Blogs
 
 			posts = await postService.ExceptFromCategoryAsync(posts, exeptCategory);
 
-			posts = viewService.OrderPosts(posts);
-
-			var pageList = await viewService.GetPostPagedList(posts, page, pageSize);
-
-			return new ObjectResult(pageList);
+			return viewService.OrderPosts(posts); 
 		}
 
 
-		[HttpGet("[controller]/[action]")]
+		[HttpGet("[controller]/[action]")] //校史館校園日誌 , 排除大愛新聞
 		public async Task<IActionResult> GetDiaryList(string terms = "", string keyword = "", int page = 1, int pageSize = 10)
 		{
-		
-			Category diaryCategory = GetCategory(CategoryKeys.Dairy);  
+			
+			var posts = await LoadPostsExceptDaai(page, pageSize, keyword);
+			var pageList = await viewService.GetPostPagedList(posts, page, pageSize);
+
+			return Ok(pageList);
+
+
+		}
+
+		[HttpGet("[controller]/[action]")] //校史館使用 
+		public async Task<IActionResult> SearchHonorList(string keyword = "", int page = 1, int pageSize = 10)
+		{
+			Category diaryCategory = GetCategory(CategoryKeys.Honor);
 
 			bool reviewed = true;
 			var posts = await postService.FetchPosts(diaryCategory, reviewed, keyword);
 
-			if (!String.IsNullOrEmpty(terms))
-			{
-				var termNumbers = terms.Split(',').ToList().Select(int.Parse).ToList();
-				posts = posts.Where(p => termNumbers.Contains(p.TermNumber));
-			}
+			posts = posts.Where(p => p.Year >= 2011);
 
 			posts = viewService.OrderPosts(posts);
 
@@ -116,12 +129,12 @@ namespace WebApi.Blogs
 
 			return Ok(pageList);
 
-
 		}
 
-		[HttpGet("[controller]/[action]")] //校史館使用 GroupByYear
-		public async Task<IEnumerable<PostsGroupByYearForm>> GetHonorList(string keyword = "")
+		[HttpGet("[controller]/[action]")] //校史館使用 
+		public async Task<IEnumerable<PostsGroupByYearForm>> GetHonorList(string keyword = "",int page = 1, int pageSize = 10)
 		{
+			
 			var result = new List<PostsGroupByYearForm>();
 			
 			Category category = GetCategory(CategoryKeys.Honor);
@@ -129,6 +142,10 @@ namespace WebApi.Blogs
 
 			bool reviewed = true;
 			var posts = await postService.FetchPosts(category, reviewed, keyword);
+
+			posts = posts.Where(p => p.Year >= 2011);
+
+			
 
 			var years = posts.Select(p => p.Year).Distinct();
 
@@ -151,7 +168,6 @@ namespace WebApi.Blogs
 			
 
 			return result;
-
 
 		}
 

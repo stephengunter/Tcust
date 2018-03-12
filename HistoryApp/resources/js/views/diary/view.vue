@@ -130,8 +130,17 @@ export default {
 					this.model.hasNextPage=model.hasNextPage;
                this.onPostsLoaded();
             }else{
-              
+               
 					this.model = { ...model };
+					
+					if(!this.searchMode){
+						
+						let lastPost={
+							...model.viewList[model.viewList.length-1]
+						};
+					 
+						model.viewList.splice(0, 0, lastPost);
+					}
 					
               
                this.onReady();

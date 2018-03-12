@@ -5,7 +5,7 @@
 		
 		</flat-pickr>
       
-      <div class="input-group-btn">
+      <div class="input-group-btn" v-if="can_clear">
          <button v-show="selectedDate" type="button" @click.prevent="clear" class="btn btn-default" title="Clear" data-clear>
             <i class="fa fa-times"> </i>            
          </button>
@@ -24,11 +24,15 @@ export default {
 		date:{
 			type:String,
 			default:''
-		}
+        },
+        can_clear:{
+			type:Boolean,
+			default:false
+        },
 	},
 	components: {
       'flat-pickr':flatPickr
-   },
+    },
 	data(){
 		return {
 			config: {

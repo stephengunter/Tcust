@@ -17,6 +17,7 @@ using IdentityApp.Helper;
 using ApplicationCore.Helpers;
 using IdentityApp.Views;
 using ApplicationCore.Views;
+using Microsoft.AspNetCore.Hosting;
 
 namespace IdentityApp.Areas.Admin.Controllers
 {
@@ -26,11 +27,16 @@ namespace IdentityApp.Areas.Admin.Controllers
 		
 		private readonly IUserService userService;
 
-		public UsersController(IUserService userService)
-		{
 		
+
+		public UsersController(UserManager<ApplicationUser> UserManager, RoleManager<IdentityRole> roleManager,
+			IHostingEnvironment environment, IOptions<AppSettings> settings, IUserService userService)
+			: base(UserManager, roleManager, environment, settings)
+		{
 			this.userService = userService;
 		}
+
+
 
 		public async Task<IActionResult> Index(string role = "", string keyword = "", int page = 1, int pageSize = 10)
 		{
@@ -42,7 +48,7 @@ namespace IdentityApp.Areas.Admin.Controllers
 
 			users = users.GetOrdered();
 
-			var pageList = users.GetUsersPagedList(page = 1, pageSize);
+			var pageList = users.GetUsersPagedList(page , pageSize);
 
 			foreach (var item in pageList.ViewList)
 			{
@@ -82,16 +88,16 @@ namespace IdentityApp.Areas.Admin.Controllers
 		[HttpPost("[area]/[controller]")]
 		public async Task<IActionResult> Store([FromBody] IdentityUserEditViewModel model)
 		{
-			if (!ModelState.IsValid) return BadRequest();
+			if (!ModelState.IsValid) return BadRequest(ModelState);
 
-			string userName = model.user.name.Trim();
+			string email = model.user.email.Trim();
 			string role = model.roles.FirstOrDefault();
 
-			var exist = await userService.GetUserByUserNameAsync(userName);
+			var exist =  userService.GetUserByEmail(email);
 
 			if (exist != null)
 			{
-				ModelState.AddModelError("user.name", "UserName重複了");
+				ModelState.AddModelError("user.email", "Email重複了");
 				return BadRequest(ModelState);
 			}
 
@@ -101,7 +107,7 @@ namespace IdentityApp.Areas.Admin.Controllers
 				Fullname = model.user.profile.fullname,
 			};
 
-			var user= await userService.CreateUserAsync(userName, role, profile);
+			var user= await CreateUserAsync(email, role, profile);
 
 			return Ok(user);
 
@@ -118,7 +124,7 @@ namespace IdentityApp.Areas.Admin.Controllers
 
 			var model = new IdentityUserEditViewModel { user = userModel, roleOptions = GetRoleOptions() };
 
-			var roles = await userService.GetRolesByUserAsync(user);
+			var roles = await GetRolesByUserAsync(user);
 			model.roles = roles.Select(r => r.Name).ToArray();
 
 			return Ok(model);
@@ -131,12 +137,12 @@ namespace IdentityApp.Areas.Admin.Controllers
 			var user = userService.GetUserById(id);
 			if (user == null) return NotFound();
 
-			string username = model.user.name;
+			string email = model.user.email;
 
-			var exist = userService.GetUserByUserName(username);
+			var exist = userService.GetUserByEmail(email);
 			if (exist != null && exist.Id != id)
 			{
-				ModelState.AddModelError("user.name", "UserName重複了");
+				ModelState.AddModelError("user.email", "Email重複了");
 				return BadRequest(ModelState);
 			}
 
@@ -144,7 +150,7 @@ namespace IdentityApp.Areas.Admin.Controllers
 
 			await userService.UpdateUserAsync(user);
 
-			await userService.UpdateUserAsync(user, model.roles);
+			await SyncUserRoles(user, model.roles);
 
 			return Ok(user);
 
@@ -156,7 +162,7 @@ namespace IdentityApp.Areas.Admin.Controllers
 		{
 			bool emptyOption = !edit;
 			
-			var roles = userService.GetAllRoles();
+			var roles = GetAllRoles();
 			return roles.ToOptions(emptyOption);
 		}
 

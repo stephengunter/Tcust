@@ -40,7 +40,7 @@ namespace WebApi
 
 
 			});
-			
+
 
 			services.AddCors(options =>
 			{

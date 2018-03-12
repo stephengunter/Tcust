@@ -8,9 +8,8 @@ namespace IdentityApp.Models.AccountViewModels
 {
     public class LoginViewModel
     {
-		[Required(ErrorMessage = "請輸入Email")]
-		[EmailAddress(ErrorMessage = "Email格式不正確")]
-		public string Email { get; set; }
+		[Required(ErrorMessage = "請輸入使用者名稱")]
+		public string UserName { get; set; }
 
 
 

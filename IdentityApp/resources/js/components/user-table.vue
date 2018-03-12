@@ -4,10 +4,11 @@
          <table class="table table-striped">
             <thead>
                <tr>
-                  <th style="width:15%">UserName</th>
-                  <th style="width:15%">姓名</th>
-                  <th>角色</th>
-                  <th style="width:10%"></th>
+                    <th style="width:15%">UserName</th>
+                    <th style="width:15%">姓名</th>
+                    <th style="width:15%">Email</th>
+                    <th>角色</th>
+                    <th style="width:10%"></th>
                </tr>
             </thead>
             <tbody>
@@ -15,6 +16,7 @@
                   
                   <td>{{ user.name }}</td>
                   <td>{{ user.profile.fullname }}</td>
+                   <td>{{ user.email }}</td>
                   <td>{{ user.roles }}</td>
                   <td>
                      <button class="btn btn-sm btn-primary" @click.prevent="edit(user.id)">

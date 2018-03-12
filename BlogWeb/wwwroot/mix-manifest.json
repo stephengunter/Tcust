@@ -1,3 +1,4 @@
 {
-    "/js/app.js": "/js/app.js"
+    "/js/app.js": "/js/app.js",
+    "/js/polyfill.js": "/js/polyfill.js"
 }

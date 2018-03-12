@@ -25,6 +25,7 @@ namespace ApplicationCore.Interfaces
 		void Update(T entity);
 		void Delete(T entity);
 
+		void UpdateRange(IEnumerable<T> entityList);
 		void DeleteRange(IEnumerable<T> entityList);
 
 

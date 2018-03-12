@@ -106,18 +106,18 @@
 				this.$emit('page-changed',page);
 			},
 			
-         fetchData(){
-            let getData = Post.index(this.params);
+        //  fetchData(){
+        //     let getData = Post.index(this.params);
 
-            getData.then(model => {
-					this.$emit('posts-fetched',model);
+        //     getData.then(model => {
+				// 	this.$emit('posts-fetched',model);
 
-            })
-            .catch(error => {
-               Helper.BusEmitError(error);
+        //     })
+        //     .catch(error => {
+        //        Helper.BusEmitError(error);
                
-            })
-         },
+        //     })
+        //  },
          onDetails(id){
 			
             this.$emit('details',id);

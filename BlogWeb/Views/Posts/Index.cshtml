@@ -10,7 +10,7 @@
 	<post-index ref="postIndex" v-show="!selected" :params="params" 
 				:model="model" :categories="categories" :archive_items="archives"
 				v-on:year-changed="onYearChanged" v-on:page-changed="onPageChanged"
-				v-on:details="onDetails" v-on:posts-fetched="onPostsDetched">
+				v-on:details="onDetails">
 
 
 	</post-index>
@@ -24,21 +24,20 @@
 
 </div>
 
-
 	@section scripts{
-		<script>
+	<script type="text/babel">
 		new Vue({
 			el: '#app',
-			data() {
-				return {
+			data: {
+
 					selected: 0,
 
 					model: null,
 					archives: [],
 					categories: [],
 
-					
-					
+
+
 
 					params: {
 						category: 0,
@@ -49,7 +48,8 @@
 					},
 
 					detailsModel: null
-				}
+
+
 			},
 			beforeMount() {
 
@@ -91,7 +91,7 @@
 			},
 			methods: {
 				init() {
-					
+
 
 					if (this.selected) {
 
@@ -111,14 +111,20 @@
 					}
 
 				},
-				fetchPosts() {
-					this.$refs.postIndex.fetchData();
-				},
-				onPostsDetched(model) {
+				fetchPosts(){
+					let getData = Post.index(this.params);
 
-					this.model = { ...model };
+					getData.then(model => {
+						this.model = { ...model };
 
-					$("html, body").animate({ scrollTop: 0 }, 1000);
+						this.scrollToTop();
+						
+					})
+					.catch(error => {
+						Helper.BusEmitError(error);
+
+					})
+					
 				},
 				onYearChanged(year) {
 					this.params.year = year;
@@ -144,18 +150,23 @@
 
 						this.selected = 0;
 						this.detailsModel = null;
-						this.fetchPosts();
+						
 
-					} else { 
+					} else {
 						document.location = '/';
 					}
 
-					
+
 
 				},
 				onDetailsFetched(model) {
 					this.detailsModel = { ...model };
+					this.scrollToTop();
+				},
+				scrollToTop(){
+					$("html, body").animate({ scrollTop: 0 }, 1000);
 				}
+
 			}
 
 		});

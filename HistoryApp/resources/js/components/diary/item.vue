@@ -20,15 +20,15 @@
 			</li>
 			<li class="imgintxt">
 
-				<div style="width:443px;height:325px;display: table-cell;  vertical-align: middle;" align="center">
+				<div v-if="photoSrc" style="width:443px;height:325px;display: table-cell;  vertical-align: middle;" align="center">
 					<img v-if="lockWidth" :src="photoSrc" width="443" style="max-width:443px; text-align: center; margin-left: auto; margin-right: auto;" >
 					<img v-else :src="photoSrc" height="325" style="max-width:443px; text-align: center; margin-left: auto; margin-right: auto;" >
 				</div>
 
 			</li>
 			
-			<li class="intxt1">
-				<a @click.prevent="selected(post.id)" href="#" class="initxt-a" style="z-index:99999" >more....</a>
+			<li v-if="post.id"  class="intxt1">
+				<a  @click.prevent="selected(post.id)" href="#" class="initxt-a" style="z-index:99999" >more....</a>
 			</li>
 
 

@@ -9,27 +9,25 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using IdentityApp.Views;
 using ApplicationCore.Helpers;
+using IdentityApp.Helper;
 
 namespace IdentityApp.Services
 {
 	public interface IUserService
 	{
 		Task<IEnumerable<ApplicationUser>> FetchUsers(IdentityRole role = null , string keyword = "");
-		Task<ApplicationUser> CreateUserAsync(string username, string role, Profile profile);
+	
 		
 		Task UpdateUserAsync(ApplicationUser user);
-		Task UpdateUserAsync(ApplicationUser user, IList<string> roles);
 
 		ApplicationUser GetUserById(string id);
 		ApplicationUser GetUserByEmail(string email);
 
 		ApplicationUser GetUserByUserName(string username);
-		Task<ApplicationUser> GetUserByUserNameAsync(string username);
 
-		IEnumerable<IdentityRole> GetAllRoles();
+		Task <IEnumerable<IdentityRole>> GetAllRolesAsync();
 		Task<IdentityRole> GetRoleByNameAsync(string name);
 
-		Task<IEnumerable<IdentityRole>> GetRolesByUserAsync(ApplicationUser user);
 		Task<IEnumerable<IdentityRole>> GetRolesByUserIdAsync(string userId);
 
 	}
@@ -37,19 +35,15 @@ namespace IdentityApp.Services
 
 	public class UserService: IUserService
 	{
-		private readonly UserManager<ApplicationUser> userManager;
-		private readonly RoleManager<IdentityRole> roleManager;
-
 		private readonly IIdentityRepository<ApplicationUser> userRepository;
+		private readonly IIdentityRepository<IdentityRole> roleRepository;
 		private readonly IIdentityRepository<IdentityUserRole<string>> userRoleRepository;
 
-		public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, 
-			IIdentityRepository<ApplicationUser> userRepository, IIdentityRepository<IdentityUserRole<string>> userRoleRepository)
-
+		public UserService(IIdentityRepository<ApplicationUser> userRepository, IIdentityRepository<IdentityRole> roleRepository,
+			IIdentityRepository<IdentityUserRole<string>> userRoleRepository)
 		{
-			this.userManager = userManager;
-			this.roleManager = roleManager;
 			this.userRepository = userRepository;
+			this.roleRepository = roleRepository;
 			this.userRoleRepository = userRoleRepository;
 		}
 
@@ -79,57 +73,10 @@ namespace IdentityApp.Services
 			return users;
 		}
 
-		public async Task<ApplicationUser> CreateUserAsync(string username ,string role, Profile profile)
-		{
-			string email = String.Format("{0}@tcust.edu.tw", username);
-			string password = "secret";
-
-			List<RoleType> roleTypes = new List<RoleType>();
-			try
-			{
-				var roleType = (RoleType)Enum.Parse(typeof(RoleType), role);
-				if (roleType == RoleType.Dev)
-				{
-					roleTypes.Add(RoleType.Dev);
-					roleTypes.Add(RoleType.Staff);
-				}
-				else
-				{
-					
-					roleTypes.Add(roleType);
-				}
-			}
-			catch (Exception)
-			{
-				throw new Exception("RoleType Error. Role=" + role);
-			}
-
-			if(roleTypes.IsNullOrEmpty()) throw new Exception("RoleType Error. Role=" + role);
-
-
-			var user = new ApplicationUser { UserName = username, Email = email };
-			var result = await userManager.CreateAsync(user, password);
-
-			if (!result.Succeeded) throw new Exception("Create User Failed. UserName= " + username);
-
-
-			await AddToRolesAsync(user, roleTypes);
-
-			user.CreatedAt = DateTime.Now;
-			profile.CreatedAt = DateTime.Now;
-
-			user.Profile = profile;
-
-			await UpdateUserAsync(user);
-
-			return user;
-
-		}
+		
 
 		public async Task UpdateUserAsync(ApplicationUser user)
 		{
-			user.Email = String.Format("{0}@tcust.edu.tw", user.UserName);
-
 			user.LastUpdated= DateTime.Now;
 			if (user.Profile != null)
 			{
@@ -139,11 +86,7 @@ namespace IdentityApp.Services
 			await userRepository.UpdateAsync(user);
 
 		}
-		public async Task UpdateUserAsync(ApplicationUser user, IList<string> roles)
-		{
-			await SyncUserRoles(user, roles);
-			await UpdateUserAsync(user);
-		}
+		
 
 		public ApplicationUser GetUserById(string id)
 		{
@@ -163,9 +106,12 @@ namespace IdentityApp.Services
 			return user;
 		}
 
-		public async Task<ApplicationUser> GetUserByUserNameAsync(string username)
+		public ApplicationUser GetUserByUserNameAsync(string username)
 		{
-			return await userManager.FindByNameAsync(username);
+			var spec = new UserNameFilterSpecifications(username);
+			var user = userRepository.GetSingleBySpec(spec);
+
+			return user;
 		}
 
 
@@ -180,41 +126,7 @@ namespace IdentityApp.Services
 			
 		}
 
-		public IEnumerable<IdentityRole> GetAllRoles()
-		{
-			return roleManager.Roles.ToList();
-		}
-
-		public Task<IdentityRole> GetRoleByNameAsync(string name)
-		{
-			return roleManager.FindByNameAsync(name);
-		}
-
-		public async Task<IEnumerable<IdentityRole>> GetRolesByUserAsync(ApplicationUser user)
-		{
-			var roleNames = await userManager.GetRolesAsync(user);
-			return roleManager.Roles.Where(r => roleNames.Contains(r.Name));
-		}
-
-		public async Task<IEnumerable<IdentityRole>> GetRolesByUserIdAsync(string userId)
-		{
-			var spec = new UserRoleFilterSpecifications(userId);
-			var userRoles = await userRoleRepository.ListAsync(spec);
-
-			var roleIds = userRoles.Select(ur => ur.RoleId);
-
-			return roleManager.Roles.Where(r => roleIds.Contains(r.Id));
-		}
-
-		async Task AddToRolesAsync(ApplicationUser user, List<RoleType> roleTypes)
-		{
-			foreach (var roleType in roleTypes)
-			{
-				string role = roleType.ToString();
-				await userManager.AddToRoleAsync(user, role);
-			}
-			
-		}
+		
 
 		async Task<IEnumerable<ApplicationUser>> GetAllAsync()
 		{
@@ -239,23 +151,30 @@ namespace IdentityApp.Services
 
 		}
 
-		async Task SyncUserRoles(ApplicationUser user, IList<string> roleNames)
+		public async Task<IEnumerable<IdentityRole>> GetAllRolesAsync()
 		{
-
-			var currentRoleNames = await userManager.GetRolesAsync(user);
-
-			var needRemoveNames = currentRoleNames.Where(name => !roleNames.Contains(name));
-			if (!needRemoveNames.IsNullOrEmpty())
-			{
-			    await userManager.RemoveFromRolesAsync(user, needRemoveNames);
-			}
-
-			var needToAddNames = roleNames.Where(name => !currentRoleNames.Contains(name));
-			if (!needToAddNames.IsNullOrEmpty())
-			{
-				await userManager.AddToRolesAsync(user, needToAddNames);
-			}
-
+			return await roleRepository.ListAllAsync();
 		}
+
+		public async  Task<IdentityRole> GetRoleByNameAsync(string name)
+		{
+			var all = await GetAllRolesAsync();
+			return all.Where(r => r.Name == name).FirstOrDefault();
+		}
+
+		public async Task<IEnumerable<IdentityRole>> GetRolesByUserIdAsync(string userId)
+		{
+			var spec = new UserRoleFilterSpecifications(userId);
+			var userRoles = await userRoleRepository.ListAsync(spec);
+
+			var roleIds = userRoles.Select(ur => ur.RoleId);
+
+			var allRoles = await GetAllRolesAsync();
+
+			return allRoles.Where(r => roleIds.Contains(r.Id));
+		}
+
+
+
 	}
 }

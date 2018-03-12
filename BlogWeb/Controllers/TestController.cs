@@ -8,20 +8,24 @@ using Microsoft.AspNetCore.Authentication;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using IdentityModel.Client;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
 
 namespace BlogWeb.Controllers
 {
 	
 	public class TestController : Controller
     {
-		public TestController()
-		{
+		private readonly IHostingEnvironment _hostingEnvironment;
 
+		public TestController(IHostingEnvironment environment)
+		{
+			this._hostingEnvironment = environment;
 		}
-		public IActionResult Index(int number)
+		public IActionResult Index(int number=0)
 		{
 
-			return View();
+			return Content(Path.Combine(_hostingEnvironment.ContentRootPath, "Helpers"));
 		}
 
 		[Authorize]
@@ -50,7 +54,7 @@ namespace BlogWeb.Controllers
 
 			var client = new HttpClient();
 			client.SetBearerToken(tokenResponse.AccessToken);
-			var content = await client.GetStringAsync("http://localhost:50001/api/identity");
+			var content = await client.GetStringAsync("http://localhost:50001/identity");
 
 			ViewBag.Json = JArray.Parse(content).ToString();
 			return View("json");
@@ -62,7 +66,7 @@ namespace BlogWeb.Controllers
 
 			var client = new HttpClient();
 			client.SetBearerToken(accessToken);
-			var content = await client.GetStringAsync("http://localhost:50001/api/identity");
+			var content = await client.GetStringAsync("http://localhost:50001/identity");
 
 			ViewBag.Json = JArray.Parse(content).ToString();
 			return View("json");

@@ -11,7 +11,7 @@ using IdentityApp.Helper;
 
 namespace WebApi.Identity
 {
-	[Authorize]
+	//[Authorize]
 	public class UsersController : BaseApiController
 	{
 		private readonly IUserService userService;

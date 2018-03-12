@@ -34,6 +34,8 @@ namespace Blog.Views
 		public string summary { get; set; }
 
 		public string date { get; set; }
+		public string beginDate { get; set; }
+		public string endDate { get; set; }
 
 		public bool top { get; set; }
 
@@ -86,7 +88,25 @@ namespace Blog.Views
 			post.Reviewed = reviewed;
 			post.Number = number;
 
-			post.Date = date.ToDatetimeOrDefault(DateTime.Now);
+			if (String.IsNullOrEmpty(beginDate))
+			{
+				post.BeginDate = DateTime.Now;
+				post.EndDate = null;
+
+			}
+			else
+			{
+				post.BeginDate = beginDate.ToDatetimeOrDefault(DateTime.Now);
+
+				if (String.IsNullOrEmpty(endDate)) post.EndDate = null;
+				else post.EndDate = endDate.ToDatetimeOrNull();
+
+			}
+
+			post.Date =Convert.ToDateTime(post.BeginDate);
+
+			post.Year = post.Date.Year;
+			post.Month = post.Date.Month;
 
 			post.SetUpdated(updatedBy);
 

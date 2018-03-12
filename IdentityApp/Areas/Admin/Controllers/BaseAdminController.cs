@@ -4,7 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using ApplicationCore.Controllers;
+using IdentityApp.Controllers;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using IdentityApp.Models;
 
 namespace IdentityApp.Areas.Admin.Controllers
 {
@@ -12,6 +16,12 @@ namespace IdentityApp.Areas.Admin.Controllers
 	[Authorize(Roles ="Dev")]
 	public class BaseAdminController : BaseController
 	{
-         
-    }
+		public BaseAdminController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
+		   IHostingEnvironment environment, IOptions<AppSettings> settings) : base(userManager, roleManager, environment, settings)
+
+		{
+			
+		}
+
+	}
 }

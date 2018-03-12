@@ -12,14 +12,17 @@
 	
 </head>
 <body>
-	<div id="app" >
+	<div id="app" style="min-height: 480px;">
 
 		@RenderBody()
 
 	</div>	
 
 	<footer id="footer" class="container">
-		<p>&copy; 2017 - 慈濟科技大學</p>
+		<p>
+			<span>&copy; 2017 - 慈濟科技大學</span>
+			
+		</p>
 		<alert v-show="showAlert" :show="showAlert" :type="alertSetting.type"
 			   width="400px" placement="top-right" :duration=alertSetting.duration
 			   v-on:closed="closeAlert">
@@ -33,14 +36,18 @@
 		html * {
 			font-family: "微軟正黑體", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
 		}
+		video {
+			max-width:85%;
+			max-height:85%;
+		}
 	</style>
 	<script type="text/javascript" src="~/libs/jquery.min.js" ></script>
 	<script type="text/javascript" src="~/libs/tether.min.js"></script>
 	<script type="text/javascript" src="~/libs/bootstrap.min.js"></script>
 
+	<script src="~/libs/babel.min.js"></script>
 	
-	
-
+	<script type="text/javascript" src="~/js/polyfill.js"></script>
 	<script type="text/javascript" src="~/js/app.js"></script>
 
     @RenderSection("Scripts", required: false)

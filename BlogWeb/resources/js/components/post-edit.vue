@@ -28,15 +28,15 @@
 					<small class="text-danger" v-if="form.errors.has('post.termNumber')" v-text="form.errors.get('post.termNumber')"></small>
 				
 				</div>
-         </div>
-         <div class="form-group">
+         	</div>
+			<div class="form-group">
 				<label class="col-md-2 control-label">文章編號</label>
 				<div class="col-md-10">
 					<input name="post.number" v-model="form.post.number" class="form-control" style="max-width:180px" />
 					<small class="text-danger" v-if="form.errors.has('post.number')" v-text="form.errors.get('post.number')"></small>
 				
 				</div>
-         </div>
+			</div>
 			<div class="form-group">
 				<label class="col-md-2 control-label">分類</label>
 				<div class="col-md-10">
@@ -44,7 +44,7 @@
 					  @selected="onCategorySelected">
 					</drop-down>
 				</div>
-         </div>
+         	</div>
 			<div class="form-group">
 				<label class="col-md-2 control-label">標題</label>
 				<div class="col-md-10">
@@ -52,65 +52,75 @@
 					<small class="text-danger" v-if="form.errors.has('post.title')" v-text="form.errors.get('post.title')"></small>
 				
 				</div>
-         </div>
-         <div class="form-group">
+			</div>
+			<div class="form-group">
 				<label class="col-md-2 control-label">作者</label>
 				<div class="col-md-10">
 					<input name="post.author" v-model="form.post.author" class="form-control" />
 					<small class="text-danger" v-if="form.errors.has('post.author')" v-text="form.errors.get('post.author')"></small>
 				</div>
-         </div>
-         <div class="form-group">
+			</div>
+			<div class="form-group">
 				<label class="col-md-2 control-label">內容</label>
 				<div class="col-md-10">
 					<html-editor ref="contentEditor" :model="form.post.content" :toolbar="textEditor.toolbar"
-                  :height="textEditor.height"     @html-value="setContent">  
-               </html-editor>  
+						:height="textEditor.height"     @html-value="setContent">  
+					</html-editor>  
 
 					<small class="text-danger" v-if="form.errors.has('post.content')" v-text="form.errors.get('post.content')"></small>
 				</div>
-         </div>
+			</div>
 			<div class="form-group">
 				<label class="col-md-2 control-label">日期</label>
 				<div class="col-md-10">
-					<datetime-picker :date="form.post.date" @selected="setDate"></datetime-picker>
+					<div class="form-group row">
+						<div class="col-md-3">
+							<datetime-picker :date="form.post.beginDate" @selected="setBeginDate"></datetime-picker>
+						</div>
+						<div class="col-md-1 text-center" style="height:3em">
+						  	<span style="position: absolute;top: 10%;font-size:1.2em">   ~ </span>	
+						</div>	
+						<div class="col-md-3">
+							<datetime-picker :date="form.post.endDate" @selected="setEndDate" :can_clear="true"></datetime-picker>
+						</div>
+               		</div>
 				</div>
-         </div>
+         	</div>
 			<div v-if="canReview" class="form-group">
 				<label class="col-md-2 control-label">置頂文章</label>
 				<div class="col-md-10">
 					<input type="hidden" v-model="form.post.top"  >
-               <toggle :items="topOptions"   :default_val="form.post.top" @selected="setTop"></toggle>
+               		<toggle :items="topOptions"   :default_val="form.post.top" @selected="setTop"></toggle>
 				</div>
-         </div>
+         	</div>
 			<div class="form-group">
 				<label class="col-md-2 control-label">圖片/影片</label>
 				<div class="col-md-10">
 					<media-edit :post="form.post" ref="mediaEdit"></media-edit>
 				</div>
 				
-         </div>
+         	</div>
 			<div v-if="canReview" v-show="!isCreate" class="form-group">
 				<label class="col-md-2 control-label">狀態</label>
 				<div class="col-md-10">
 					<input type="hidden" v-model="form.post.reviewed"  >
-               <toggle :items="reviewedOptions"   :default_val="form.post.reviewed" @selected="setReviewed"></toggle>
+               		<toggle :items="reviewedOptions"   :default_val="form.post.reviewed" @selected="setReviewed"></toggle>
 				</div>
-         </div>
+         	</div>
 			<div class="form-group">
 				<label class="col-md-2 control-label"></label>
 				
 				<div v-if="submitting"  class="col-md-10">
 					<button class="btn btn-default">
-                  <i class="fa fa-spinner fa-spin"></i> 
-                  處理中
-               </button>
+						<i class="fa fa-spinner fa-spin"></i> 
+						處理中
+               		</button>
 				</div>
 				<div v-else class="col-md-10">
 					<button class="btn btn-success" type="submit">
 						<i class="fa fa-floppy-o" aria-hidden="true"></i>
 							確認存檔
-						</button>
+					</button>
 					&nbsp;&nbsp;&nbsp;
 					<button @click.prevent="cancel" class="btn btn-default">
 						
@@ -241,8 +251,11 @@ export default {
 		onCategorySelected(category){
 			this.form.post.categoryId=category.value;
 		},
-		setDate(val){
-			this.form.post.date=val;
+		setBeginDate(val){
+			this.form.post.beginDate=val;
+		},
+		setEndDate(val){
+			this.form.post.endDate=val;
 		},
 		setReviewed(val) {
          this.form.post.reviewed = val;

@@ -50,9 +50,16 @@ namespace Blog.Helpers
 
 			model.reviewed = post.Reviewed;
 			model.date = post.Date.ToString("yyyy-MM-dd");
+
+			if (post.BeginDate.HasValue) model.beginDate = Convert.ToDateTime(post.BeginDate).ToString("yyyy-MM-dd");
+			else model.beginDate = "";
+
+			if (post.EndDate.HasValue) model.endDate = Convert.ToDateTime(post.EndDate).ToString("yyyy-MM-dd");
+			else model.endDate = "";
+
 			model.createdAt = post.CreatedAt;
 
-			model.url = String.Format("{0}/posts/{1}?title={2}", settings.Value.Url, post.Id, post.Title);
+			model.url = String.Format("{0}/posts/{1}", settings.Value.Url, post.Id);
 
 			if (String.IsNullOrEmpty(post.Summary)) model.summary = PostViewModel.GetDefaultSummary(post);
 			else model.summary = post.Summary;
@@ -127,8 +134,7 @@ namespace Blog.Helpers
 		{
 			return posts.OrderByDescending(p => p.Top)
 						.ThenByDescending(p => p.DisplayOrder)
-						.ThenByDescending(p => p.Date)
-						.ThenByDescending(p => p.LastUpdated);
+						.ThenByDescending(p => p.Date);
 		}
 
 		

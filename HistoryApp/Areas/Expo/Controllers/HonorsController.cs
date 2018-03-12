@@ -18,8 +18,9 @@ namespace HistoryApp.Areas.Expo.Controllers
 			return View();
 		}
 
-		public IActionResult Search()
+		public IActionResult Search(string keyword="")
 		{
+			ViewData["keyword"] = keyword;
 			return View();
 
 		}

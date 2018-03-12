@@ -1,5 +1,6 @@
 class Api {
    static source() {
+	   
 		return 'http://api.tcust.edu.tw';
    }
    
@@ -38,6 +39,23 @@ class Api {
 	}
 	static getHonorList(params){
 		let url =`${this.source()}/posts/GetHonorList`;
+
+		url=Helper.buildQuery(url, params);
+
+		return new Promise((resolve, reject) => {
+			axios.get(url)
+				  .then(response => {
+						resolve(response.data);
+				  })
+				  .catch(error => {
+						reject(error);
+				  })
+
+		})
+
+	}
+	static searchHonorList(params){
+		let url =`${this.source()}/posts/SearchHonorList`;
 
 		url=Helper.buildQuery(url, params);
 

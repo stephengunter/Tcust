@@ -19,7 +19,7 @@
 
 	</div>
 
-	<footer id="footer" class="container" style="margin-top:1.5em">
+	<footer id="footer" class="container" style="display:none">
 		<p>&copy; 2017 - 慈濟科技大學</p>
 		<alert v-show="showAlert" :show="showAlert" :type="alertSetting.type"
 			   width="400px" placement="top-right" :duration=alertSetting.duration
@@ -30,6 +30,12 @@
 		</alert>
 	</footer>
 
+	<style>
+		video {
+			max-width: 85%;
+			max-height: 85%;
+		}
+	</style>
 
 	<script src="~/js/app.js"></script>
 

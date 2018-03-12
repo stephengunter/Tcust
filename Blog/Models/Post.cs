@@ -16,6 +16,8 @@ namespace Blog.Models
 		public string Number { get; set; }
 
 		public DateTime Date { get; set; }
+		public DateTime? BeginDate { get; set; }
+		public DateTime? EndDate { get; set; }
 
 		public string Author { get; set; }
 

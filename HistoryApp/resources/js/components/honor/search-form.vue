@@ -8,7 +8,7 @@
             <input name="nextPage" type="hidden" value="1">
          </ul>
          <ul class="btnright">
-            <a href="#"  @click.prevent="onSubmit" >
+            <a  href="#"  @click.prevent="onSubmit" >
                搜尋
             </a>
          </ul>

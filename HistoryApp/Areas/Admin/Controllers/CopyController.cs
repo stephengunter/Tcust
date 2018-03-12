@@ -225,6 +225,9 @@ namespace HistoryApp.Areas.Admin.Controllers
 			this.createdAt = Convert.ToDateTime(content.ContentCreateTime);
 			this.updatedAt = Convert.ToDateTime(content.ContentUpdateTime);
 
+
+
+
 			updatedBy = content.ContentUpdater;
 
 			if (String.IsNullOrEmpty(updatedBy)) throw new Exception("updatedBy==null");
@@ -237,6 +240,17 @@ namespace HistoryApp.Areas.Admin.Controllers
 			{
 				date = this.createdAt.ToShortDateString();
 			}
+
+			if (content.OpenTime.HasValue)
+			{
+				beginDate = Convert.ToDateTime(content.OpenTime).ToShortDateString();
+			}
+
+			if (content.CloseTime.HasValue)
+			{
+				endDate = Convert.ToDateTime(content.CloseTime).ToShortDateString();
+			}
+
 
 
 			fileIds = string.Join(",", content.FileUplaods.Select(f => f.ItemOID));
@@ -254,6 +268,9 @@ namespace HistoryApp.Areas.Admin.Controllers
 		public string date { get; set; }
 
 		public string updatedBy { get; set; }
+
+		public string beginDate { get; set; }
+		public string endDate { get; set; }
 
 
 		public DateTime createdAt { get; set; }

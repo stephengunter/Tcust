@@ -14,7 +14,7 @@ namespace IdentityApp.Models.ManageViewModels
         public string OldPassword { get; set; }
 
         [Required(ErrorMessage = "請輸入新密碼")]
-        [StringLength(100, ErrorMessage = "密碼長度最少8位", MinimumLength = 8)]
+        [StringLength(100, ErrorMessage = "密碼長度最少4位", MinimumLength = 4)]
         [DataType(DataType.Password)]
         [Display(Name = "新密碼")]
         public string NewPassword { get; set; }

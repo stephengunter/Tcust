@@ -24,18 +24,18 @@
       <form @submit.prevent="onSubmit" @keydown="clearErrorMsg($event.target.name)" class="form-horizontal">
 			
 			<div class="form-group">
-				<label class="col-md-2 control-label">UserName</label>
+				<label class="col-md-2 control-label">Email</label>
 				<div class="col-md-10">
-					<input name="user.name" v-model="form.user.name" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('user.name')" v-text="form.errors.get('user.name')"></small>
+					<input name="user.email" v-model="form.user.email" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('user.email')" v-text="form.errors.get('user.email')"></small>
 				
 				</div>
          </div>
 			<div class="form-group">
 				<label class="col-md-2 control-label">姓名</label>
 				<div class="col-md-10">
-					<input name="profile.fullname" v-model="form.user.profile.fullname" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('profile.fullname')" v-text="form.errors.get('profile.fullname')"></small>
+					<input name="user.profile.fullname" v-model="form.user.profile.fullname" class="form-control" />
+					<small class="text-danger" v-if="form.errors.has('user.profile.fullname')" v-text="form.errors.get('user.profile.fullname')"></small>
 				
 				</div>
          </div>

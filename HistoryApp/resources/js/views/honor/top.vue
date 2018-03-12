@@ -39,8 +39,8 @@ export default {
    },
    methods: {
       fetchData(){
-         //let fetchHonors=Api.getHonorList();
-         let fetchHonors=Api.getDiaryList();
+         
+         let fetchHonors=Api.searchHonorList();
 
          fetchHonors.then(model => {
             this.model = { ...model };

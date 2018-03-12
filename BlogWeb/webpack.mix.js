@@ -1,4 +1,4 @@
-const { mix } = require('laravel-mix');
+let mix = require('laravel-mix');
 
 /*
  |--------------------------------------------------------------------------
@@ -7,20 +7,16 @@ const { mix } = require('laravel-mix');
  |
  | Mix provides a clean, fluent API for defining some Webpack build steps
  | for your Laravel application. By default, we are compiling the Sass
- | file for the application as well as bundling up all the JS files.
+ | file for your application, as well as bundling up your JS files.
  |
  */
 
- //mix.sass('src/sass/app.scss', 'dist/css')
- mix.js('resources/js/app.js', 'wwwroot/js')
-    .setPublicPath('wwwroot');
-    // .sourceMaps()
-    // .browserSync({
-    //   injectChanges: true,
-    //   files: [ '**/*.js', '**/*.css'],
-    //   logSnippet: true,
-    //   proxy:'my-site.dev',
-    // });
+mix.js('node_modules/babel-polyfill/dist/polyfill.js','wwwroot/js')
+.js('resources/js/app.js', 'wwwroot/js')
+.setPublicPath('wwwroot');
+
+// mix.js('src/app.js', 'dist/')
+//    .sass('src/app.scss', 'dist/');
 
 // Full API
 // mix.js(src, output);
@@ -46,6 +42,7 @@ const { mix } = require('laravel-mix');
 // mix.setResourceRoot('prefix/for/resource/locators');
 // mix.autoload({}); <-- Will be passed to Webpack's ProvidePlugin.
 // mix.webpackConfig({}); <-- Override webpack.config.js, without editing the file directly.
+// mix.babelConfig({}); <-- Merge extra Babel configuration (plugins, etc.) with Mix's default.
 // mix.then(function () {}) <-- Will be triggered each time Webpack finishes building.
 // mix.options({
 //   extractVueStyles: false, // Extract .vue component styling to file, rather than inline.
@@ -54,3 +51,4 @@ const { mix } = require('laravel-mix');
 //   purifyCss: false, // Remove unused CSS selectors.
 //   uglify: {}, // Uglify-specific options. https://webpack.github.io/docs/list-of-plugins.html#uglifyjsplugin
 //   postCss: [] // Post-CSS options: https://github.com/postcss/postcss/blob/master/docs/plugins.md
+// });

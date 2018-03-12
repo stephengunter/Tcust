@@ -34,10 +34,10 @@ namespace IdentityApp.Helper
 			return options;
 		}
 
-		//public static bool HasDevRole(this ApplicationUser user)
-		//{
-
-		//}
+		public static string GetUserNameFromEmail(this string email)
+		{
+			return email.Split('@').FirstOrDefault();
+		}
 
 	}
 }

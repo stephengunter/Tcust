@@ -48,6 +48,15 @@ namespace Blog.Specifications
 		}
 	}
 
+	public class PostNumberFilterSpecification : BasePostFilterSpecification
+	{
+		public PostNumberFilterSpecification(string number)
+		{
+			var compiled = Criteria.Compile();
+			Criteria = p => compiled(p) && p.Number== number;
+		}
+	}
+
 	public class PostFilterSpecification : BasePostFilterSpecification
 	{
 		

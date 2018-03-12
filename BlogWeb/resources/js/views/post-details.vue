@@ -26,7 +26,8 @@
       </div>
       <div class="col-sm-3">
 			<div class="sidebar-module">
-				<a v-for="(item,index) in model.post.medias" :key="index" data-fancybox="gallery" :data-caption="item.title" 
+				<a v-for="(item,index) in model.post.medias" :key="index" data-fancybox="gallery" 
+				 :data-caption="item.title" 
 					:href="item.path"  >
 					<img :alt="item.title" :src="item.previewPath" style="width:210px;padding-top:5px">
 				</a>
@@ -56,7 +57,11 @@ export default {
    },
    data(){
       return {
-         
+         fancyOptions:{
+				'iframe' : {
+					'css' : { 'max-width' : '640px', 'max-height' : '360px' }
+				}
+			}
       }
 	},
 	mounted(){

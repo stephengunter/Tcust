@@ -20,8 +20,8 @@ using System.Data;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
-	//[Authorize(Policy = "DEV_ONLY")]
-	public class CopyController  : BlogWeb.Controllers.BaseController//BaseAdminController
+	[Authorize(Policy = "DEV_ONLY")]
+	public class CopyController  : BaseAdminController
 	{
 		class PostViewModel
 		{
@@ -35,6 +35,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 			public string summary { get; set; }
 			public string date { get; set; }
 			public string updatedBy { get; set; }
+
+			public string beginDate { get; set; }
+			public string endDate { get; set; }
 
 
 			public DateTime createdAt { get; set; }
@@ -138,12 +141,11 @@ namespace BlogWeb.Areas.Admin.Controllers
 		private readonly IPostService postService;
 
 		
+		public CopyController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPermissionService permissionService, IPostService postService) 
+			: base(environment, settings, permissionService)
 
-		public CopyController(IHostingEnvironment environment, IOptions<AppSettings> settings, IPostService postService)//IPermissionService permissionService, ) 
-			: base(environment, settings)//, permissionService)
 		{
 			this.postService = postService;
-			
 		}
 
 		public IActionResult test()
@@ -186,7 +188,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 		//	return Content("done");
 		//}
 
-		IEnumerable<MediaViewModel> GetMediaViewModelsFromFile(string name, string type)
+		IEnumerable<MediaViewModel> GetMediaViewModelsFromFile(string name, string type="")
 		{
 			string fileName = String.Format("{0}_medias.csv", name);
 			string filepath = Path.Combine(this.UploadFilesPath, fileName);
@@ -202,7 +204,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			}
 		}
 
-		IEnumerable<PostViewModel> GetPostModelsFromFile(string name, string type)
+		IEnumerable<PostViewModel> GetPostModelsFromFile(string name, string type="")
 		{
 			string fileName = String.Format("{0}.csv", name);
 			string filepath = Path.Combine(this.UploadFilesPath, fileName);
@@ -216,6 +218,54 @@ namespace BlogWeb.Areas.Admin.Controllers
 				return records.ToList();
 
 			}
+		}
+
+		public IActionResult Date()
+		{
+			var posts = postService.GetAll();
+			foreach (var post in posts)
+			{
+				post.Year = post.Date.Year;
+				post.Month = post.Date.Month;
+			}
+
+			postService.UpdateRange(posts);
+
+			return Content("done");
+		}
+
+		public async Task<IActionResult> CopyDate(string name)
+		{
+			
+			var postViewModelList = GetPostModelsFromFile(name);
+
+			foreach (var model in postViewModelList)
+			{
+
+				if(String.IsNullOrEmpty(model.number)) continue;
+				if(String.IsNullOrEmpty(model.beginDate)) continue;
+				if(String.IsNullOrEmpty(model.endDate)) continue;
+
+				string number = model.number.Trim();
+
+				var existPost = postService.GetByNumber(number);
+
+				if (existPost == null) continue;
+
+				DateTime? beginDate = model.beginDate.ToDatetimeOrNull();
+				if(beginDate==null) continue;
+
+				DateTime? endDate = model.endDate.ToDatetimeOrNull();
+				if (endDate == null) continue;
+
+				existPost.BeginDate = beginDate;
+				existPost.EndDate = endDate;
+
+				await postService.UpdateAsync(existPost);
+
+			}
+
+			return Content("done");
 		}
 
 

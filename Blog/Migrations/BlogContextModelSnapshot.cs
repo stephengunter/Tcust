@@ -61,6 +61,8 @@ namespace Blog.Migrations
 
                     b.Property<string>("Author");
 
+                    b.Property<DateTime?>("BeginDate");
+
                     b.Property<string>("Content");
 
                     b.Property<DateTime>("CreatedAt");
@@ -70,6 +72,8 @@ namespace Blog.Migrations
                     b.Property<int>("DisplayOrder");
 
                     b.Property<bool>("Down");
+
+                    b.Property<DateTime?>("EndDate");
 
                     b.Property<DateTime>("LastUpdated");
 

@@ -297,9 +297,7 @@ export default {
 			this.fetchingDetails=false;
 		},
 		leave(){
-			alert('leave');
-			this.init();
-			//this.$emit('leave');
+			this.$emit('leave');
 		}
 
 
