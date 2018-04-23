@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
-using SendGrid;
-using SendGrid.Helpers.Mail;
+using System;
+using System.Net;
+using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace IdentityApp.Services
@@ -28,24 +29,55 @@ namespace IdentityApp.Services
 			return Execute( subject, message, email);
 		}
 
-		public Task Execute(string subject, string message, string email)
+		public async Task Execute( string subject, string message ,string email)
 		{
-			string apiKey = settings.Value.EmailApiKey;
-			var client = new SendGridClient(apiKey);
-
 			string siteEmail = settings.Value.Email;
 			string siteTitle = settings.Value.Title;
 
-			var msg = new SendGridMessage()
+			try
 			{
-				From = new EmailAddress(siteEmail, siteTitle),
-				Subject = subject,
-				PlainTextContent = message,
 				
-				HtmlContent = message
-			};
-			msg.AddTo(new EmailAddress(email));
-			return client.SendEmailAsync(msg);
+				MailMessage mail = new MailMessage()
+				{
+					From = new MailAddress(siteEmail, siteTitle)
+				};
+				mail.To.Add(new MailAddress(email));
+				mail.Subject = subject;
+				mail.Body = message;
+				mail.IsBodyHtml = true;
+				mail.Priority = MailPriority.High;
+
+				using (SmtpClient smtp = new SmtpClient(settings.Value.EmailHost,  settings.Value.EmailPort))
+				{
+					smtp.Credentials = new NetworkCredential(settings.Value.EmailUserName, settings.Value.EmailPassword);
+					smtp.EnableSsl = true;
+					await smtp.SendMailAsync(mail);
+				}
+			}
+			catch (Exception ex)
+			{
+				//do something here
+			}
 		}
+
+		//public Task Execute(string subject, string message, string email)
+		//{
+		//	string apiKey = settings.Value.EmailApiKey;
+		//	var client = new SendGridClient(apiKey);
+
+		//	string siteEmail = settings.Value.Email;
+		//	string siteTitle = settings.Value.Title;
+
+		//	var msg = new SendGridMessage()
+		//	{
+		//		From = new EmailAddress(siteEmail, siteTitle),
+		//		Subject = subject,
+		//		PlainTextContent = message,
+				
+		//		HtmlContent = message
+		//	};
+		//	msg.AddTo(new EmailAddress(email));
+		//	return client.SendEmailAsync(msg);
+		//}
 	}
 }

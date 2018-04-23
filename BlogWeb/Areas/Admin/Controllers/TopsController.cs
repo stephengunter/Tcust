@@ -38,8 +38,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Index(int category = 0,  int page = 1, int pageSize = 10)
 		{
-			bool returnDefault = true;
-			Category selectedCategory = await postService.GetCategoryByIdAsync(category, returnDefault);
+			
+			Category selectedCategory = null;
+			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
 			if (selectedCategory == null) category = 0;
 
 			var posts = await postService.FetchPosts(selectedCategory);
@@ -58,7 +59,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 				return new ObjectResult(pageList);
 			}
 
-			bool edit = true;
+			bool edit = false;
 			var categoryOptions = await GetCategoryOptions(edit);
 
 			ViewData["categories"] = this.ToJsonString(categoryOptions);
