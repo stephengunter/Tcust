@@ -18,6 +18,8 @@ namespace Tcust.Models
 
 		public bool Active { get; set; }
 
+		public int Parent { get; set; }
+
 
 		public DateTime StartDate { get; set; }
 

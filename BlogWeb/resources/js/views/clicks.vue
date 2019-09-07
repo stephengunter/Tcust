@@ -115,7 +115,7 @@
          fetchData() {
 				
             let getData = Clicks.index(this.params);
-
+            Helper.setLoading(true);
             getData.then(model => {
 
                this.model={ ...model };
@@ -125,6 +125,9 @@
                Helper.BusEmitError(error);
                
             })
+            .finally(() => { 
+					Helper.setLoading(false);
+				});
          },
          
       }

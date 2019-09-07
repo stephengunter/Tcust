@@ -16,6 +16,11 @@ using Microsoft.AspNetCore.Authorization;
 using ApplicationCore.Views;
 using Permissions.Services;
 
+using Tcust.Services;
+using Tcust.Models;
+using System.Net.Http;
+using IdentityModel.Client;
+
 namespace BlogWeb.Areas.Admin.Controllers
 {
 	[Authorize(Policy = "EDIT_POSTS")]
@@ -29,21 +34,22 @@ namespace BlogWeb.Areas.Admin.Controllers
 		{
 			
 			this.postService = postService;
-			
-
 			this.viewService = new ViewService(this.Settings, this.postService); 
 		}
 
-		public IActionResult test()
+		Category defaultCategory;
+		Category GetDefaultCategory()
 		{
-			return View();
+			if (this.defaultCategory != null) return this.defaultCategory;
+
+			this.defaultCategory = postService.GetCategoryByCode("diary");
+			return this.defaultCategory;
 		}
-
-
 
 		[HttpGet]
 		public async Task<IActionResult> Index(int category=0 , bool reviewed=true , string terms="" ,string keyword="" , string sortby = "", string sort = "", int page = 1, int pageSize=10 )
 		{
+			
 			Category selectedCategory = null;
 			if (category > 0) selectedCategory = await postService.GetCategoryByIdAsync(category);
 			if (selectedCategory == null) category = 0;
@@ -91,6 +97,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 
 			ViewData["list"]= this.ToJsonString(pageList);
+			
 
 			ViewData["can_delete"] = CanReviewPost().ToInt();
 
@@ -115,7 +122,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 			{
 				post = post,
 				categoryOptions= categoryOptions,
-				canReview= canReviewPost.ToInt()
+				canReview= canReviewPost.ToInt(),
+				issuerIds=new List<int>(),
+				departmentIds = new List<int>()
 
 			};
 			
@@ -128,11 +137,18 @@ namespace BlogWeb.Areas.Admin.Controllers
 		[HttpPost("[area]/[controller]")]
 		public async Task<IActionResult> Store([FromBody] PostEditForm model)
 		{
+			var departmentIds = model.departmentIds;
+			var issuerIds = model.issuerIds;
 			
+			if (issuerIds.IsNullOrEmpty()) ModelState.AddModelError("issuerIds", "請選擇發稿單位");
+			if (departmentIds.IsNullOrEmpty()) ModelState.AddModelError("departmentIds", "請選擇活動單位");
+
+
 			if (!ModelState.IsValid)
 			{
 				return BadRequest(ModelState);
 			}
+			
 
 			var post = model.post.MapToEntity(CurrentUserId);
 
@@ -141,14 +157,30 @@ namespace BlogWeb.Areas.Admin.Controllers
 				post.Attachments.Add(item.MapToEntity(CurrentUserId));
 			}
 
-			var caregory = await postService.GetCategoryByIdAsync(model.post.categoryId);
-			post.Categories.Add(caregory);
+			if (model.post.categoryIds.IsNullOrEmpty())
+			{
+				post.Categories.Add(this.GetDefaultCategory());
+			}
+			else
+			{
+				foreach (var categoryId in model.post.categoryIds)
+				{
+					var caregory = await postService.GetCategoryByIdAsync(categoryId);
+					post.Categories.Add(caregory);
+				}
+			}
 
-
-
+			
 			
 
 			post = await postService.CreateAsync(post);
+
+			await postService.SyncPostDepartments(post, departmentIds);
+
+			await postService.SyncPostIssuers(post, issuerIds);
+
+
+
 
 
 			return new ObjectResult(post);
@@ -173,7 +205,10 @@ namespace BlogWeb.Areas.Admin.Controllers
 
 			var categoryIds =await postService.GetCategoryIdsAsync(id);
 
-			model.post.categoryId = categoryIds.FirstOrDefault();
+			model.post.categoryIds = categoryIds;
+
+			model.departmentIds = await postService.GetDepartmentIdsInPostAsync(post);
+			model.issuerIds = await postService.GetIssuerIdsInPostAsync(post);
 
 			bool edit = true;
 			var categoryOptions = await GetCategoryOptions(edit);
@@ -186,6 +221,12 @@ namespace BlogWeb.Areas.Admin.Controllers
 		[HttpPut("[area]/[controller]/{id}")]
 		public async Task<IActionResult> Update(int id , [FromBody] PostEditForm model)
 		{
+			var departmentIds = model.departmentIds;
+			var issuerIds = model.issuerIds;
+
+			if (issuerIds.IsNullOrEmpty()) ModelState.AddModelError("issuerIds", "請選擇發稿單位");
+			if (departmentIds.IsNullOrEmpty()) ModelState.AddModelError("departmentIds", "請選擇活動單位");
+
 			if (!ModelState.IsValid)
 			{
 				return BadRequest(ModelState);
@@ -209,12 +250,23 @@ namespace BlogWeb.Areas.Admin.Controllers
 				
 			}
 
-			var categoryIds =new List<int> { model.post.categoryId };
-			
-			
+			var categoryIds = new List<int>();
 
+			if (model.post.categoryIds.IsNullOrEmpty())
+			{
+				categoryIds.Add(this.GetDefaultCategory().Id);
+			}
+			else
+			{
+				categoryIds = model.post.categoryIds.ToList();
+			}
 
 			await postService.UpdateAsync(post, categoryIds);
+
+
+			await postService.SyncPostDepartments(post, departmentIds);
+
+			await postService.SyncPostIssuers(post, issuerIds);
 
 
 			return new ObjectResult(post);
@@ -240,6 +292,9 @@ namespace BlogWeb.Areas.Admin.Controllers
 		{
 			bool emptyOption = !edit;
 			var categories = await postService.GetCategoriesAsync();
+
+			categories = categories.Where(c => c.Id != this.GetDefaultCategory().Id);
+
 
 			return categories.ToOptions(emptyOption);
 

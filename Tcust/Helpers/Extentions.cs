@@ -44,5 +44,12 @@ namespace Tcust.Helpers
 
 			return options;
 		}
-	}
+
+        public static IEnumerable<Department> GetOrdered(this IEnumerable<Department> departments)
+        {
+            return ViewService.GetOrdered(departments);
+        }
+
+        public static DepartmentViewModel MapDepartmentViewModel(this Department department) => ViewService.MapDepartmentViewModel(department);
+    }
 }

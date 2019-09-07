@@ -103,6 +103,7 @@ export default {
 		},
 		fetchData(){
 			let years=Api.getDaAiNewsYears();
+			
 			years.then(data => {
 				this.initYearMonth(data);
 			})
@@ -112,7 +113,7 @@ export default {
 			})
 		},
       initYearMonth(years){
-         
+			years = years.sort((a,b) => b - a);
          years.forEach((year)=>{
             this.yearOptions.push( {
                value:year,

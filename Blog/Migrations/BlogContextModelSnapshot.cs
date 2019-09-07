@@ -54,6 +54,22 @@ namespace Blog.Migrations
                     b.ToTable("Clicks");
                 });
 
+            modelBuilder.Entity("Blog.Models.DepartmentTarget", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("DepartmentId");
+
+                    b.Property<int>("Tatget");
+
+                    b.Property<int>("TermNumber");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DepartmentTargets");
+                });
+
             modelBuilder.Entity("Blog.Models.Post", b =>
                 {
                     b.Property<int>("Id")
@@ -113,6 +129,28 @@ namespace Blog.Migrations
                     b.HasIndex("CategoryId");
 
                     b.ToTable("PostsCategories");
+                });
+
+            modelBuilder.Entity("Blog.Models.PostDepartment", b =>
+                {
+                    b.Property<int>("PostId");
+
+                    b.Property<int>("DepartmentId");
+
+                    b.HasKey("PostId", "DepartmentId");
+
+                    b.ToTable("PostsDepartments");
+                });
+
+            modelBuilder.Entity("Blog.Models.PostIssuer", b =>
+                {
+                    b.Property<int>("PostId");
+
+                    b.Property<int>("DepartmentId");
+
+                    b.HasKey("PostId", "DepartmentId");
+
+                    b.ToTable("PostsIssuers");
                 });
 
             modelBuilder.Entity("Blog.Models.UploadFile", b =>

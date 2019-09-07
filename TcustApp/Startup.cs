@@ -45,9 +45,9 @@ namespace TcustApp
 			services.AddScoped(typeof(ITcustRepository<>), typeof(TcustRepository<>));
 
 			services.AddScoped<ITermService, TermService>();
+            services.AddScoped<IDepartmentService, DepartmentService>();
 
-
-		}
+        }
 
        
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -68,7 +68,7 @@ namespace TcustApp
 			{
 				routes.MapRoute(
 					name: "areaRoute",
-					template: "{area:exists}/{controller}/{action=Index}/{id?}");
+					template: "{area:exists}/{controller=Terms}/{action=Index}/{id?}");
 
 
 				routes.MapRoute(

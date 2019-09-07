@@ -65,7 +65,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 				postViewModel.clickCount = item.clickCount;
 
 				var categories = await postService.GetPostCategoriesAsync(post);
-				postViewModel.categoryName = String.Join(",", categories.Select(c => c.Name));
+				postViewModel.categoryNames = String.Join(",", categories.Select(c => c.Name));
 
 				pageList.ViewList.Add(postViewModel);
 			}

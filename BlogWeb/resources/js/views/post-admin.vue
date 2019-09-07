@@ -33,7 +33,7 @@
          <post-table :model="model" :can_delete="can_delete" :desc="desc" :sortby="params.sortby" 
 				@edit="onEdit" @remove="onDelete" @sort="onSort">
           
-			   <div v-show="model.totalItems>0" slot="table-footer" class="panel-footer pagination-footer">
+			   <div v-show="model.totalItems > 0" slot="table-footer" class="panel-footer pagination-footer">
 					<page-controll   :model="model" @page-changed="onPageChanged"
 						@pagesize-changed="fetchData">
 					</page-controll>
@@ -55,21 +55,21 @@
 
 <script>
 	import YearTermFilter from '../components/year-term-filter';
-   import Searcher from '../components/searcher';
-   import PostTable from '../components/post-table';
-   import PostEdit from '../components/post-edit';
-   export default {
-      name:'PostAdminView',
-      components: {
+	import Searcher from '../components/searcher';
+	import PostTable from '../components/post-table';
+	import PostEdit from '../components/post-edit';
+	export default {
+		name:'PostAdminView',
+		components: {
 			'year-term-filter':YearTermFilter,
-         'searcher':Searcher,
-         'post-table':PostTable,
-         'post-edit':PostEdit
-      },
-      props: {
-         init_model: {
-            type: Object,
-            default: null
+			'searcher':Searcher,
+			'post-table':PostTable,
+			'post-edit':PostEdit
+		},
+		props: {
+			init_model: {
+				type: Object,
+				default: null
 			},
 			categories:{
 				type:Array,
@@ -79,18 +79,17 @@
 				type:Boolean,
 				default:false
 			}
-      },
-      data(){
-         return {
+		},
+		data(){
+			return {
 				loaded:false,
 
 				model:null,
-				
-            selected:0,
+					
+				selected:0,
 				create:false,
-
-				
-				
+						
+						
 				params:{
 					terms:'',
 					category:0,
@@ -106,69 +105,64 @@
 				
 				category:null,
 
-            deleteConfirm:{
-               id:0,
-               showing:false,
-               message:''
-            }
-         }
-      },
-      beforeMount() {
-         if(this.init_model){
-				this.model={...this.init_model };
-				this.params.page=this.init_model.pageNumber;
-				this.params.pageSize=this.init_model.pageSize;
+				deleteConfirm:{
+					id:0,
+					showing:false,
+					message:''
+				}
+			}
+		},
+		beforeMount() {
+			if(this.init_model){
+				this.model = {...this.init_model };
+				this.params.page = this.init_model.pageNumber;
+				this.params.pageSize = this.init_model.pageSize;
 			}
 			
 			if(this.categories){
-				this.setCategory(this.categories[0]);
-				
-			}	
-
-			
-
+				this.setCategory(this.categories[0]);				
+			}
 		},
-      computed:{
-         editting(){
-            if(this.selected) return true;
-            return this.create;
-         },
-         indexMode(){
-            if(this.editting) return false;
-            return true;
+		computed:{
+			editting(){
+				if(this.selected) return true;
+				return this.create;
+			},
+			indexMode(){
+				if(this.editting) return false;
+				return true;
 			},
 			desc(){
-            return this.params.sort=='desc';
-         }
-      }, 
-      methods:{
-         onIndex(){
-            this.fetchData();
+				return this.params.sort == 'desc';
+			}
+		}, 
+		methods:{
+			onIndex(){
+				this.fetchData();
 
-            this.selected=0;
-            this.create=false;
+				this.selected = 0;
+				this.create = false;
 			},
-         onCreate(){
-            this.create=true;
-         },
-         onEdit(id){
-            this.selected=id;
-         },
-         onDelete(post){
-            this.deleteConfirm.id=post.id;
-            this.deleteConfirm.message='確定要刪除 ' + post.title + ' 嗎?';
-            this.deleteConfirm.showing=true;
-         },
-         deletePost(){
+			onCreate(){
+				this.create = true;
+			},
+			onEdit(id){
+				this.selected=id;
+			},
+			onDelete(post){
+				this.deleteConfirm.id = post.id;
+				this.deleteConfirm.message = '確定要刪除 ' + post.title + ' 嗎?';
+				this.deleteConfirm.showing = true;
+			},
+			deletePost(){
 				let remove=PostAdmin.remove(this.deleteConfirm.id);
 				
 				remove.then(() => {
 					this.fetchData();
-               Helper.BusEmitOK('刪除成功');
-
-            })
-            .catch(error => {
-               Helper.BusEmitError(error);
+					Helper.BusEmitOK('刪除成功');
+				})
+				.catch(error => {
+					Helper.BusEmitError(error);
 				})
 				
 				this.deleteConfirm.showing=false;
@@ -181,63 +175,58 @@
 				this.category=category;
 				this.params.category=category.value;
 			},
-			
 			setReviewed(val) {
-        	   this.params.reviewed = val;
+				this.params.reviewed = val;
 				this.fetchData();
-         },
+			},
 			onPageChanged(page){
-				this.params.page=page;
+				this.params.page = page;
 				this.fetchData();
-				
+					
 			},
 			onSearch(keyword){
-               
 				this.params.keyword=keyword;
 				this.fetchData();
 			},
 			onYearTermChanged(terms){
-				
-				this.params.terms=terms;
+				this.params.terms = terms;
 				this.fetchData();
 			},
 			onSort(key){
-				
-				if(key=='date'){
+					
+				if(key == 'date'){
 					this.params.sort='desc';
 					this.params.sortby=key;
 				}else{
-					if(this.params.sortby!=key){
-
-						this.params.sortby=key;
-						
+					if(this.params.sortby != key){
+						this.params.sortby = key;						
 					}else{
-						if(this.desc) this.params.sort='asc';
-            		else  this.params.sort='desc';
+						if(this.desc) this.params.sort = 'asc';
+						else  this.params.sort = 'desc';
 					}
-					
 				}
 				
 
-            this.fetchData();
+				this.fetchData();
 			},
-         fetchData() {
-				
-            let getData = PostAdmin.index(this.params);
+			fetchData() {
+						
+				let getData = PostAdmin.index(this.params);
 
-            getData.then(model => {
-
-               this.model={ ...model };
-
-            })
-            .catch(error => {
-               Helper.BusEmitError(error);
-               
-            })
-         },
-         
-      }
-   }
+				Helper.setLoading(true);
+				getData.then(model => {
+					this.model = { ...model };
+				})
+				.catch(error => {
+					Helper.BusEmitError(error);				
+				})
+				.finally(() => { 
+					Helper.setLoading(false);
+				});
+			}
+			
+		}
+	}
 </script>
 
 

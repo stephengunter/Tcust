@@ -23,6 +23,8 @@ using ApplicationCore.Helpers;
 using BlogWeb.Authorization;
 using Permissions.Services;
 using Microsoft.AspNetCore.Http.Features;
+using Tcust.Services;
+using Tcust.DAL;
 
 namespace BlogWeb
 {
@@ -132,15 +134,35 @@ namespace BlogWeb
 				}
 			});
 
-			
+			services.AddDbContext<TcustContext>(c =>
+			{
+				try
+				{
+
+					c.UseSqlServer(Configuration.GetConnectionString("TcustConnection"));
+				}
+				catch (System.Exception ex)
+				{
+					var message = ex.Message;
+				}
+			});
+
+
+
 
 			services.AddScoped(typeof(IPermissionRepository<>), typeof(PermissionRepository<>));
 
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
 
+			services.AddScoped(typeof(ITcustRepository<>), typeof(TcustRepository<>));
+
 			services.AddScoped<IPostService, PostService>();
 			services.AddScoped<IAttachmentService, AttachmentService>();
 			services.AddScoped<ITopPostService, TopPostService>();
+
+			services.AddScoped<IDepartmentService, DepartmentService>();
+			services.AddScoped<ITermService, TermService>();
+			services.AddScoped<ITargetService, TargetService>();
 
 
 			services.AddScoped<IPermissionService, PermissionService>();

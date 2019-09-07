@@ -33,8 +33,8 @@ namespace ConsoleApp
 				DatabaseBackup(connectionString, savePath);
 			}
 
-		
 
+			Environment.Exit(0);
 
 		}
 

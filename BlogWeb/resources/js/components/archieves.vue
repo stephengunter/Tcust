@@ -20,10 +20,13 @@
             default: null
          },
          year:{
-            type:Number,
-            default:0
+            type: Number,
+            default: 0
          }
       },
+      beforeMount(){
+			console.log(this.year);
+		},
       methods:{
          getClass(item){
             let style= 'list-group-item';
@@ -32,12 +35,10 @@
             return style;
          },
          isActive(item){
-            return parseInt(item.text)==this.year;
+            return parseInt(item.text) == this.year;
          },
          onSelected(item){
-           
-            this.$emit('selected',item);
-            
+            this.$emit('selected',item);            
          }
         
       }

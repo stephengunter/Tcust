@@ -17,6 +17,16 @@ namespace Blog.Models
 		public int PostId { get; set; }
 		public Post Post { get; set; }
 
+
+		public bool IsVideo
+		{
+			get
+			{
+				if (String.IsNullOrEmpty(Type)) return false;
+				return Type.ToLower() == ".mp4";
+			}
+		}
+
 		
 	}
 }

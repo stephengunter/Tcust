@@ -22,15 +22,10 @@ namespace Tcust.DAL
 				SeedTermYears(context);
 				SeedTerms(context);
 
-				//seedCountries(context);
-				//seedPartitions(context);
-				//setTaiwanAreas(context);
 
-				//seedPartners(context);
+				seedDepartments(context);
 
-				//seedTypes(context);
 
-				//seedDepartments(context);
 			}
 
 
@@ -231,28 +226,36 @@ namespace Tcust.DAL
 
 		static void seedDepartments(TcustContext context)
 		{
-			var names = new Dictionary<string, string>();
-			names.Add("護理系", "");
-			names.Add("醫務暨健康管理系", "");
-			names.Add("醫學影像暨放射科學所", "");
-			names.Add("放射醫學科學研究所", "");
-			names.Add("資訊科技與管理系", "");
-			names.Add("行銷與流通管理系", "");
-			names.Add("進修推廣部", "");
-			names.Add("資工系", "");
-
-			foreach (var item in names)
+			var departments = new List<Department>()
 			{
-				string name = item.Key;
-				var exist = context.Types.Where(t => t.Name == name).FirstOrDefault();
+				new Department{  Name="教務處",Code="104000",Active=true, Parent=0,  },
+				new Department{  Name="學務處",Code="105000",Active=true, Parent=0,  },
+				new Department{  Name="總務處",Code="106000",Active=true, Parent=0,  },
+				new Department{  Name="研發處",Code="112000",Active=true, Parent=0,  },
+				new Department{  Name="電算中心",Code="118000",Active=true, Parent=0,  },
+				new Department{  Name="圖書館",Code="117000",Active=true, Parent=0,  },
+				new Department{  Name="進修推廣部",Code="108000",Active=true, Parent=0,  },
+				new Department{  Name="人事室",Code="109000",Active=true, Parent=0,  },
+				new Department{  Name="國資中心",Code="120000",Active=true, Parent=0,  },
+				new Department{  Name="教資中心",Code="119000",Active=true, Parent=0,  },
+				new Department{  Name="護理系",Code="206000",Active=true, Parent=0,  },
+				new Department{  Name="醫管系",Code="209000",Active=true, Parent=0,  },
+				new Department{  Name="行管系",Code="211000",Active=true, Parent=0,  },
+				new Department{  Name="科管系",Code="213000",Active=true, Parent=0,  },
+				new Department{  Name="醫放系",Code="210000",Active=true, Parent=0,  },
+				new Department{  Name="全人教育中心",Code="218000",Active=true, Parent=0,  },
+				new Department{  Name="長照所",Code="219000",Active=true, Parent=0,  },
+
+				new Department{  Name="文宣公關組",Code="103010",Active=true, Parent=0,  },
+			};
+			
+
+			foreach (var department in departments)
+			{
+				string code = department.Code;
+				var exist = context.Departments.Where(d => d.Code == code).FirstOrDefault();
 				if (exist == null)
 				{
-					var department=new Department
-					{
-						Active = true,
-						Name = name
-					};
-
 					string updatedBy = "";
 					department.SetUpdated(updatedBy);
 

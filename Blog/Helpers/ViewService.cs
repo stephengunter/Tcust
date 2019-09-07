@@ -13,9 +13,9 @@ namespace Blog.Helpers
 {
 	public static class ExtensionHelpers
 	{
-		public static List<BaseOption> ToOptions(this IEnumerable<Category> Categories, bool withEmpty = true)
+		public static List<BaseOption> ToOptions(this IEnumerable<Category> categories, bool withEmpty = true)
 		{
-			var options = Categories.Select(c => new BaseOption(c.Id.ToString(), c.Name)).ToList();
+			var options = categories.Select(c => new BaseOption(c.Id.ToString(), c.Name)).ToList();
 			if (withEmpty) options.Insert(0, new BaseOption("", "所有分類"));
 
 			return options;
@@ -98,8 +98,8 @@ namespace Blog.Helpers
 			model.type = file.Type;
 			model.path = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.Path);
 
-			if (String.IsNullOrEmpty(file.PreviewPath)) model.previewPath = model.path;
-			else model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
+			if (file.IsVideo) model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
+			else model.previewPath = $"{settings.Value.Url}/photo?path={file.Path}";
 
 
 			return model;
@@ -117,7 +117,7 @@ namespace Blog.Helpers
 				if (withCategories)
 				{
 					var categories = await postService.GetPostCategoriesAsync(post);
-					postViewModel.categoryName = String.Join(",", categories.Select(c => c.Name));
+					postViewModel.categoryNames = String.Join(",", categories.Select(c => c.Name));
 				}
 
 				postViewModel.clickCount = await postService.GetPostClickCount(post.Id);

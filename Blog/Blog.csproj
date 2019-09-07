@@ -20,6 +20,7 @@
     <ProjectReference Include="..\ApplicationCore\ApplicationCore.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\Permissions\Permissions.csproj" />
+    <ProjectReference Include="..\Tcust\Tcust.csproj" />
   </ItemGroup>
 
 </Project>

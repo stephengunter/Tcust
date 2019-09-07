@@ -25,7 +25,7 @@ namespace BlogWeb.Controllers
 		{
 		}
 
-		public IActionResult Index(string path ,int width=0, int height=0, string thumbnailType = "")
+		public IActionResult Index(int width, int height, string type, string path)
 		{
 			//檢查檔案路徑
 			string imgSourcePath = Path.Combine(this.UploadFilesPath, path);
@@ -49,7 +49,7 @@ namespace BlogWeb.Controllers
 
 			Image imgSource = Image.FromStream(new MemoryStream(System.IO.File.ReadAllBytes(imgSourcePath)));
 			Image imgResized = null;
-			if (thumbnailType == "crop") imgResized = GetCropedImage(imgSource, width, height);
+			if (type == "crop") imgResized = GetCropedImage(imgSource, width, height);
 			else imgResized = GetResizedImage(imgSource, width, height);
 
 			if (imgResized == null)

@@ -41,6 +41,9 @@
 						<li id="linkClicks" style="font-size:1.2em">
 							<a href="@Url.Action("Index", "Clicks", new { Area = "Admin" })">點擊率分析</a>
 						</li>
+						<li id="linkDepartments" style="font-size:1.2em">
+							<a href="@Url.Action("Index", "Departments", new { Area = "Admin" })">發稿統計</a>
+						</li>
 						@if ((await AuthorizationService.AuthorizeAsync(User, "REVIEW_POSTS")).Succeeded)
 						{
 							<li id="linkReview" style="font-size:1.2em">
@@ -76,6 +79,7 @@
 			<strong v-text="alertSetting.title"></strong>
 			<p v-text="alertSetting.text"></p>
 		</alert>
+		<loading :active.sync="loading"></loading>
 	</footer>
 
 	

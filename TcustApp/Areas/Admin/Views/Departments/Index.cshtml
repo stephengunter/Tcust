@@ -1,0 +1,33 @@
+﻿
+
+<departments-admin :init_model="list"></departments-admin>
+
+
+@section scripts{
+	<script>
+		$("#linkDepartments").addClass("active");
+
+		new Vue({
+			el: '#main',
+			data() {
+				return {
+					list: [],
+				}
+			},
+			beforeMount() {
+                this.list = @Html.Raw(ViewData["list"]);
+			},
+			methods: {
+
+			}
+
+		});
+
+
+
+	</script>
+
+}
+
+
+

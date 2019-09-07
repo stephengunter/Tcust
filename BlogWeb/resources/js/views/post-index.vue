@@ -3,7 +3,6 @@
    <div v-if="model" class="row">
       
       <div class="col-sm-8 blog-main">
-
          <post-item v-for="(post,index) in model.viewList" :key="index"
          :post="post" v-on:details="onDetails" >
 
@@ -22,7 +21,6 @@
 
       </div>
       <div  class="col-sm-1">
-            
       </div>
       <div class="col-sm-3">
          
@@ -51,80 +49,80 @@
 
 
 <script>
-   import PostItem from '../components/post-item';
-   import Archieves from '../components/archieves';
-   export default {
-      name:'PostIndexView',
-      components: {
-         PostItem,
-         Archieves
-      },
-      props: {
-         model: {
-            type: Object,
-            default: null
+	import PostItem from '../components/post-item';
+	import Archieves from '../components/archieves';
+	export default {
+		name:'PostIndexView',
+		components: {
+			PostItem,
+			Archieves
+		},
+		props: {
+			model: {
+				type: Object,
+				default: null
 			},
 			params:{
 				type: Object,
-            default: null
+				default: null
 			},
-         archive_items: {
-            type: Array,
-            default: null
-         },
-      },
-      data(){
-         return {
+			archive_items: {
+				type: Array,
+				default: null
+			},
+		},
+		data(){
+			return {
+					
+			
+			}
+		},
+		computed:{
+			hasData(){
+				if(!this.model) return false;
+				return this.model.totalPages > 0;
+			}
+		},
+		beforeMount(){
+			this.init();
+		},
+		methods:{
+			init(){
 				
-           
-         }
-      },
-      computed:{
-         hasData(){
-            if(!this.model) return false;
-            return this.model.totalPages > 0;
-         }
-      },
-      beforeMount(){
-          this.init();
-      },
-      methods:{
-         init(){
-            
-           
+			
 			},
-         onArchiveSelected(item){
+			onArchiveSelected(item){
 				this.$emit('year-changed',parseInt(item.text));
-         },
-         onPreviousPage(){
-				let page=parseInt(this.params.page) - 1;
+			},
+			onPreviousPage(){
+				let page = parseInt(this.params.page) - 1;
 				this.$emit('page-changed',page);
-           
-         },
-         onNextPage(){
-            let page=parseInt(this.params.page) + 1;
+			
+			},
+			onNextPage(){
+				let page = parseInt(this.params.page) + 1;
 				this.$emit('page-changed',page);
 			},
-			
-        //  fetchData(){
-        //     let getData = Post.index(this.params);
+				
+			//  fetchData(){
+			//     let getData = Post.index(this.params);
 
-        //     getData.then(model => {
-				// 	this.$emit('posts-fetched',model);
+			//     getData.then(model => {
+					// 	this.$emit('posts-fetched',model);
 
-        //     })
-        //     .catch(error => {
-        //        Helper.BusEmitError(error);
-               
-        //     })
-        //  },
-         onDetails(id){
-			
-            this.$emit('details',id);
-            
-         }
-      }
-   }
+			//     })
+			//     .catch(error => {
+			//        Helper.BusEmitError(error);
+				
+			//     })
+			//  },
+			onDetails(id){
+				
+				this.$emit('details',id);
+				
+			}
+		}
+	}
 </script>
 
 <style>

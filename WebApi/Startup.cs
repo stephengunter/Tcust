@@ -10,6 +10,8 @@ using Tcust.Services;
 using Cat = Blog;
 using Blog.Services;
 using Blog.DAL;
+using System.Collections.Generic;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace WebApi
 {
@@ -25,15 +27,16 @@ namespace WebApi
 		public void ConfigureServices(IServiceCollection services)
 		{
 
-			services.AddMvcCore().AddAuthorization()
+			services.AddMvcCore().AddAuthorization().AddApiExplorer()
 						.AddJsonFormatters()
 						.AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore); 
+            
 				
 
 			services.AddAuthentication("Bearer")
 			.AddIdentityServerAuthentication(options =>
 			{
-				options.Authority = Configuration["Settings:AuthUrl"]; //"http://localhost:50000";
+				options.Authority = "http://localhost:50000";// Configuration["Settings:AuthUrl"]; //"http://localhost:50000";
 				options.RequireHttpsMetadata = false;
 
 				options.ApiName = "apiApp";
@@ -41,6 +44,7 @@ namespace WebApi
 
 			});
 
+			
 
 			services.AddCors(options =>
 			{
@@ -53,7 +57,27 @@ namespace WebApi
 				});
 			});
 
-			services.Configure<Blog.Settings>(Configuration.GetSection("BlogSettings"));
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info { Title = "WebApiStarter", Version = "v1" });
+
+                c.AddSecurityDefinition("Bearer", new ApiKeyScheme
+                {
+                    In = "header",
+                    Description = "Please insert JWT with Bearer into field",
+                    Name = "Authorization",
+                    Type = "apiKey"
+                });
+
+                c.AddSecurityRequirement(new Dictionary<string, IEnumerable<string>>
+                {
+                    { "Bearer", new string[] { } }
+                });
+            });
+
+            services.Configure<Blog.Settings>(Configuration.GetSection("BlogSettings"));
+
+			services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 
 			services.AddDbContext<ApplicationDbContext>(c =>
 			{
@@ -102,6 +126,7 @@ namespace WebApi
 			services.AddScoped(typeof(ITcustRepository<>), typeof(TcustRepository<>));
 
 			services.AddScoped<ITermService, TermService>();
+			services.AddScoped<IDepartmentService, DepartmentService>();
 
 			//Blog
 			services.AddScoped(typeof(IBlogRepository<>), typeof(BlogRepository<>));
@@ -116,7 +141,13 @@ namespace WebApi
 			app.UseDeveloperExceptionPage();
 			app.UseCors("default");
 
-			app.UseAuthentication();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "WepApiStarter");
+            });
+            app.UseSwagger();
+
+            app.UseAuthentication();
 
 			app.UseMvc(routes =>
 			{

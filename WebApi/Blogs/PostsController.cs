@@ -9,6 +9,8 @@ using Microsoft.Extensions.Options;
 using WebApi.Controllers;
 using Blog.Models;
 using Blog.Views;
+using Tcust.Services;
+using ApplicationCore.Helpers;
 
 namespace WebApi.Blogs
 {
@@ -17,21 +19,22 @@ namespace WebApi.Blogs
 		Dairy,
 		Honor,
 		Famer,
-		DaAi
+		DaAi,
+		Inter
 	}
 	
 	public class PostsController : BaseApiController
 	{
 		private readonly IPostService postService;
+        private readonly IDepartmentService departmentService;
+        private readonly ViewService viewService;
 
-		private readonly ViewService viewService;
-
-		public PostsController(IOptions<Blog.Settings> settings, IPostService postService) 
+		public PostsController(IOptions<Blog.Settings> settings, IPostService postService, IDepartmentService departmentService) 
 		{
 
 			this.postService = postService;
-
-			this.viewService = new ViewService(settings, this.postService);
+            this.departmentService = departmentService;
+            this.viewService = new ViewService(settings, this.postService);
 		}
 
 		Category GetCategory(CategoryKeys key)
@@ -48,7 +51,10 @@ namespace WebApi.Blogs
 				case CategoryKeys.DaAi:
 					code = "da-ai";
 					break;
-				
+				case CategoryKeys.Inter:
+					code = "inter";
+					break;
+
 			}
 
 			return postService.GetCategoryByCode(code);
@@ -68,11 +74,35 @@ namespace WebApi.Blogs
 			posts = viewService.OrderPosts(posts);
 			
 			var pageList = await viewService.GetPostPagedList(posts, page, pageSize);
+			
 
 			return new ObjectResult(pageList);
 		}
 
-		[HttpGet("[controller]/[action]")]  //首頁輪播 , 排除大愛新聞
+        [HttpGet("[controller]/[action]")]  //以部門篩選, 排除大愛新聞
+        public async Task<IActionResult> Fetch(string code , string keyword = "", int pageSize = 12)
+        {
+            int page = 1;
+            var taskPosts = LoadPostsExceptDaai(page, pageSize, keyword);
+
+            var departmentCodes = code.Split(',').ToArray();
+            var departments = await departmentService.FetchByCodesAsync(departmentCodes);
+
+            var posts = await taskPosts;
+
+            if (!departments.IsNullOrEmpty())
+            {
+                posts = await postService.FilterByDepartmentsAsync(posts, departments);
+            }
+            
+
+            var pageList = await viewService.GetPostPagedList(posts, page, pageSize);
+
+
+            return new ObjectResult(pageList);
+        }
+
+        [HttpGet("[controller]/[action]")]  //首頁輪播 , 排除大愛新聞
 		public async Task<IActionResult> Tops(int pageSize = 12)
 		{
 			string keyword = "";
@@ -96,7 +126,10 @@ namespace WebApi.Blogs
 
 			posts = await postService.ExceptFromCategoryAsync(posts, exeptCategory);
 
-			return viewService.OrderPosts(posts); 
+           
+
+
+            return viewService.OrderPosts(posts); 
 		}
 
 
@@ -192,7 +225,7 @@ namespace WebApi.Blogs
 		[HttpGet("[controller]/[action]")] //校史館使用 
 		public async Task<IActionResult> GetDaAiNews(string keyword = "", int year=0, int month=0, int page = 1, int pageSize = 99)
 		{
-			
+
 			Category category = GetCategory(CategoryKeys.DaAi);
 
 
@@ -225,6 +258,27 @@ namespace WebApi.Blogs
 			return years;
 
 
+		}
+	
+		[HttpGet("[controller]/[action]")] //國際交流
+		public async Task<IActionResult> GetInters(string keyword = "", int year = 0, int month = 0, int page = 1, int pageSize = 99)
+		{
+
+			Category category = GetCategory(CategoryKeys.Inter);
+
+
+			bool reviewed = true;
+			var posts = await postService.FetchPosts(category, reviewed, keyword);
+
+			if (year > 0) posts = posts.Where(p => p.Year == year);
+			if (month > 0) posts = posts.Where(p => p.Month == month);
+
+			posts = viewService.OrderPosts(posts);
+
+
+			var pageList = await viewService.GetPostPagedList(posts, page, pageSize);
+
+			return Ok(pageList);
 		}
 
 		[HttpGet("[controller]/{id}")]

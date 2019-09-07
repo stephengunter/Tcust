@@ -1,4 +1,8 @@
 class Helper {
+	static setLoading(val){
+		Bus.$emit('loading', val);
+		if(!val) $("html, body").animate({ scrollTop: 0 }, 500);
+	}
    static getScrollBarWidth() {
       if (document.documentElement.scrollHeight <= document.documentElement.clientHeight) {
 			return 0

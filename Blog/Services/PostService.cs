@@ -8,6 +8,7 @@ using ApplicationCore.Helpers;
 using System.Linq;
 using System;
 using ApplicationCore.Views;
+using Tcust.Models;
 
 namespace Blog.Services
 {
@@ -23,13 +24,16 @@ namespace Blog.Services
 		Task DeleteAsync(int id, string updatedBy);
 
 		Post GetById(int id);
+
 		IEnumerable<Post> ListByIds(IList<int> ids);
 
 		Task<IEnumerable<Post>> ExceptFromCategoryAsync(IEnumerable<Post> posts, Category category);
 
-		Task<IEnumerable<Post>> FetchPosts(Category category = null, bool reviewed = true, string keyword = "");
+        Task<IEnumerable<Post>> FilterByDepartmentsAsync(IEnumerable<Post> posts, IEnumerable<Department> departments);
 
-		Task ReviewPosts(IList<int> ids);
+        Task<IEnumerable<Post>> FetchPosts(Category category = null, bool reviewed = true, string keyword = "");        
+
+        Task ReviewPosts(IList<int> ids);
 
 		Task<IEnumerable<Post>> GetAllAsync();
 
@@ -56,6 +60,16 @@ namespace Blog.Services
 		Task<IEnumerable<Category>> GetPostCategoriesAsync(Post post);
 
 
+		Task SyncPostDepartments(Post post, IList<int> departmentIds);
+		Task SyncPostIssuers(Post post, IList<int> departmentIds);
+
+		Task<IList<int>> GetDepartmentIdsInPostAsync(Post post);
+		Task<IList<int>> GetIssuerIdsInPostAsync(Post post);
+
+		Task<IList<int>> GetPostsIdsByDepartmentAsync(Department department);
+		Task<IList<int>> GetPostsIdsByIssuerAsync(Department department);
+
+		Task<IEnumerable<PostIssuer>> GetIssuersByPostAsync(Post post);
 
 	}
 
@@ -67,15 +81,22 @@ namespace Blog.Services
 		private readonly IBlogRepository<Click> clickRepository;
 		private readonly IBlogRepository<PostCategory> postsCategoriesRepository;
 
+		private readonly IBlogRepository<PostDepartment> postDepartmentRepository;
+		private readonly IBlogRepository<PostIssuer> postIssuerRepository;
+
 
 		public PostService(IBlogRepository<Post> postRepository, IBlogRepository<Category> categoryRepository,
-			IBlogRepository<Click> clickRepository, IBlogRepository<UploadFile> uploadFileRepository , IBlogRepository<PostCategory> postsCategoriesRepository)
+			IBlogRepository<Click> clickRepository, IBlogRepository<UploadFile> uploadFileRepository , IBlogRepository<PostCategory> postsCategoriesRepository,
+			IBlogRepository<PostDepartment> postDepartmentRepository, IBlogRepository<PostIssuer> postIssuerRepository)
 		{
 			this.postRepository = postRepository;
 			this.categoryRepository = categoryRepository;
 			this.uploadFileRepository = uploadFileRepository;
 			this.clickRepository = clickRepository;
 			this.postsCategoriesRepository = postsCategoriesRepository;
+
+			this.postDepartmentRepository = postDepartmentRepository;
+			this.postIssuerRepository = postIssuerRepository;
 		}
 
 		public async Task<IEnumerable<Post>> GetAllAsync()
@@ -137,7 +158,19 @@ namespace Blog.Services
 			return posts.Where(p => !postIds.Contains(p.Id));
 		}
 
-		public async Task<Post> GetByIdAsync(int id) => await postRepository.GetByIdAsync(id);
+        public async Task<IEnumerable<Post>> FilterByDepartmentsAsync(IEnumerable<Post> posts, IEnumerable<Department> departments)
+        {
+            var departmentsIds = departments.Select(d => d.Id).ToList();
+            var spec = new PostDepartmentFilterSpecification(departmentsIds);
+            var postDepartments = await postDepartmentRepository.ListAsync(spec);
+
+            var postIds = postDepartments.Select(item => item.PostId).ToList();
+
+            return posts.Where(p => postIds.Contains(p.Id)).ToList();
+
+        }
+
+        public async Task<Post> GetByIdAsync(int id) => await postRepository.GetByIdAsync(id);
 
 		public Post GetByNumber(string number)
 		{
@@ -145,7 +178,6 @@ namespace Blog.Services
 
 			return  postRepository.GetSingleBySpec(filter);
 		}
-
 
 
 		public async Task<IEnumerable<Post>> GetByKeywordAsync(string keyword)
@@ -274,7 +306,7 @@ namespace Blog.Services
 			if (excludeDefault) categories = categories.Where(c => c.Code != "diary").ToList();
 
 
-			return categories.Where(c=>c.Active).OrderByDescending(c=>c.Order);
+			return categories.Where(c => c.Active).OrderByDescending(c=>c.Order);
 		}
 		public async Task<Category> GetCategoryByIdAsync(int id, bool returnDefault=false)
 		{
@@ -307,6 +339,56 @@ namespace Blog.Services
 			var categoryIds= await GetCategoryIdsInPostAsync(post);
 			var filter = new CategoryFilterSpecification(categoryIds);
 			return await categoryRepository.ListAsync(filter);
+		}
+
+		public async Task SyncPostDepartments(Post post, IList<int> departmentIds)
+		{
+			var current = await GetDepartmentIdsInPostAsync(post);
+
+			var needRemoveIds = current.Where(i => !departmentIds.Contains(i));
+			if (!needRemoveIds.IsNullOrEmpty())
+			{
+				var spec = new PostDepartmentFilterSpecification(post, needRemoveIds.ToList());
+				var removeItems = await postDepartmentRepository.ListAsync(spec);
+
+				postDepartmentRepository.DeleteRange(removeItems);
+			}
+
+			var needToAdd = departmentIds.Where(i => !current.Contains(i));
+			if (!needToAdd.IsNullOrEmpty())
+			{
+				foreach (var newDepartmentId in needToAdd)
+				{
+					await postDepartmentRepository.AddAsync(new PostDepartment { PostId = post.Id, DepartmentId = newDepartmentId });
+
+				}
+			}
+
+		}
+
+		public async Task SyncPostIssuers(Post post, IList<int> departmentIds)
+		{
+			var current = await GetIssuerIdsInPostAsync(post);
+
+			var needRemoveIds = current.Where(i => !departmentIds.Contains(i));
+			if (!needRemoveIds.IsNullOrEmpty())
+			{
+				var spec = new PostIssuerFilterSpecification(post, needRemoveIds.ToList());
+				var removeItems = await postIssuerRepository.ListAsync(spec);
+
+				postIssuerRepository.DeleteRange(removeItems);
+			}
+
+			var needToAdd = departmentIds.Where(i => !current.Contains(i));
+			if (!needToAdd.IsNullOrEmpty())
+			{
+				foreach (var newIssuerId in needToAdd)
+				{
+					await postIssuerRepository.AddAsync(new PostIssuer { PostId = post.Id, DepartmentId = newIssuerId });
+
+				}
+			}
+
 		}
 
 
@@ -358,9 +440,50 @@ namespace Blog.Services
 			return postCategories.Select(pc => pc.CategoryId).ToList();
 		}
 
-		
 
-		
+		public async Task<IList<int>> GetDepartmentIdsInPostAsync(Post post)
+		{
+
+			var filter = new PostDepartmentFilterSpecification(post);
+
+			var postDepartments = await postDepartmentRepository.ListAsync(filter);
+
+			return postDepartments.Select(pc => pc.DepartmentId).ToList();
+		}
+
+		public async Task<IList<int>> GetIssuerIdsInPostAsync(Post post)
+		{
+
+			var filter = new PostIssuerFilterSpecification(post);
+
+			var postIssuers = await postIssuerRepository.ListAsync(filter);
+
+			return postIssuers.Select(pc => pc.DepartmentId).ToList();
+		}
+
+		public async Task<IList<int>> GetPostsIdsByDepartmentAsync(Department department)
+		{
+			var filter = new PostDepartmentFilterSpecification(department);
+
+			var postDepartments = await postDepartmentRepository.ListAsync(filter);
+
+			return postDepartments.Select(pc => pc.PostId).ToList();
+		}
+		public async Task<IList<int>> GetPostsIdsByIssuerAsync(Department department)
+		{
+			var filter = new PostIssuerFilterSpecification(department);
+
+			var postIssuers = await postIssuerRepository.ListAsync(filter);
+
+			return postIssuers.Select(pc => pc.PostId).ToList();
+		}
+
+		public async Task<IEnumerable<PostIssuer>> GetIssuersByPostAsync(Post post)
+		{
+			var filter = new PostIssuerFilterSpecification(post);
+
+			return await postIssuerRepository.ListAsync(filter);
+		}
 
 	}
 }

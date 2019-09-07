@@ -28,9 +28,10 @@ window.Form = Form;
 
 import YearAdmin from './models/yearAdmin';
 import TermAdmin from './models/termAdmin';
+import DepartmentAdmin from './models/departmentAdmin';
 window.YearAdmin = YearAdmin;
 window.TermAdmin = TermAdmin;
-
+window.DepartmentAdmin = DepartmentAdmin;
 
 
 

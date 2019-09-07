@@ -89,6 +89,8 @@ namespace Tcust.Migrations
 
                     b.Property<string>("Name");
 
+                    b.Property<int>("Parent");
+
                     b.Property<DateTime>("StartDate");
 
                     b.Property<string>("UpdatedBy");

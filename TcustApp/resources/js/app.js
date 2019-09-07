@@ -11,10 +11,13 @@ Vue.component('drop-down', require('./packages/components/DropDown'));
 Vue.component('html-editor', require('./packages/components/HtmlEditor'));
 Vue.component('check-box', require('./packages/components/Checkbox'));
 Vue.component('check-box-list', require('./packages/components/CheckboxList'));
+Vue.component('tree-item', require('./packages/components/TreeItem'));
+Vue.component('tree-view', require('./packages/components/TreeView'));
 
 
 Vue.component('terms-admin', require('./views/terms-admin'));
 Vue.component('years-admin', require('./views/years-admin'));
+Vue.component('departments-admin', require('./views/departments-admin'));
 
 import ErrorHandler from './utilities/error-handler';
 

@@ -38,7 +38,7 @@
          @saved="onIndex" @cancel="onIndex">
       </term-edit>
       
-   </div> 
+   </div>
 </template>
 
 

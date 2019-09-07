@@ -12,7 +12,9 @@ namespace BlogWeb.Controllers
     {
         public IActionResult Index()
         {
-            return View();
+			
+			
+			return Content("");
         }
 
         public IActionResult About()

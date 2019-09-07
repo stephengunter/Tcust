@@ -85,7 +85,7 @@
 
 <script>
 export default {
-	name:'termEdit',
+	name:'TermEdit',
 	props:{
 		id:{
 			type:Number,

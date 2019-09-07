@@ -19,7 +19,7 @@
 					<td v-else>
 						<img v-if="media.thumb" class="thumbnail" style="max-width:120px" :src="media.thumb" />
 					</td>
-					<td v-if="edittingIndex==index">
+					<td v-if="edittingIndex == index">
 						<input class="form-control" type="text" v-model="edittingMedia.title">
 					</td>
 					<td v-else>
@@ -28,7 +28,7 @@
 					<td>
 						{{ media.type }} 
 					</td>
-					<td v-if="edittingIndex==index">
+					<td v-if="edittingIndex == index">
 						<button class="btn btn-sm btn-success" @click.prevent="updateMedia(index)">
 							<i class="fa fa-floppy-o" aria-hidden="true"></i>
 						</button>

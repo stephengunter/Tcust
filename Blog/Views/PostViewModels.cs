@@ -14,7 +14,7 @@ namespace Blog.Views
 	{
 		public PostViewModel()
 		{
-
+			categoryIds = new List<int>();
 		}
 
 		public int id { get; set; }
@@ -46,9 +46,9 @@ namespace Blog.Views
 
 		public DateTime createdAt { get; set; }
 
-		public int categoryId { get; set; }
+		public IList<int> categoryIds { get; set; }
 
-		public string categoryName { get; set; }
+		public string categoryNames { get; set; }
 
 		public string url { get; set; }
 
@@ -129,6 +129,10 @@ namespace Blog.Views
 	public class PostEditForm
 	{
 		public int canReview { get; set; }
+
+		public IList<int> issuerIds { get; set; }
+
+		public IList<int> departmentIds { get; set; }
 
 		public PostViewModel post { get; set; }
 

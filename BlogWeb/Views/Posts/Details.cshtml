@@ -1,0 +1,66 @@
+﻿<div class="blog-masthead">
+
+	<div class="container">
+		<navbar ref="navBar"  :categories="categories" :category="category" v-on:search="onSearch"></navbar>
+	</div>
+</div>
+
+
+<div class="container">
+
+	<post-details  :model="detailsModel" v-on:back="onBack">
+		
+	</post-details>
+	
+
+	<hr />
+
+</div>
+
+@section scripts{
+<script type="text/babel">
+	new Vue({
+	el: '#app',
+	data: {
+	category: 0,
+	categories: [],
+
+	detailsModel: null
+
+	},
+	beforeMount() {
+	let categoryList = @Html.Raw(ViewData["categories"]);
+	this.categories = categoryList;
+
+	this.category = @ViewData["category"];
+
+
+	this.detailsModel = @Html.Raw(ViewData["model"]);
+
+	},
+	methods: {
+	onSearch(keyword) {
+	let url = Helper.buildQuery('/posts', { keyword });
+	document.location = url;
+	},
+	onBack(){
+	window.history.back();
+	}
+	}
+
+	});
+
+
+</script>
+
+}
+
+
+
+
+
+
+
+
+
+

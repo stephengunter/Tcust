@@ -23,11 +23,14 @@
         "vue": "^2.5.7"
     },
     "dependencies": {
+        "babel-polyfill": "^6.26.0",
         "clipboard": "^1.7.1",
         "codemirror": "^5.33.0",
         "flatpickr": "^4.1.4",
+        "polyfill": "^0.1.0",
         "summernote": "^0.8.9",
         "vue-flatpickr-component": "^6.0.0",
+        "vue-loading-overlay": "^3.2.0",
         "vue-upload-component": "^2.7.4"
     }
 }

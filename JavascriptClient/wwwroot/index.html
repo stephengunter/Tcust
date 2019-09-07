@@ -1,118 +1,17 @@
 ﻿<!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">
     <title></title>
-
-    <link href="css/flexslider.css" rel="stylesheet" />
-    <script src="http://www.tcust.edu.tw/ezfiles/0/1000/img/1176/jquery-1.9.1.min.js"></script>
-    <script src="http://www.tcust.edu.tw/ezfiles/0/1000/img/1276/jquery.flexslider.js"></script>
 </head>
-
 <body>
-    <div id="flex_container" class="cf">
-        <div id="tcust_slide_main" role="tcust_slide_main">
+	<button id="login">Login</button>
+	<button id="api">Call API</button>
+	<button id="logout">Logout</button>
 
-            <section>
-                <div class="flexslider">
-                    <ul id="head-news-silder" class="slides">
+	<pre id="results"></pre>
 
-
-
-
-
-                    </ul>
-
-                </div>
-            </section>
-        </div>
-    </div>
-
-
-    <script type="text/javascript">
-        function getHeadNews() {
-
-            var uri = 'http://api.tcust.edu.tw/posts/tops';
-            $.ajax({
-                url: uri,
-                cache: false,
-                dataType: "json",
-                success: function(data) {
-
-
-
-                    $.each(data.viewList, function(key, item) {
-                        $('<li>', {
-                            html: formatHeadNewsItem(item)
-                        }).appendTo($('#head-news-silder'));
-                    });
-
-
-
-                    iniSilder();
-                },
-                error: function(request, status, error) {
-                    console.log(error);
-                }
-            });
-
-
-
-        }
-
-        function formatHeadNewsItem(item) {
-            var html = ' <div class="flex-img"> ' + getHeadNewsImage(item) + '</div>';
-            html += '<div class="flex-caption"><h2>' + item.title + '</h2>';
-            html += ' <p>' + item.summary;
-            html += '&nbsp;&nbsp;<span class="slider_news_more">';
-            html += getHeadNewsLink(item);
-            html += '</span>';
-            html += '</p></div>';
-
-            return html;
-
-        }
-
-        function getHeadNewsImage(item) {
-            var img = item.cover;
-
-            var src = img.path;
-            var alt = img.title;
-            return ' <img  src="' + src + '" ' + 'alt="' + alt + '" /> ';
-        }
-
-        function getHeadNewsLink(item) {
-            var url = item.url;
-            return '<a href="' + url + '"   target="_blank">  ...more</a>'
-
-        }
-
-        function iniSilder() {
-
-            $('.flexslider').flexslider({
-                animation: "fade",
-                start: function(slider) {
-                    $('body').removeClass('loading');
-                }
-            });
-        }
-
-
-
-        $(document).ready(function() {
-
-            jQuery.support.cors = true;
-
-            getHeadNews();
-
-
-        });
-    </script>
-
-
-
+	<script src="oidc-client.js"></script>
+	<script src="app.js"></script>
 </body>
-
 </html>

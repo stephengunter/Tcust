@@ -7,17 +7,13 @@
 
 
 <div class="container">
-	<post-index ref="postIndex" v-show="!selected" :params="params" 
+	<post-index ref="postIndex" :params="params" 
 				:model="model" :categories="categories" :archive_items="archives"
 				v-on:year-changed="onYearChanged" v-on:page-changed="onPageChanged"
 				v-on:details="onDetails">
 
 
 	</post-index>
-
-	<post-details  ref="postDetails" :model="detailsModel" v-show="selected" 
-				  v-on:back="onBack"  v-on:details-fetched="onDetailsFetched">
-	</post-details>
 	
 
 	<hr />
@@ -25,155 +21,86 @@
 </div>
 
 	@section scripts{
-	<script type="text/babel">
-		new Vue({
-			el: '#app',
-			data: {
+<script type="text/babel">
+	new Vue({
+	el: '#app',
+	data: {
 
-					selected: 0,
+	selected: 0,
 
-					model: null,
-					archives: [],
-					categories: [],
-
-
-
-
-					params: {
-						category: 0,
-						keyword: '',
-						year: 0,
-						page: 1,
-
-					},
-
-					detailsModel: null
+	model: null,
+	archives: [],
+	categories: [],
+	params: {
+	category: 0,
+	keyword: '',
+	year: 0,
+	page: 1
+	}
 
 
-			},
-			beforeMount() {
+	},
+	beforeMount() {
+	let categoryList = @Html.Raw(ViewData["categories"]);
+	this.categories = categoryList;
 
-				let categoryList = @Html.Raw(ViewData["categories"]);
-				this.categories = categoryList;
+	this.params.category = @ViewData["category"];
 
-				this.params.category = @ViewData["category"];
+	this.params.keyword = '@Html.Raw(ViewData["keyword"])';
 
-				 @if (ViewData["id"] == null)
-				 {
-					 <text>
-					this.params.keyword = '@Html.Raw(ViewData["keyword"])';
+	this.params.year = @ViewData["year"];
 
+	this.archives = @Html.Raw(ViewData["archives"]);
 
-					this.archives = @Html.Raw(ViewData["archives"]);
-
-					this.model = @Html.Raw(ViewData["list"]);
+	this.model = @Html.Raw(ViewData["list"]);
 
 
-
-					</text>
-
-				 }
-				 else
-				 {
-					  <text>
-					this.selected = @ViewData["id"];
-					this.detailsModel = @Html.Raw(ViewData["model"]);
-					  </text>
-				 }
+	this.init();
 
 
-				this.init();
+	},
+	mounted() {
+	this.$refs.navBar.setKeyword(this.params.keyword);
+	},
+	methods: {
+	init() {
+
+	this.params.page = this.model.pageNumber;
+	this.params.pageSize = this.model.pageSize;
+
+	},
+	fetchPosts(){
+	let params = {};
+	if(this.params.category) params.category = this.params.category;
+	if(this.params.keyword) params.keyword = this.params.keyword;
+	if(this.params.year) params.year = this.params.year;
+	params.page = this.params.page;
+	let url = Helper.buildQuery('/posts', params);
+	document.location = url;
+
+	},
+	onYearChanged(year) {
+	this.params.year = year;
+	this.params.page = 1;
+	this.fetchPosts();
+	},
+	onSearch(keyword) {
+	let url = Helper.buildQuery('/posts', { keyword });
+	document.location = url;
+	},
+	onPageChanged(page) {
+	this.params.page = page;
+	this.fetchPosts();
+	},
+	onDetails(id) {
+	document.location = `/posts/${id}`;
+	}
+	}
+
+	});
 
 
-			},
-			mounted() {
-				this.$refs.navBar.setKeyword(this.params.keyword);
-			},
-			methods: {
-				init() {
-
-
-					if (this.selected) {
-
-					}
-					else {
-						this.params.page = this.model.pageNumber;
-						this.params.pageSize = this.model.pageSize;
-
-						let archive_items = this.archives;
-							if(!archive_items) return;
-							if(archive_items.length){
-							this.params.year=parseInt(archive_items[0].text);
-						}else{
-							this.params.year=0;
-						}
-
-					}
-
-				},
-				fetchPosts(){
-					let getData = Post.index(this.params);
-
-					getData.then(model => {
-						this.model = { ...model };
-
-						this.scrollToTop();
-						
-					})
-					.catch(error => {
-						Helper.BusEmitError(error);
-
-					})
-					
-				},
-				onYearChanged(year) {
-					this.params.year = year;
-					this.fetchPosts();
-				},
-				onSearch(keyword) {
-					let params = {
-						keyword: keyword
-					};
-					let url = Helper.buildQuery('/posts', params);
-					document.location = url;
-				},
-				onPageChanged(page) {
-					this.params.page = page;
-					this.fetchPosts();
-				},
-				onDetails(id) {
-					this.selected = id;
-					this.$refs.postDetails.fetchData(id);
-				},
-				onBack() {
-					if (this.model) {
-
-						this.selected = 0;
-						this.detailsModel = null;
-						
-
-					} else {
-						document.location = '/';
-					}
-
-
-
-				},
-				onDetailsFetched(model) {
-					this.detailsModel = { ...model };
-					this.scrollToTop();
-				},
-				scrollToTop(){
-					$("html, body").animate({ scrollTop: 0 }, 1000);
-				}
-
-			}
-
-		});
-
-
-
-		</script>
+</script>
 
 	}
 

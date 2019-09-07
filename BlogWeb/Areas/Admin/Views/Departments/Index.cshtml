@@ -1,0 +1,35 @@
+﻿<departments :terms="terms" :init_model="model" ></departments>
+
+
+
+@section scripts{
+	<script>
+		$("#linkDepartments").addClass("active");
+
+		new Vue({
+			el: '#main',
+			data() {
+				return {
+					model: {},
+					terms: []
+
+				}
+			},
+			beforeMount() {
+				this.model = @Html.Raw(ViewData["list"]);
+				this.terms = @Html.Raw(ViewData["terms"]);
+			},
+			methods: {
+
+			}
+
+		});
+
+
+
+	</script>
+
+}
+
+
+

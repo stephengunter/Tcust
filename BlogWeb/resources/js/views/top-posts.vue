@@ -85,18 +85,18 @@
       methods:{
 			fetchData() {
 				
-            let getData = TopAdmin.index(this.params);
-
-            getData.then(model => {
-
-               this.model={ ...model };
-
-            })
-            .catch(error => {
-               Helper.BusEmitError(error);
-               
-            })
-         },
+				let getData = TopAdmin.index(this.params);
+				Helper.setLoading(true);
+				getData.then(model => {
+					this.model={ ...model };
+				})
+				.catch(error => {
+					Helper.BusEmitError(error);				
+				})
+				.finally(() => { 
+					Helper.setLoading(false);
+				});
+			},
 			onCategorySelected(category){
 				this.setCategory(category);
 				this.fetchData();

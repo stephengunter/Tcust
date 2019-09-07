@@ -25,6 +25,7 @@ Vue.component('post-admin', require('./views/post-admin'));
 Vue.component('top-posts-admin', require('./views/top-posts'));
 Vue.component('post-review', require('./views/post-review'));
 Vue.component('clicks', require('./views/clicks'));
+Vue.component('departments', require('./views/departments'));
 Vue.component('manage', require('./views/manage'));
 
 
@@ -38,7 +39,7 @@ new Vue({
     el: '#footer',
     data() {
         return {
-            
+            loading: false,
             showAlert: false,
             alertSetting: {
                 type: 'success',
@@ -53,11 +54,15 @@ new Vue({
         }
     },
     created() {
+        Bus.$on('loading',this.setLoading);
         Bus.$on('errors',this.onErrors);
         Bus.$on('okmsg',this.showSuccessMsg);
      
     },
     methods: {
+        setLoading(val){
+            this.loading = val;
+        },
         closeAlert() {
             this.showAlert = false;
         },

@@ -23,14 +23,19 @@ namespace Blog.DAL
 		public DbSet<Click> Clicks { get; set; }
 		public DbSet<UploadFile> UploadFiles { get; set; }
 		public DbSet<PostCategory> PostsCategories { get; set; }
+		public DbSet<DepartmentTarget> DepartmentTargets { get; set; }
 
-		
+		public DbSet<PostIssuer> PostsIssuers { get; set; }
+		public DbSet<PostDepartment> PostsDepartments { get; set; }
+
 
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 
 			modelBuilder.Entity<PostCategory>(ConfigurePostCategory);
+			modelBuilder.Entity<PostIssuer>(ConfigurePostIssuer);
+			modelBuilder.Entity<PostDepartment>(ConfigurePostDepartment);
 
 		}
 
@@ -50,8 +55,22 @@ namespace Blog.DAL
 			
 
 		}
-		
 
+		private void ConfigurePostIssuer(EntityTypeBuilder<PostIssuer> builder)
+		{
+
+			builder.HasKey(pc => new { pc.PostId, pc.DepartmentId });
+
+
+		}
+
+		private void ConfigurePostDepartment(EntityTypeBuilder<PostDepartment> builder)
+		{
+
+			builder.HasKey(pc => new { pc.PostId, pc.DepartmentId });
+
+
+		}
 
 
 

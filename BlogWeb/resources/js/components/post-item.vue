@@ -4,7 +4,8 @@
       <div class="line-item hf-item-odd clearfix">
          <div class="content-image">
             <a v-if="post.cover"  class="image-link article-link" href="#" @click.prevent="onDetails">
-               <img class="img-thumbnail summary-img" :src="post.cover.previewPath" />
+               <cover-photo :media="post.cover"/>
+               <!-- <img class="img-thumbnail summary-img" :src="post.cover.previewPath" /> -->
                <span class="overlay article-overlay"></span>
             </a>
          </div>
@@ -36,6 +37,9 @@
 </template>
 
 <script>
+
+   import CoverPhoto from './cover-photo';
+   
    export default {
       name:'PostItem',
       props: {
@@ -44,9 +48,11 @@
             default: null
          },
       },
+      components: {
+         'cover-photo': CoverPhoto
+      },
       methods:{
          onDetails(){
-            
             this.$emit('details' , this.post.id);
          }
       }

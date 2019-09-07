@@ -1,7 +1,6 @@
 <template>
   
    <div class="wbox1" style="width:1920px;">
-     
       <div class="leftbox">
         <a @click.prevent="init"  href="#"> 
 			  <img :src="title_img_path" width="134" height="750">

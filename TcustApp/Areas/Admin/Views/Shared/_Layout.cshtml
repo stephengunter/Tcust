@@ -29,25 +29,27 @@
 					<a  href="@Url.Action("Index", "Terms", new { Area = "Admin" })" class="navbar-brand" style="font-size:1.8em">慈濟科大管理系統</a>
 				</div>				
 				<div class="navbar-collapse collapse">
-					<ul class="nav navbar-nav">
-					
-						<li id="linkYearTerms"  class="dropdown">
-							<a  href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-								學年度管理 <span class="caret"></span>
-							</a>
-							<ul class="dropdown-menu">
-								<li>
-									<a href="@Url.Action("Index", "Years", new { Area = "Admin" })">年度</a>
-								</li>
-								<li>
-									<a href="@Url.Action("Index", "Terms", new { Area = "Admin" })">學期</a>
-								</li>
-								
-							</ul>
-						</li>
+                    <ul class="nav navbar-nav">
 
+                        <li id="linkYearTerms" class="dropdown" style="font-size:1.2em">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                學年度管理 <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a href="@Url.Action("Index", "Years", new { Area = "Admin" })">年度</a>
+                                </li>
+                                <li>
+                                    <a href="@Url.Action("Index", "Terms", new { Area = "Admin" })">學期</a>
+                                </li>
 
-					</ul>
+                            </ul>
+                        </li>
+
+                        <li id="linkDepartments" style="font-size:1.2em">
+                            <a href="@Url.Action("Index", "Departments", new { Area = "Admin" })">部門管理</a>
+                        </li>
+                    </ul>
 				</div>
 			</div>
 		</nav>

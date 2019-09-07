@@ -55,7 +55,7 @@
 				return '/posts?category=' + item.value
 			},
 			isActive(item){
-            return parseInt(item.value)==this.category;
+            return parseInt(item.value) == this.category;
          },
          setKeyword(keyword){
             this.keyword=keyword;
