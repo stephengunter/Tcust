@@ -59,7 +59,6 @@ namespace IdentityApp.Controllers
 
             _interaction = interaction;
             _account = new AccountService(interaction, httpContextAccessor, schemeProvider, clientStore);
-
 		
 
 		}
@@ -76,8 +75,7 @@ namespace IdentityApp.Controllers
         {
 
 			if (User.Identity.IsAuthenticated) return Redirect("/Manage/Index");
-			//var user =await _UserManager.FindByEmailAsync("traders.com.tw@gmail.com");
-			//await _UserManager.DeleteAsync(user);
+			
 
 			// Clear the existing external cookie to ensure a clean login process
 			await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -325,7 +323,51 @@ namespace IdentityApp.Controllers
             return View("LoggedOut", vm);
         }
 
-        [HttpPost]
+		[HttpGet]
+		[AllowAnonymous]
+		public IActionResult Admin()
+		{
+			return View(new AdminViewModel());
+		}
+
+		[HttpPost]
+		[AllowAnonymous]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> Admin(AdminViewModel model)
+		{
+			
+			if (ModelState.IsValid)
+			{
+                if (model.Key != Settings.Value.AdminKey)
+                {
+                    ModelState.AddModelError(string.Empty, "密碼重設失敗.");
+                    return View(model);
+                }
+
+                var user = await UserManager.FindByNameAsync(model.UserName);
+                if (user == null)
+                {
+                    ModelState.AddModelError(string.Empty, "密碼重設失敗.");
+                    return View(model);
+                }
+
+                var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+
+                var result = await UserManager.ResetPasswordAsync(user, token, model.Password);
+
+                if (result.Succeeded)
+                {
+                    return RedirectToAction(nameof(ResetPasswordConfirmation));
+                }
+                AddErrors(result);
+                return View(model);
+            }
+
+			// If we got this far, something failed, redisplay form
+			return View(model);
+		}
+
+		[HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public IActionResult ExternalLogin(string provider, string returnUrl = null)

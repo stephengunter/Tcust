@@ -166,20 +166,7 @@ namespace IdentityApp.Areas.Admin.Controllers
 			return roles.ToOptions(emptyOption);
 		}
 
-		async Task SetRole(IdentityUserEditViewModel model, ApplicationUser user)
-		{
-			//foreach (var item in model.roleOptions)
-			//{
-			//	string role = item.value;
-			//	bool inRole = await userManager.IsInRoleAsync(user, role);
-
-			//	if (inRole)
-			//	{
-			//		model.role = role;
-			//		return;
-			//	}
-			//}
-		}
+		
 
 	}
 }

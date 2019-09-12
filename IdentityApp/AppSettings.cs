@@ -18,6 +18,8 @@ namespace IdentityApp
 		public string Maintain { get; set; }
 
 		public string EmailApiKey { get; set; }
-		
+
+		public string AdminKey { get; set; }
+
 	}
 }
