@@ -18,6 +18,7 @@ Vue.component('tree-view', require('./packages/components/TreeView'));
 Vue.component('terms-admin', require('./views/terms-admin'));
 Vue.component('years-admin', require('./views/years-admin'));
 Vue.component('departments-admin', require('./views/departments-admin'));
+Vue.component('manage', require('./views/manage'));
 
 import ErrorHandler from './utilities/error-handler';
 

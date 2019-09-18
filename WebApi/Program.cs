@@ -19,8 +19,6 @@ namespace WebApi
 		{
 			var host = BuildWebHost(args);
 
-			TcustContextSeed.SeedData(host.Services);
-
 			host.Run();
 		}
 

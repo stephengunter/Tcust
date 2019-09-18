@@ -9,11 +9,11 @@
 
 	<title>慈濟科技大學 - 管理系統</title>
 
-	<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-	<link rel="stylesheet" href="~/css/site.css" />
-	<link rel="stylesheet" href="~/lib/fontawesome/css/font-awesome.min.css" />
-	
-	
+	<link rel="stylesheet" href="~/css/admin/bootstrap.min.css" />
+	<link rel="stylesheet" href="~/libs/fontawesome/css/font-awesome.min.css" />
+	<link rel="stylesheet" href="~/css/admin/admin.css" />
+
+
 </head>
 <body>
 	<div>
@@ -26,38 +26,33 @@
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					<a  href="@Url.Action("Index", "Terms", new { Area = "Admin" })" class="navbar-brand" style="font-size:1.8em">慈濟科大管理系統</a>
-				</div>				
+					<a href="@Url.Action("Index", "Terms", new { Area = "Admin" })" class="navbar-brand" style="font-size:1.8em">慈濟科大管理系統</a>
+				</div>
 				<div class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
+					<ul class="nav navbar-nav">
 
-                        <li id="linkYearTerms" class="dropdown" style="font-size:1.2em">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                                學年度管理 <span class="caret"></span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a href="@Url.Action("Index", "Years", new { Area = "Admin" })">年度</a>
-                                </li>
-                                <li>
-                                    <a href="@Url.Action("Index", "Terms", new { Area = "Admin" })">學期</a>
-                                </li>
-
-                            </ul>
-                        </li>
-
-                        <li id="linkDepartments" style="font-size:1.2em">
-                            <a href="@Url.Action("Index", "Departments", new { Area = "Admin" })">部門管理</a>
-                        </li>
-                    </ul>
+						
+						<li id="linkYears" style="font-size:1.2em">
+							<a href="@Url.Action("Index", "Years", new { Area = "Admin" })">學年度管理</a>
+						</li>
+						<li id="linkTerms" style="font-size:1.2em">
+							<a href="@Url.Action("Index", "Terms", new { Area = "Admin" })">學期管理</a>
+						</li>
+						<li id="linkDepartments" style="font-size:1.2em">
+							<a href="@Url.Action("Index", "Departments", new { Area = "Admin" })">部門管理</a>
+						</li>
+						<li id="linkManage" style="font-size:1.2em">
+							<a href="@Url.Action("Index", "Manage", new { Area = "Admin" })">使用者管理</a>
+						</li>
+					</ul>
 				</div>
 			</div>
 		</nav>
-		
+
 	</div>
 	<div id="main" class="container body-content">
 		@RenderBody()
-		
+
 	</div>
 	<hr />
 	<footer id="footer" class="container">
@@ -71,29 +66,33 @@
 		</alert>
 	</footer>
 
-	<script src="~/lib/jquery/dist/jquery.min.js"></script>
-	<script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="~/libs/jquery.min.js"></script>
+	<script type="text/javascript" src="~/libs/tether.min.js"></script>
+	<script type="text/javascript" src="~/libs/bootstrap.min.js"></script>
 
 
 	<script type="text/javascript" src="~/js/app.js"></script>
-	
-	
+
+	<style>
+		html * {
+			font-family: "微軟正黑體", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+		}
+	</style>
 
 	@RenderSection("Scripts", required: false)
 
 	<script>
 		$(document).ready(function () {
 			var selector = '.nav li';
-
 			$(selector).on('click', function () {
-				
+
 				$(selector).removeClass('active');
 				$(this).addClass('active');
 			});
 		});
-		
+
 	</script>
 
-	
+
 </body>
 </html >

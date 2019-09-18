@@ -20,6 +20,8 @@
             {{ post.author }}
             </div>
             <div class="author-text blog-post-meta ">
+               <span style="margin-right:1em">{{ post.date }}</span>
+               
                <i class="fa fa-eye" aria-hidden="true"></i> {{ post.clickCount}}
             </div>
             

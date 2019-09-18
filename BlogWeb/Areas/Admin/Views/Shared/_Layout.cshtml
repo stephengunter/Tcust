@@ -36,7 +36,7 @@
 							<a href="@Url.Action("Index", "Posts", new { Area = "Admin" })">校園日誌管理</a>
 						</li>
 						<li id="linkTops" style="font-size:1.2em">
-							<a href="@Url.Action("Index", "Tops", new { Area = "Admin" })">置頂文章</a>							
+							<a href="@Url.Action("Index", "Tops", new { Area = "Admin" })">置頂文章</a>
 						</li>
 						<li id="linkClicks" style="font-size:1.2em">
 							<a href="@Url.Action("Index", "Clicks", new { Area = "Admin" })">點擊率分析</a>
@@ -48,26 +48,26 @@
 						{
 							<li id="linkReview" style="font-size:1.2em">
 								<a href="@Url.Action("Index", "Review", new { Area = "Admin" })">文章審核</a>
-								
+
 							</li>
 						}
-						
+
 						@if ((await AuthorizationService.AuthorizeAsync(User, "MANAGE_USERS")).Succeeded)
 						{
 							<li id="linkManage" style="font-size:1.2em">
 								<a href="@Url.Action("Index", "Manage", new { Area = "Admin" })">使用者管理</a>
 							</li>
 						}
-						
+
 					</ul>
 				</div>
 			</div>
 		</nav>
-		
+
 	</div>
 	<div id="main" class="container body-content">
 		@RenderBody()
-		
+
 	</div>
 	<hr />
 	<footer id="footer" class="container">
@@ -82,14 +82,13 @@
 		<loading :active.sync="loading"></loading>
 	</footer>
 
-	
 
 	<script type="text/javascript" src="~/libs/jquery.min.js"></script>
 	<script type="text/javascript" src="~/libs/tether.min.js"></script>
 	<script type="text/javascript" src="~/libs/bootstrap.min.js"></script>
 
 	<script type="text/javascript" src="~/libs/summernote/summernote.min.js"></script>
-	
+
 	<script type="text/javascript" src="~/js/app.js"></script>
 
 	<style>
@@ -103,16 +102,15 @@
 	<script>
 		$(document).ready(function () {
 			var selector = '.nav li';
-
 			$(selector).on('click', function () {
-				
+
 				$(selector).removeClass('active');
 				$(this).addClass('active');
 			});
 		});
-		
+
 	</script>
 
-	
+
 </body>
 </html >

@@ -6,8 +6,9 @@
 				<span class="blog-post-meta">
 				{{ model.post.author }}   
 				<br />
+					<span style="margin-right:1em">{{ model.post.date }}</span>
 					<i class="fa fa-eye" aria-hidden="true"></i> {{ model.post.clickCount}}
-					<button class="btn btn-light btn-sm btn-copy" :data-clipboard-text="model.post.url"
+					<button v-if="false" class="btn btn-light btn-sm btn-copy" :data-clipboard-text="model.post.url"
 						data-toggle="tooltip" title="複製連結" data-placement="top">
 						<i class="fa fa-clipboard" aria-hidden="true"></i>
 					</button>

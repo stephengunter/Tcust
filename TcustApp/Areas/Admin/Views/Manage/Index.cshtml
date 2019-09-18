@@ -1,0 +1,34 @@
+﻿
+<manage :init_model="model"></manage>
+
+
+@section scripts{
+	<script>
+		$("#linkManage").addClass("active");
+
+		new Vue({
+			el: '#main',
+			data() {
+				return {
+					model: {},
+					
+				}
+			},
+			beforeMount() {
+				this.model= @Html.Raw(ViewData["list"]);
+				
+
+				let token = '@Html.Raw(ViewData["token"])';
+				this.$auth.setToken(token);
+			},
+			methods: {
+
+			}
+
+		});
+
+
+
+	</script>
+
+}

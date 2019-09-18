@@ -30,7 +30,7 @@ namespace BlogWeb.Areas.Admin.Controllers
 			if (permission > 0) selectedPermission = await permissionService.GetPermissionByIdAsync(permission);
 			if (selectedPermission == null) permission = 0;
 
-			var users = await permissionService.FetchUsersWithPermissions(selectedPermission, keyword);
+			var users = await permissionService.FetchUsersWithPermission(selectedPermission, keyword);
 
 			users = users.OrderByDescending(u => u.LastUpdated);
 

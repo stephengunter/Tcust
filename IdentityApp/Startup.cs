@@ -101,7 +101,7 @@ namespace IdentityApp
 				// this defines a CORS policy called "default"
 				options.AddPolicy("default", policy =>
 				{
-					policy.WithOrigins("http://localhost:50002", "http://localhost:50003")
+					policy.WithOrigins("http://localhost:50002", "http://localhost:50003", "http://localhost:50008")
 						.AllowAnyHeader()
 						.AllowAnyMethod();
 				});

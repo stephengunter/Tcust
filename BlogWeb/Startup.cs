@@ -190,10 +190,6 @@ namespace BlogWeb
 
 
 			app.UseAuthentication();
-
-			
-		
-
 			
 
 			app.UseStaticFiles();

@@ -1,11 +1,12 @@
 ﻿using Permissions.Models;
 using System.Collections.Generic;
+using ApplicationCore.Helpers;
 
 namespace Permissions.Views
 {
     public class PermissionViewService
 	{
-		public static UserViewModel MapUserViewModel(AppUser user, List<Permission> permissions)
+		public static UserViewModel MapUserViewModel(AppUser user, List<Permission> permissions = null)
 		{
 			var model = new UserViewModel()
 			{
@@ -20,10 +21,14 @@ namespace Permissions.Views
 		
 			model.ps = user.PS;
 
-			foreach (var item in permissions)
+			if (!permissions.IsNullOrEmpty())
 			{
-				model.permissionViews.Add(MapPermissionViewModel(item));
+				foreach (var item in permissions)
+				{
+					model.permissionViews.Add(MapPermissionViewModel(item));
+				}
 			}
+			
 
 			return model;
 

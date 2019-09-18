@@ -15,7 +15,7 @@ namespace Permissions.Services
 	{
 		Task<AppUser> GetAppUserByIdAsync(int id);
 		AppUser GetAppUserByUserId(string userId);
-		Task<IEnumerable<AppUser>> FetchUsersWithPermissions(Permission permission = null, string keyword = "");
+		Task<IEnumerable<AppUser>> FetchUsersWithPermission(Permission permission = null, string keyword = "");
 
 		Task<AppUser> CreateAppUserAsync(AppUser user);
 		Task UpdateAppUserAsync(AppUser user, IList<int> permissionIds);
@@ -27,7 +27,7 @@ namespace Permissions.Services
 		Task<IEnumerable<Permission>> GetUserPermissionsAsync(AppUser user);
 
 		Task<Permission> GetPermissionByIdAsync(int id);
-
+		Permission GetPermissionByName(string name);
 
 		Task<List<PermissionOption>> GetPermissionOptionsAsync(bool edit, bool isDev = false);
 
@@ -51,6 +51,13 @@ namespace Permissions.Services
 		{
 			return await appUserRepository.GetByIdAsync(id);
 		}
+
+		public Permission GetPermissionByName(string name)
+		{
+			var filter = new PermissionFilterSpecification(name);
+			return permissionRepository.GetSingleBySpec(filter);
+		}
+
 		public AppUser GetAppUserByUserId(string userId)
 		{
 			return appUserRepository.Get(u => u.UserId == userId);
@@ -61,7 +68,7 @@ namespace Permissions.Services
 			return await permissionRepository.GetByIdAsync(id);
 		}
 
-		public async Task<IEnumerable<AppUser>> FetchUsersWithPermissions(Permission permission = null, string keyword = "")
+		public async Task<IEnumerable<AppUser>> FetchUsersWithPermission(Permission permission = null, string keyword = "")
 		{
 			Task<IEnumerable<AppUser>> getAppUsersTask;
 

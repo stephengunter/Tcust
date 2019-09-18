@@ -1,6 +1,8 @@
 ﻿using ApplicationCore.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Permissions.DAL;
+using Permissions.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,12 +20,17 @@ namespace Tcust.DAL
 				var context = scope.ServiceProvider.GetRequiredService<TcustContext>();
 				context.Database.Migrate();
 
+				scope.ServiceProvider.GetRequiredService<PermissionContext>().Database.Migrate();
+
 
 				SeedTermYears(context);
 				SeedTerms(context);
 
 
 				seedDepartments(context);
+
+				var permissionContext = scope.ServiceProvider.GetRequiredService<PermissionContext>();
+				SeedPermissions(permissionContext);
 
 
 			}
@@ -283,6 +290,37 @@ namespace Tcust.DAL
 			context.Partners.Add(partner);
 			context.SaveChanges();
 		}
+
+		static void SeedPermissions(PermissionContext context)
+		{
+			var permissions = new List<Permission>
+			{
+				new  Permission
+				{
+					Name = "ADMIN",
+					Title = "後台管理",
+					AdminOnly = true,
+					Order = 88
+				}
+			};
+
+			foreach (var item in permissions)
+			{
+				CreatePermission(item, context);
+			}
+
+		}
+
+		static void CreatePermission(Permission permission, PermissionContext context)
+		{
+			var exist = context.Permissons.Where(c => c.Name == permission.Name).FirstOrDefault();
+			if (exist == null)
+			{
+				context.Permissons.Add(permission);
+				context.SaveChanges();
+			}
+		}
+
 
 
 	}
