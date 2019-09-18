@@ -6,7 +6,7 @@
 				<span class="blog-post-meta">
 				{{ model.post.author }}   
 				<br />
-					<span style="margin-right:1em">{{ model.post.date }}</span>
+					<span style="margin-right:1em">{{ date }}</span>
 					<i class="fa fa-eye" aria-hidden="true"></i> {{ model.post.clickCount}}
 					<button v-if="false" class="btn btn-light btn-sm btn-copy" :data-clipboard-text="model.post.url"
 						data-toggle="tooltip" title="複製連結" data-placement="top">
@@ -69,15 +69,24 @@ export default {
 			},
 		}
 	},
-	mounted(){
-			
-		let clipboard = new Clipboard('.btn-copy');
-
-		clipboard.on('success', function(e) {
-			Helper.BusEmitOK('連結已複製');
-			e.clearSelection();
-		});
+	computed: {
+		date(){
+			if(!this.model) return '';
+			let model = this.model.post;
+			if(!model.beginDate) return model.date;
+			if(!model.endDate) return model.beginDate;
+			return `${model.beginDate} ~ ${model.endDate}`;
+		}
 	},
+	// mounted(){
+			
+	// 	let clipboard = new Clipboard('.btn-copy');
+
+	// 	clipboard.on('success', function(e) {
+	// 		Helper.BusEmitOK('連結已複製');
+	// 		e.clearSelection();
+	// 	});
+	// },
 	methods:{
 		mapPhoto(){
 			this.medias = this.model.post.medias.map(item => {
