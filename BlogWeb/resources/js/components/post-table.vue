@@ -154,11 +154,7 @@ export default {
 	computed:{
 		posts(){
 			if(!this.model) return [];
-			return this.model.viewList.map(post => {
-				let cover = new Photo(post.cover);
-				cover.previewPath = cover.getThumbnailUrlByWidth(60);
-				return { ...post, cover:cover };
-			})
+			return this.model.viewList;
 		},
 		canSubmitOrders(){
 			return this.posts.length > 0;

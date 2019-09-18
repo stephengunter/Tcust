@@ -40,8 +40,6 @@
 </template>
 
 <script>
-
-   import CoverPhoto from './cover-photo';
    
    export default {
       name:'PostItem',
@@ -50,9 +48,6 @@
             type: Object,
             default: null
          },
-      },
-      components: {
-         'cover-photo': CoverPhoto
       },
       computed: {
          date(){

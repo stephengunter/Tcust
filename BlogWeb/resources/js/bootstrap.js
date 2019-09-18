@@ -51,7 +51,6 @@ window.Form = Form;
 import Api from './models/api';
 import Manage from './models/manage';
 import Post from './models/post';
-import Photo from './models/photo';
 import PostAdmin from './models/postAdmin';
 
 import Department from './models/department';
@@ -63,7 +62,6 @@ import Attachment from './models/attachment';
 window.Manage=Manage;
 window.Api = Api;
 window.Post = Post;
-window.Photo = Photo;
 window.TopAdmin = TopAdmin;
 window.PostAdmin = PostAdmin;
 window.PostReview=PostReview;
