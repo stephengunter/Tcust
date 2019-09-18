@@ -103,19 +103,6 @@
 				let page = parseInt(this.params.page) + 1;
 				this.$emit('page-changed',page);
 			},
-				
-			//  fetchData(){
-			//     let getData = Post.index(this.params);
-
-			//     getData.then(model => {
-					// 	this.$emit('posts-fetched',model);
-
-			//     })
-			//     .catch(error => {
-			//        Helper.BusEmitError(error);
-				
-			//     })
-			//  },
 			onDetails(id){
 				
 				this.$emit('details',id);

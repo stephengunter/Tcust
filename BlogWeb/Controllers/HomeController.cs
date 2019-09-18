@@ -12,9 +12,12 @@ namespace BlogWeb.Controllers
     {
         public IActionResult Index()
         {
-			
-			
-			return Content("");
+			string path = "20190730/7e0c103f-a7d7-4efd-98d5-59b7294935a2.mp4";
+			var parts = path.Split('.');
+			string ext = parts[parts.Length - 1];
+
+			path.Replace(parts[parts.Length - 1], "jpg");
+			return Ok(parts[parts.Length - 1]);
         }
 
         public IActionResult About()

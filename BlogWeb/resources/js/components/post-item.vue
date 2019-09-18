@@ -4,8 +4,7 @@
       <div class="line-item hf-item-odd clearfix">
          <div class="content-image">
             <a v-if="post.cover"  class="image-link article-link" href="#" @click.prevent="onDetails">
-               <cover-photo :media="post.cover"/>
-               <!-- <img class="img-thumbnail summary-img" :src="post.cover.previewPath" /> -->
+               <img class="img-thumbnail summary-img" :src="post.cover.previewPath" />
                <span class="overlay article-overlay"></span>
             </a>
          </div>
@@ -20,7 +19,9 @@
             {{ post.author }}
             </div>
             <div class="author-text blog-post-meta ">
-               <span style="margin-right:1em">{{ post.date }}</span>
+               <span style="margin-right:1em">
+                  {{ date }}
+               </span>
                
                <i class="fa fa-eye" aria-hidden="true"></i> {{ post.clickCount}}
             </div>
@@ -52,6 +53,16 @@
       },
       components: {
          'cover-photo': CoverPhoto
+      },
+      computed: {
+         date(){
+            if(!this.post) return '';
+            let model = this.post;
+            if(!model.beginDate) return model.date;
+            if(!model.endDate) return model.beginDate;
+            return `${model.beginDate} ~ ${model.endDate}`;
+
+         }
       },
       methods:{
          onDetails(){

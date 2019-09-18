@@ -6,12 +6,8 @@
 				<span class="blog-post-meta">
 				{{ model.post.author }}   
 				<br />
-					<span style="margin-right:1em">{{ model.post.date }}</span>
-					<i class="fa fa-eye" aria-hidden="true"></i> {{ model.post.clickCount}}
-					<button v-if="false" class="btn btn-light btn-sm btn-copy" :data-clipboard-text="model.post.url"
-						data-toggle="tooltip" title="複製連結" data-placement="top">
-						<i class="fa fa-clipboard" aria-hidden="true"></i>
-					</button>
+					<span style="margin-right:1em">{{ date }}</span>
+					<i class="fa fa-eye" aria-hidden="true"></i> {{ model.post.clickCount }}
 				</span>
 				<hr style="margin-top:0">
 				<p v-html="model.post.content">
@@ -25,11 +21,11 @@
       </div>
       <div class="col-sm-3">
 			<div class="sidebar-module">
-				<a v-for="(item,index) in medias" :key="index" data-fancybox="gallery" 
-				   :data-caption="item.original.title" 
-					:href="item.original.path"  
+				<a v-for="(item,index) in model.post.medias" :key="index" data-fancybox="gallery" 
+				   :data-caption="item.title" 
+					:href="item.path"  
 				>
-					<img :alt="item.title" :src="item.previewPath" style="padding-top:5px">
+					<img :alt="item.title" :src="item.previewPath" style="width: 210px;padding-top:5px">
 				</a>
 			</div>
 			
@@ -55,12 +51,9 @@ export default {
 			default: null
 		}
 	},
-	beforeMount(){
-		this.mapPhoto();         
-	},
 	data(){
 		return {
-			medias:[],
+			
 			imageWidth: 200,
 			fancyOptions:{
 				'iframe' : {
@@ -69,22 +62,17 @@ export default {
 			},
 		}
 	},
-	mounted(){
-			
-		let clipboard = new Clipboard('.btn-copy');
+	computed: {
+		date(){
+			if(!this.model) return '';
+			let model = this.model.post;
+			if(!model.beginDate) return model.date;
+			if(!model.endDate) return model.beginDate;
+			return `${model.beginDate} ~ ${model.endDate}`;
 
-		clipboard.on('success', function(e) {
-			Helper.BusEmitOK('連結已複製');
-			e.clearSelection();
-		});
+		}
 	},
 	methods:{
-		mapPhoto(){
-			this.medias = this.model.post.medias.map(item => {
-				let cover = new Photo(item);
-				return { ...cover, previewPath: cover.getThumbnailUrlByWidth(this.imageWidth)};
-			})
-		},
 		fetchData(id){
 				
 			let getData = Post.details(id);

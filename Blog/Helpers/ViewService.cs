@@ -97,9 +97,7 @@ namespace Blog.Helpers
 			model.height = file.Height;
 			model.type = file.Type;
 			model.path = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.Path);
-
-			if (file.IsVideo) model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
-			else model.previewPath = $"{settings.Value.Url}/photo?path={file.Path}";
+			model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
 
 
 			return model;
