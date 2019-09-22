@@ -96,16 +96,16 @@ namespace IdentityApp
 
 			services.AddMvc().AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
-			services.AddCors(options =>
-			{
-				// this defines a CORS policy called "default"
-				options.AddPolicy("default", policy =>
-				{
-					policy.WithOrigins("http://localhost:50002", "http://localhost:50003", "http://localhost:50008")
-						.AllowAnyHeader()
-						.AllowAnyMethod();
-				});
-			});
+			//services.AddCors(options =>
+			//{
+			//	// this defines a CORS policy called "default"
+			//	options.AddPolicy("default", policy =>
+			//	{
+			//		policy.WithOrigins("http://localhost:50002", "http://localhost:50003", "http://localhost:50008")
+			//			.AllowAnyHeader()
+			//			.AllowAnyMethod();
+			//	});
+			//});
 
 
 
@@ -143,7 +143,7 @@ namespace IdentityApp
 				app.UseExceptionHandler("/Home/Error");
 			}
 
-			app.UseCors("default");
+			//app.UseCors("default");
 
 			app.UseIdentityServer();
 

@@ -12,6 +12,7 @@ namespace TcustApp.Controllers
     {
         public IActionResult Index()
         {
+			
             return Redirect("/admin");
         }
     }

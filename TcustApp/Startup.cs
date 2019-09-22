@@ -41,7 +41,7 @@ namespace TcustApp
 			services.AddAuthorization(options =>
 			{
 				options.AddPolicy("ADMIN", policy =>
-					policy.Requirements.Add(new HasPermissionRequirement("EDIT_POSTS")));
+					policy.Requirements.Add(new HasPermissionRequirement("ADMIN")));
 			});
 
 			services.AddAuthentication(options =>

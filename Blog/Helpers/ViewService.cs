@@ -97,7 +97,9 @@ namespace Blog.Helpers
 			model.height = file.Height;
 			model.type = file.Type;
 			model.path = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.Path);
-			model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
+
+			if (String.IsNullOrEmpty(file.PreviewPath)) model.previewPath = model.path;
+			else model.previewPath = String.Format("{0}/{1}/{2}", settings.Value.Url, settings.Value.UploadFoler, file.PreviewPath);
 
 
 			return model;
