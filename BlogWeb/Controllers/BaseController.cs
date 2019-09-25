@@ -22,17 +22,11 @@ namespace BlogWeb.Controllers
 
 		protected IOptions<AppSettings> Settings { get { return this.settings; } }
 
-		protected string UploadFilesPath
-		{
-			get { return Path.Combine(_hostingEnvironment.WebRootPath, "uploads"); }
-		}
+		protected string UploadFilesPath => Path.Combine(_hostingEnvironment.WebRootPath, "uploads");
 
-		protected string HelpersPath
-		{
-			get { return Path.Combine(_hostingEnvironment.ContentRootPath, "Helpers"); }
-		}
+		protected string HelpersPath => Path.Combine(_hostingEnvironment.WebRootPath, "helpers");
 
-		
+
 
 		protected string DefaultTermNumber()
 		{
