@@ -405,9 +405,9 @@ export default {
 			this.onSubmit();
 		},
 		onSubmit(){
-			this.submitting=true;
+			this.submitting = true;
 
-			let medias=this.$refs.mediaEdit.getMedias();
+			let medias = this.$refs.mediaEdit.getMedias();
 			this.form.post.medias=medias;
 
 			let contentValue=this.$refs.contentEditor.getValue();
