@@ -1,6 +1,6 @@
 class Api {
 	static source() {
-		return 'http://api.tcust.edu.tw';      
+		return 'https://api.tcust.edu.tw';      
 	}
 	static setToken(token) {
 		axios.defaults.headers.common.Authorization='Bearer ' + token

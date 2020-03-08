@@ -30,13 +30,13 @@
 
 
 					<input type="hidden" name="userId" v-model="form.user.userId" class="form-control" />
-					<small class="text-danger" v-if="form.errors.has('user.userId')" v-text="form.errors.get('user.userId')"></small>
+					<small class="text-danger" v-if="form.errors.has('user.email')" v-text="form.errors.get('user.email')"></small>
 				</div>
          </div>
-         <div v-show="!isCreate" class="form-group">
+         <div class="form-group">
 				<label class="col-md-2 control-label">姓名</label>
 				<div class="col-md-10">
-					<input name="user.name" v-model="form.user.name" class="form-control"  :disabled="!isCreate"/>
+					<input name="user.name" v-model="form.user.name" class="form-control" />
 					<small class="text-danger" v-if="form.errors.has('user.name')" v-text="form.errors.get('user.name')"></small>
 				
 				</div>
@@ -47,7 +47,8 @@
 					<check-box-list :options="permissionOptions" :default_values="form.user.permissionIds" 
 						@select-changed="onPermissionChanged">
 					</check-box-list>
-					<small class="text-danger" v-if="permissionError" v-text="permissionError"></small>
+					<small class="text-danger" v-if="form.errors.has('user.permissionIds')" v-text="form.errors.get('user.permissionIds')"></small>
+					
 				</div>
          </div>
 			
@@ -140,14 +141,11 @@ export default {
 			else  getData=Manage.edit(this.id);  
 
 			getData.then(model => {
-			
-				
 				this.form = new Form({
 					user:{
 						...model.user
 					}
 				});
-
 				this.permissionOptions=model.permissionOptions.slice(0);
 				
 
@@ -160,52 +158,25 @@ export default {
 			})
 		},
 		onPermissionChanged(selectedValues){
-			
-			this.form.user.permissionIds=selectedValues.slice(0);
-			this.permissionError='';
+			this.form.user.permissionIds = selectedValues.slice(0);
+			this.clearErrorMsg('user.permissionIds');
+
 		},
 		setDate(val){
 			this.form.user.date=val;
 		},
-		setContent(val){
-			this.form.user.content=val
-			this.onSubmit()
-		},
 		onSubmit(){
-			let email= this.form.user.email
-			if(!email){
-				this.emailError='請填寫Email';
-				return;
-			} 
 
-			if(!this.form.user.permissionIds || !this.form.user.permissionIds.length){
-				this.permissionError='請選擇權限';
-				return;
-			} 
-
-			this.submitting=true;
-			let find= Api.getUserByEmail(email);
-			find.then(user => {
-			   this.submit(user);
-			})
-			.catch(error => {
-				this.emailError='這個Email不存在';
-				this.submitting=false;
-			})
+			this.submitting = true;
+			this.submit();
 			
 		},
-		submit(user){
-			
-			
+		submit(){
 
-			this.form.user.userId=user.id;
-			this.form.user.name=user.profile.fullname;
+			let save = null;
 
-
-			let save=null;
-
-			if(this.isCreate)  save=Manage.store(this.form);            
-			else  save=Manage.update(this.id,this.form);  
+			if(this.isCreate) save = Manage.store(this.form);            
+			else save = Manage.update(this.id, this.form);  
 
 			save.then(user => {
 					Helper.BusEmitOK();
@@ -213,15 +184,10 @@ export default {
 				})
 				.catch(error => {
 					Helper.BusEmitError(error,'存檔失敗');
-					this.submitting=false;
+					this.submitting = false;
 				})
 		},
 		clearErrorMsg(name) {
-			
-			if(name=='user.email'){
-				this.emailError='';
-				name='user.userId'
-			} 
       	this.form.errors.clear(name);
       },
 	}

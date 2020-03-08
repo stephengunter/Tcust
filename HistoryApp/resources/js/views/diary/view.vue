@@ -88,7 +88,7 @@ export default {
       this.fetchData();
    },
    mounted(){
-    
+    	console.log('Api source',Api.source());
     
    },
    methods: {

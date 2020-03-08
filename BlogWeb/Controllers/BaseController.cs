@@ -7,8 +7,6 @@ namespace BlogWeb.Controllers
 {
 	public abstract class BaseController : ApplicationCore.Controllers.BaseController
 	{
-		
-
 		private readonly IHostingEnvironment _hostingEnvironment;
 		private readonly IOptions<AppSettings> settings;
 

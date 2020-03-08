@@ -12,6 +12,11 @@ using Permissions.Models;
 using Permissions.Views;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
+using System.Net.Http;
+using Newtonsoft.Json;
+using System.Text;
+using IdentityApp.Views;
+using System.Net.Mail;
 
 namespace BlogWeb.Areas.Admin.Controllers
 {
@@ -23,9 +28,10 @@ namespace BlogWeb.Areas.Admin.Controllers
 			
 		}
 
+		AppSettings AppSettings => Settings.Value;
+
 		public async Task<IActionResult> Index(int permission = 0, string keyword = "", int page = 1, int pageSize = 10)
 		{
-			
 			Permission selectedPermission = null;
 			if (permission > 0) selectedPermission = await permissionService.GetPermissionByIdAsync(permission);
 			if (selectedPermission == null) permission = 0;
@@ -90,35 +96,68 @@ namespace BlogWeb.Areas.Admin.Controllers
 			return permissionOptions.ToList();
 		}
 
+		async Task<string> PostResponseStringAsync(string action, object model)
+		{
+			var client = new HttpClient
+			{
+				BaseAddress = new Uri(AppSettings.AuthUrl)
+			};
+			string json = JsonConvert.SerializeObject(model);
+
+			HttpContent contentPost = new StringContent(json, Encoding.UTF8, "application/json");
+
+
+			var response = await client.PostAsync(action, contentPost);
+			response.EnsureSuccessStatusCode();
+
+			return await response.Content.ReadAsStringAsync();
+
+		}
+
 		[HttpPost("[area]/[controller]")]
 		public async Task<IActionResult> Store([FromBody] UserEditForm model)
 		{
-			
-			var exist = permissionService.GetAppUserByUserId(model.user.userId);
-			if(exist!=null) ModelState.AddModelError("user.userId", "這個User重複了");
-
-
-			if (!ModelState.IsValid)
+			if (String.IsNullOrEmpty(AppSettings.AdminKey))
 			{
+				ModelState.AddModelError("adminKey", "找不到adminKey");
 				return BadRequest(ModelState);
 			}
 
-			var user = model.user.MapToEntity(CurrentUserId);
-			user.CreatedAt = DateTime.Now;
-			user.SetUpdated(CurrentUserId);
-			
+			ValidateRequest(model);
+			if (!ModelState.IsValid) return BadRequest(ModelState);
 
-			var permissions = await GetPermissionsToGrant(model.user.permissionIds);
-			foreach (var item in permissions)
+			var userId = await PostResponseStringAsync($"api/users/{AppSettings.AdminKey}", new IdentityUserViewModel{ email = model.user.email, name = model.user.name });
+
+			model.user.userId = userId;
+
+			var existUser = permissionService.GetAppUserByUserId(model.user.userId);
+			if (existUser == null)
 			{
-				user.Permissions.Add(item);
+				//新增
+				var user = model.user.MapToEntity(CurrentUserId);
+				user.CreatedAt = DateTime.Now;
+				user.SetUpdated(CurrentUserId);
+				var permissions = await GetPermissionsToGrant(model.user.permissionIds);
+				foreach (var item in permissions)
+				{
+					user.Permissions.Add(item);
+				}
+
+				user = await permissionService.CreateAppUserAsync(user);
+				return Ok();
+
 			}
+			else
+			{
+				//更新
+				existUser = model.user.MapToEntity(CurrentUserId, existUser);
 
-			user = await permissionService.CreateAppUserAsync(user);
+
+				await permissionService.UpdateAppUserAsync(existUser, model.user.permissionIds);
 
 
-			return new ObjectResult(user);
-
+				return Ok();
+			}
 
 		}
 
@@ -146,25 +185,28 @@ namespace BlogWeb.Areas.Admin.Controllers
 		[HttpPut("[area]/[controller]/{id}")]
 		public async Task<IActionResult> Update(int id, [FromBody] UserEditForm model)
 		{
-			if (!ModelState.IsValid)
+			if (String.IsNullOrEmpty(AppSettings.AdminKey))
 			{
+				ModelState.AddModelError("adminKey", "找不到adminKey");
 				return BadRequest(ModelState);
 			}
+
+			ValidateRequest(model);
+			if (!ModelState.IsValid) return BadRequest(ModelState);
+
+			var userId = await PostResponseStringAsync($"api/users/{AppSettings.AdminKey}", new IdentityUserViewModel { email = model.user.email, name = model.user.name });
+
+			model.user.userId = userId;
 
 			var user = await permissionService.GetAppUserByIdAsync(id);
 			if (user == null) return NotFound();
 
 			user = model.user.MapToEntity(CurrentUserId, user);
 
-			
-			var permissions = await GetPermissionsToGrant(model.user.permissionIds);
-			
-
 			await permissionService.UpdateAppUserAsync(user, model.user.permissionIds);
 
 
-			return new NoContentResult();
-
+			return Ok();
 
 		}
 
@@ -193,6 +235,40 @@ namespace BlogWeb.Areas.Admin.Controllers
 			}
 
 			return permissions;
+		}
+
+		void ValidateRequest(UserEditForm model)
+		{
+			if (String.IsNullOrEmpty(model.user.email))
+			{
+				ModelState.AddModelError("user.email", "必須填寫Email");
+			}
+			else
+			{
+				try
+				{
+					MailAddress m = new MailAddress(model.user.email);
+				}
+				catch (FormatException)
+				{
+					ModelState.AddModelError("user.email", "email格式錯誤");
+				}
+			}
+
+			
+
+			if (String.IsNullOrEmpty(model.user.name))
+			{
+				ModelState.AddModelError("user.name", "必須填寫姓名");
+			}
+
+			if (model.user.permissionIds.IsNullOrEmpty())
+			{
+				ModelState.AddModelError("user.permissionIds", "必須選擇權限");
+			}
+
+
+			
 		}
 	}
 }

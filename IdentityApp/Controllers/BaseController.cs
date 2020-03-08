@@ -87,6 +87,7 @@ namespace IdentityApp.Controllers
 			await AddToRolesAsync(user, roleTypes);
 
 			user.CreatedAt = DateTime.Now;
+			user.LastUpdated = DateTime.Now;
 			profile.CreatedAt = DateTime.Now;
 
 			user.Profile = profile;

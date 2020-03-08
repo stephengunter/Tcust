@@ -21,6 +21,10 @@
     <Compile Remove="Models\Profile.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="Areas\Api\Controllers\UsersController.cs" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="2.3.0" />
@@ -41,6 +45,12 @@
     <ProjectReference Include="..\ApplicationCore\ApplicationCore.csproj" />
     <ProjectReference Include="..\Identity\Identity.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Areas\Api\Data\" />
+    <Folder Include="Areas\Api\Models\" />
+    <Folder Include="Areas\Api\Views\" />
   </ItemGroup>
 
 </Project>
