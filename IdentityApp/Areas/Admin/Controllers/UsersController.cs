@@ -27,8 +27,6 @@ namespace IdentityApp.Areas.Admin.Controllers
 		
 		private readonly IUserService userService;
 
-		
-
 		public UsersController(UserManager<ApplicationUser> UserManager, RoleManager<IdentityRole> roleManager,
 			IHostingEnvironment environment, IOptions<AppSettings> settings, IUserService userService)
 			: base(UserManager, roleManager, environment, settings)

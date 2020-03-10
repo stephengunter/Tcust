@@ -12,8 +12,7 @@ namespace Permissions.Views
 
 		[Required(ErrorMessage = "請填寫Email")]
 		public string email { get; set; }
-
-		[Required(ErrorMessage = "這個Email不存在")]
+		
 		public string userId { get; set; }
 
 		

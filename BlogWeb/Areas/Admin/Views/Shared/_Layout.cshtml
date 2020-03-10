@@ -1,6 +1,14 @@
 ﻿@using Microsoft.AspNetCore.Authorization
 @inject IAuthorizationService AuthorizationService
 
+@using Microsoft.Extensions.Options
+
+@inject IOptions<BlogWeb.AppSettings> AppSettings
+
+@{
+	string authUrl = AppSettings.Value.AuthUrl;
+}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,7 +23,7 @@
 	<link rel="stylesheet" href="~/css/admin/admin.css" />
 
 	<link rel="stylesheet" href="~/libs/summernote/summernote.css" />
-	
+
 </head>
 <body>
 	<div>
@@ -28,25 +36,24 @@
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					@*<a href="/admin/posts" class="navbar-brand" style="font-size:1.8em">校園日誌管理</a>*@
 				</div>
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
-						<li id="linkPosts" style="font-size:1.8em">
+						<li class="nav-item" id="linkPosts" style="font-size:1.8em">
 							<a href="@Url.Action("Index", "Posts", new { Area = "Admin" })">校園日誌管理</a>
 						</li>
-						<li id="linkTops" style="font-size:1.2em">
+						<li class="nav-item" id="linkTops" style="font-size:1.2em">
 							<a href="@Url.Action("Index", "Tops", new { Area = "Admin" })">置頂文章</a>
 						</li>
-						<li id="linkClicks" style="font-size:1.2em">
+						<li class="nav-item" id="linkClicks" style="font-size:1.2em">
 							<a href="@Url.Action("Index", "Clicks", new { Area = "Admin" })">點擊率分析</a>
 						</li>
-						<li id="linkDepartments" style="font-size:1.2em">
+						<li class="nav-item" id="linkDepartments" style="font-size:1.2em">
 							<a href="@Url.Action("Index", "Departments", new { Area = "Admin" })">發稿統計</a>
 						</li>
 						@if ((await AuthorizationService.AuthorizeAsync(User, "REVIEW_POSTS")).Succeeded)
 						{
-							<li id="linkReview" style="font-size:1.2em">
+							<li class="nav-item" id="linkReview" style="font-size:1.2em">
 								<a href="@Url.Action("Index", "Review", new { Area = "Admin" })">文章審核</a>
 
 							</li>
@@ -54,10 +61,17 @@
 
 						@if ((await AuthorizationService.AuthorizeAsync(User, "MANAGE_USERS")).Succeeded)
 						{
-							<li id="linkManage" style="font-size:1.2em">
+							<li class="nav-item" id="linkManage" style="font-size:1.2em">
 								<a href="@Url.Action("Index", "Manage", new { Area = "Admin" })">使用者管理</a>
 							</li>
 						}
+
+					</ul>
+
+					<ul class="nav navbar-nav navbar-right">
+						<li>
+							<a id="current-user" href="@authUrl" target="_blank">@User.Identity.Name</a>
+						</li>
 
 					</ul>
 				</div>
@@ -101,9 +115,8 @@
 
 	<script>
 		$(document).ready(function () {
-			var selector = '.nav li';
+            var selector = '.nav-item';
 			$(selector).on('click', function () {
-
 				$(selector).removeClass('active');
 				$(this).addClass('active');
 			});
@@ -113,4 +126,4 @@
 
 
 </body>
-</html >
+</html>

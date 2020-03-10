@@ -237,7 +237,7 @@ namespace Permissions.Services
 
 
 			var appUser = GetAppUserByUserId(userId);
-			if(appUser==null) throw new Exception("AppUser Not Found. UserId= " + userId);
+			if(appUser == null) return false;
 
 			var spec = new PermissionFilterSpecification(permissionName);
 			var permission = permissionRepository.GetSingleBySpec(spec);

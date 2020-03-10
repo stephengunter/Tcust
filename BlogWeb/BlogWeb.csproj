@@ -40,6 +40,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ApplicationCore\ApplicationCore.csproj" />
     <ProjectReference Include="..\Blog\Blog.csproj" />
+    <ProjectReference Include="..\Identity\Identity.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\Permissions\Permissions.csproj" />
   </ItemGroup>

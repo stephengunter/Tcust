@@ -106,7 +106,7 @@
 				
 			}
 			
-			
+			console.log('Api source',Api.source());
 
 		},
       computed:{

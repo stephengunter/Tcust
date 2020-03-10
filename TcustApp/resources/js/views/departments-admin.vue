@@ -70,6 +70,8 @@
 				this.list = this.init_model.slice(0);
          }
 
+         console.log('Api source ', Api.source());
+
 		},
       computed:{
          editting(){
