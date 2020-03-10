@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>@ViewData["Title"] - 慈濟科技大學 校史館</title>
 
 	<link rel="stylesheet" href="~/css/app.css" />
@@ -44,6 +44,19 @@
 	<script src="~/js/jquery.hammer.js"></script>
 	<script src="~/js/modernizr.custom.79639.js"></script>
 
+	<script>
+		document.body.addEventListener('touchmove', function (event) {
+		   event.preventDefault();
+		  }, false);
+		  document.body.addEventListener('touchstart', function (event) {
+		   event.preventDefault();
+		  }, false);
+		  document.body.addEventListener('gesturechange', function (event) {
+		   event.preventDefault();
+		  }, false);
+       
+	</script>
+	
 	@RenderSection("scripts", required: false)
 </body>
 </html>
